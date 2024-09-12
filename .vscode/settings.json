@@ -1,4 +1,29 @@
 {
+  "editor.formatOnSave": true,
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "editor.codeActionsOnSave": { "source.organizeImports": "always" },
+  "[dockerfile]": {
+    "editor.defaultFormatter": "ms-azuretools.vscode-docker"
+  },
+  "[go]": {
+    "editor.defaultFormatter": "golang.go"
+  },
+  "cSpell.words": [
+    "clsx",
+    "godotenv",
+    "Infof",
+    "Infow",
+    "jmoiron",
+    "joho",
+    "lucide",
+    "openpulse",
+    "sqlx",
+    "sslmode",
+    "tanstack",
+    "tseslint",
+    "Turborepo"
+  ],
+  "css.customData": [".vscode/tailwind.json"],
   "eslint.workingDirectories": [
     {
       "mode": "auto"
