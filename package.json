@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "with-svelte",
+  "name": "openpulse",
   "scripts": {
     "dev": "turbo run dev",
     "lint": "turbo run lint",
