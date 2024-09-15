@@ -1,0 +1,20 @@
+# Check to see if we can use ash, in Alpine images, or default to BASH.
+SHELL_PATH = /bin/ash
+SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
+
+# ==============================================================================
+# Define dependencies
+
+GOLANG          := golang:1.23
+ALPINE          := alpine:3.20
+POSTGRES        := postgres:16.4
+KIND            := kindest/node:v1.31.0
+GRAFANA         := grafana/grafana:11.1.0
+PROMETHEUS      := prom/prometheus:v2.54.0
+
+BASE_IMAGE_NAME := iamNilotpal/openpulse
+NAMESPACE       := openpulse-main-backend
+APP_NAME       	:= openpulse-main-backend
+KIND_CLUSTER    := openpulse-main-backend-cluster
+APP_IMAGE     	:= $(BASE_IMAGE_NAME)/$(APP_NAME):$(VERSION)
+VERSION       	:= "1.0.0-$(shell git rev-parse --short HEAD)"
