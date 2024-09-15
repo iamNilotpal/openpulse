@@ -3,6 +3,14 @@ SHELL_PATH = /bin/ash
 SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
 
 # ==============================================================================
+# Install Tooling and Dependencies
+#
+#	Run these commands to install everything needed.
+#	$ make dev-brew
+#	$ make dev-docker
+#	$ make dev-gotooling
+
+# ==============================================================================
 # Define dependencies
 
 GOLANG          := golang:1.23
