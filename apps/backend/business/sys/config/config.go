@@ -1,11 +1,13 @@
 package config
 
 import (
+	"strings"
 	"time"
 )
 
 type Web struct {
 	APIHost         string
+	AllowedOrigins  []string
 	ReadTimeout     time.Duration
 	WriteTimeout    time.Duration
 	IdleTimeout     time.Duration
@@ -54,6 +56,9 @@ func NewOpenpulseConfig() *OpenpulseApiConfig {
 		webShutdownTimeout = time.Second * 20
 	}
 
+	origins := GetEnvString("ALLOWED_ORIGINS", "http://localhost:3000")
+	allowedOrigins := strings.Split(origins, ",")
+
 	return &OpenpulseApiConfig{
 		DB: DB{
 			MaxIdleConns: GetEnvInt("DB_MAX_IDLE_CONN", 5),
@@ -67,6 +72,7 @@ func NewOpenpulseConfig() *OpenpulseApiConfig {
 		Web: Web{
 			ReadTimeout:     webReadTimeOut,
 			IdleTimeout:     webIdleTimeout,
+			AllowedOrigins:  allowedOrigins,
 			WriteTimeout:    webWriteTimeout,
 			ShutdownTimeout: webShutdownTimeout,
 			APIHost:         GetEnvString("WEB_API_HOST", "localhost:4001"),

@@ -22,6 +22,7 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 	app := web.NewApp(web.AppConfig{Shutdown: cfg.Shutdown}, cors.Options{
 		MaxAge:           300,
 		AllowCredentials: true,
+		AllowedOrigins:   cfg.Config.Web.AllowedOrigins,
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowedMethods: []string{
 			http.MethodGet,
