@@ -9,7 +9,9 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/iamNilotpal/openpulse/business/config"
+	"github.com/iamNilotpal/openpulse/apps/api/handlers"
+	"github.com/iamNilotpal/openpulse/business/sys/config"
+	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/foundation/logger"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -37,12 +39,30 @@ func run(log *zap.SugaredLogger) error {
 	cfg := config.NewOpenpulseConfig()
 	log.Infow("Config", "config", cfg)
 
+	// Initialize Database
+	db, err := database.Open(cfg.DB)
+	if err != nil {
+		log.Infow("DATABASE CONNECTION ERROR", "error", err)
+		return err
+	}
+
+	err = database.StatusCheck(context.Background(), db)
+	if err != nil {
+		log.Infow("DATABASE Status Check Error", "error", err)
+		return err
+	}
+
 	// Shutdown Signals
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
+	// Initialize API support
+	mux := handlers.NewHandler(
+		handlers.HandlerConfig{Shutdown: shutdown, Log: log, Config: cfg, DB: db},
+	)
+
 	api := http.Server{
-		Handler:      nil,
+		Handler:      mux,
 		Addr:         cfg.Web.APIHost,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		IdleTimeout:  cfg.Web.IdleTimeout,
