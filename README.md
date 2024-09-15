@@ -1,4 +1,4 @@
-# About OpenPulse 🏓
+# About OpenPulse
 
 **OpenPulse: Your Comprehensive Monitoring Solution**
 
