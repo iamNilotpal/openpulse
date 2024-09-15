@@ -69,7 +69,7 @@ func NewOpenpulseConfig() *OpenpulseApiConfig {
 			IdleTimeout:     webIdleTimeout,
 			WriteTimeout:    webWriteTimeout,
 			ShutdownTimeout: webShutdownTimeout,
-			APIHost:         GetEnvString("WEB_API_HOST", "localhost:3000"),
+			APIHost:         GetEnvString("WEB_API_HOST", "localhost:4001"),
 		},
 		Auth: Auth{
 			Issuer: GetEnvString("AUTH_ISSUER", "open-pulse-backend"),
