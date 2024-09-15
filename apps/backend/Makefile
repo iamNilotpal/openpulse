@@ -48,3 +48,47 @@ dev-docker:
 	docker pull $(GRAFANA) & \
 	docker pull $(PROMETHEUS) & \
 	wait;
+
+# ==============================================================================
+# Linting and Vulnarability check
+lint:
+	CGO_ENABLED=0 go vet ./...
+	staticcheck -checks=all ./...
+
+vuln-check:
+	govulncheck ./...
+
+# ==============================================================================
+# Modules support
+
+deps-reset:
+	git checkout -- go.mod
+	go mod tidy
+
+tidy:
+	go mod tidy
+
+deps-list:
+	go list -m -u -mod=readonly all
+
+deps-upgrade:
+	go get -u -v ./...
+	go mod tidy
+
+deps-cleancache:
+	go clean -modcache
+
+list:
+	go list -mod=mod all
+
+# ==============================================================================
+# Test the application locally
+
+run:
+	go run apps/api/main.go
+
+ready:
+	curl -il http://localhost:3000/v1/readiness
+
+live:
+	curl -il http://localhost:3000/v1/liveness
