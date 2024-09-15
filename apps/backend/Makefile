@@ -18,3 +18,25 @@ APP_NAME       	:= openpulse-main-backend
 KIND_CLUSTER    := openpulse-main-backend-cluster
 APP_IMAGE     	:= $(BASE_IMAGE_NAME)/$(APP_NAME):$(VERSION)
 VERSION       	:= "1.0.0-$(shell git rev-parse --short HEAD)"
+
+# ==============================================================================
+# Install dependencies
+
+dev-gotooling:
+	go install golang.org/x/vuln/cmd/govulncheck@latest
+	go install honnef.co/go/tools/cmd/staticcheck@latest
+
+dev-brew:
+	brew update
+	brew list kind || brew install kind
+	brew list kubectl || brew install kubectl
+	brew list kustomize || brew install kustomize
+
+dev-docker:
+	docker pull $(GOLANG) & \
+	docker pull $(ALPINE) & \
+	docker pull $(KIND) & \
+	docker pull $(POSTGRES) & \
+	docker pull $(GRAFANA) & \
+	docker pull $(PROMETHEUS) & \
+	wait;
