@@ -1,9 +1,15 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 
+	"github.com/iamNilotpal/openpulse/business/config"
 	"github.com/iamNilotpal/openpulse/foundation/logger"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -26,6 +32,48 @@ func main() {
 func run(log *zap.SugaredLogger) error {
 	// GOMAXPROCS
 	log.Infow("Startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
+
+	// Initialize Config
+	cfg := config.NewOpenpulseConfig()
+	log.Infow("Config", "config", cfg)
+
+	// Shutdown Signals
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	api := http.Server{
+		Handler:      nil,
+		Addr:         cfg.Web.APIHost,
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		ErrorLog:     zap.NewStdLog(log.Desugar()),
+	}
+
+	serverErrors := make(chan error, 1)
+
+	go func() {
+		log.Infow("Server Listening", "address", api.Addr)
+		serverErrors <- api.ListenAndServe()
+	}()
+
+	// Graceful Shutdown of Server
+	select {
+	case err := <-serverErrors:
+		return fmt.Errorf("server error: %w", err)
+
+	case sig := <-shutdown:
+		log.Infow("Shutting Down Server", "signal", sig)
+		defer log.Infow("Shutdown Complete", "signal", sig)
+
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		defer cancel()
+
+		if err := api.Shutdown(ctx); err != nil {
+			api.Close()
+			return fmt.Errorf("could not stop server gracefully: %w", err)
+		}
+	}
 
 	return nil
 }
