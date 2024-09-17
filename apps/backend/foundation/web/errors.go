@@ -9,22 +9,22 @@ func (e *ErrorResponse) Error() string {
 	return e.Message
 }
 
-type responseSuccess[T any] struct {
-	Data   T              `json:"data"`
+type responseSuccess struct {
+	Data   any            `json:"data"`
 	Status responseStatus `json:"status"`
 }
 
-type responseError[T ErrorResponse] struct {
-	Error  T              `json:"error"`
+type responseError struct {
+	Error  ErrorResponse  `json:"error"`
 	Status responseStatus `json:"status"`
 }
 
 // Fail converts an error to valid error response.
-func Fail(err ErrorResponse) responseError[ErrorResponse] {
-	return responseError[ErrorResponse]{Error: err, Status: statusError}
+func Fail(err ErrorResponse) responseError {
+	return responseError{Error: err, Status: statusError}
 }
 
 // Success converts any data to valid success response.
-func Success[T any](data T) responseSuccess[T] {
-	return responseSuccess[T]{Data: data, Status: statusOk}
+func Success(data any) responseSuccess {
+	return responseSuccess{Data: data, Status: statusOk}
 }
