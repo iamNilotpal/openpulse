@@ -25,8 +25,8 @@ type AppConfig struct {
 func NewApp(cfg AppConfig, corsOpts cors.Options) *App {
 	mux := chi.NewRouter()
 
-	mux.Use(cors.Handler(corsOpts))
 	mux.Use(middleware.Logger)
+	mux.Use(cors.Handler(corsOpts))
 	mux.Use(middleware.RealIP)
 	mux.Use(middleware.RequestID)
 	mux.Use(middleware.Recoverer)
