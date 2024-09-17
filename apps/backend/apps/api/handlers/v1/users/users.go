@@ -1,16 +1,20 @@
 package users_handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/iamNilotpal/openpulse/business/core/users"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 )
 
-type Handler struct{}
+type Handler struct {
+	store users.Repository
+}
 
-func NewHandler() *Handler {
-	return &Handler{}
+func NewHandler(store users.Repository) *Handler {
+	return &Handler{store: store}
 }
 
 func (h *Handler) QueryUserById(w http.ResponseWriter, r *http.Request) {
@@ -28,5 +32,14 @@ func (h *Handler) QueryUserById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	web.Respond(w, http.StatusOK, web.Success(userId))
+	user, err := h.store.QueryByUserId(r.Context(), userId)
+	if err != nil {
+		web.Respond(
+			w, http.StatusNotFound,
+			web.Fail(web.ErrorResponse{Message: fmt.Sprintf("User with id %d doesn't exists.", userId)}),
+		)
+		return
+	}
+
+	web.Respond(w, http.StatusOK, web.Success(user))
 }
