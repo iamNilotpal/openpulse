@@ -1,24 +1,38 @@
 package v1
 
 import (
-	users_handler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/users"
-	"github.com/iamNilotpal/openpulse/business/core/users"
+	"github.com/go-chi/chi/v5"
+	userHandler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/user"
+	"github.com/iamNilotpal/openpulse/business/core/user"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"go.uber.org/zap"
 )
 
 const version = "/api/v1"
-const usersRoute = version + "/users"
 
-type V1Config struct {
-	UserStore users.Repository
-	Log       *zap.SugaredLogger
-	Config    *config.OpenpulseApiConfig
+type cfg struct {
+	app      *web.App
+	userCore *user.Core
+	log      *zap.SugaredLogger
+	config   *config.OpenpulseApiConfig
 }
 
-func SetupRoutes(app *web.App, cfg V1Config) {
-	usersHandler := users_handler.NewHandler(cfg.UserStore)
+func New(
+	app *web.App,
+	userCore *user.Core,
+	log *zap.SugaredLogger,
+	config *config.OpenpulseApiConfig,
+) *cfg {
+	return &cfg{app: app, userCore: userCore, log: log, config: config}
+}
 
-	app.Mux.Get(usersRoute+"/{id}", usersHandler.QueryUserById)
+func (c *cfg) SetupRoutes() {
+	usersHandler := userHandler.New(c.userCore)
+
+	c.app.Mux.Route(version, func(r chi.Router) {
+		r.Route("/users", func(r chi.Router) {
+			r.Get("/{id}", usersHandler.QueryById)
+		})
+	})
 }

@@ -5,15 +5,44 @@ import (
 	"net/http"
 )
 
-type responseStatus string
+type apiResponse struct {
+	Success    bool     `json:"success"`
+	StatusCode int      `json:"statusCode"`
+	Data       any      `json:"data,omitempty"`
+	Error      apiError `json:"error,omitempty"`
+}
 
-const (
-	statusOk    responseStatus = "OK"
-	statusError responseStatus = "ERROR"
-)
+type apiError struct {
+	Trace      string    `json:"-"`
+	Message    string    `json:"message"`
+	ErrorCode  errorType `json:"errorCode"`
+	StatusCode int       `json:"statusCode"`
+	Fields     any       `json:"fields,omitempty"`
+}
 
-// Respond converts a Go value to JSON and sends it to the client.
-func Respond(w http.ResponseWriter, statusCode int, data any) error {
+func RespondSuccess(w http.ResponseWriter, code int, data any) error {
+	response := apiResponse{Success: true, Data: data, StatusCode: code}
+	return respond(w, code, response)
+}
+
+func RespondError(
+	w http.ResponseWriter, code int, errorCode errorType, message string, fields any,
+) error {
+	response := apiResponse{
+		Data:    nil,
+		Success: false,
+		Error: apiError{
+			StatusCode: code,
+			Fields:     fields,
+			Message:    message,
+			ErrorCode:  errorCode,
+		},
+	}
+
+	return respond(w, code, response)
+}
+
+func respond(w http.ResponseWriter, statusCode int, data apiResponse) error {
 	if statusCode == http.StatusNoContent {
 		w.WriteHeader(statusCode)
 		return nil

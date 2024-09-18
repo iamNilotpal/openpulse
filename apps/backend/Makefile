@@ -1,3 +1,5 @@
+include .env
+
 # Check to see if we can use ash, in Alpine images, or default to BASH.
 SHELL_PATH = /bin/ash
 SHELL = $(if $(wildcard $(SHELL_PATH)),/bin/ash,/bin/bash)
@@ -26,6 +28,8 @@ APP_NAME       	:= openpulse-main-backend
 KIND_CLUSTER    := openpulse-main-backend-cluster
 APP_IMAGE     	:= $(BASE_IMAGE_NAME)/$(APP_NAME):$(VERSION)
 VERSION       	:= "1.0.0-$(shell git rev-parse --short HEAD)"
+DATABASE_URL		:= $(DB_SCHEME)://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST)/$(DB_NAME)?sslmode=$(DB_TLS)
+
 
 # ==============================================================================
 # Install dependencies
@@ -81,6 +85,18 @@ deps-cleancache:
 
 list:
 	go list -mod=mod all
+
+# ==============================================================================
+# Migration Support
+
+create-migration:
+	@migrate create -ext sql -dir $(MIGRATIONS_PATH) -seq $(filter-out $@,$(MAKECMDGOALS))
+
+migrate-up:
+	@migrate -database $(DATABASE_URL) -path $(MIGRATIONS_PATH) up
+
+migrate-down:
+	@migrate -database $(DATABASE_URL) -path $(MIGRATIONS_PATH) down
 
 # ==============================================================================
 # Test the application locally

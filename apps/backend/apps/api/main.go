@@ -10,6 +10,8 @@ import (
 	"syscall"
 
 	"github.com/iamNilotpal/openpulse/apps/api/handlers"
+	"github.com/iamNilotpal/openpulse/business/core/user"
+	user_store "github.com/iamNilotpal/openpulse/business/core/user/store/db"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/foundation/logger"
@@ -56,9 +58,20 @@ func run(log *zap.SugaredLogger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
+	// Initialize repositories
+	userStore := user_store.NewPostgresStore(db)
+	userCore := user.NewCore(userStore)
+
 	// Initialize API support
 	mux := handlers.NewHandler(
-		handlers.HandlerConfig{Shutdown: shutdown, Log: log, Config: cfg, DB: db},
+		handlers.HandlerConfig{
+			DB:       db,
+			Log:      log,
+			Config:   cfg,
+			Shutdown: shutdown,
+			Cores: handlers.Cores{
+				UserCore: userCore,
+			}},
 	)
 
 	api := http.Server{

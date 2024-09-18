@@ -13,7 +13,7 @@ import (
 // App is the entrypoint into our application and what configures our context
 // object for each of our http handlers.
 type App struct {
-	Mux      *chi.Mux
+	*chi.Mux
 	shutdown chan os.Signal
 }
 

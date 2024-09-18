@@ -1,25 +1,27 @@
-package users
+package user
 
 import (
+	"fmt"
 	"net/mail"
 	"time"
 
-	store "github.com/iamNilotpal/openpulse/business/core/users/store/db"
+	user_store "github.com/iamNilotpal/openpulse/business/core/user/store/db"
 )
 
-type AppUser struct {
-	Id            int
+type User struct {
+	ID            int
 	FirstName     string
 	LastName      string
-	Email         string
-	RoleId        int
+	Email         mail.Address
+	PasswordHash  []byte
+	RoleID        int
 	AvatarUrl     string
 	AccountStatus string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
 
-type CreateUserPayload struct {
+type NewUser struct {
 	FirstName    string
 	LastName     string
 	Email        mail.Address
@@ -28,27 +30,34 @@ type CreateUserPayload struct {
 	RoleId       int
 }
 
-func ToCreateDBUser(p CreateUserPayload) store.CreateUserDBPayload {
-	return store.CreateUserDBPayload{
+type UpdateUser struct {
+	FirstName *string
+	LastName  *string
+	Email     *mail.Address
+	AvatarUrl *string
+}
+
+func ToNewDBUser(p NewUser) user_store.NewDBUser {
+	return user_store.NewDBUser{
 		FirstName:    p.FirstName,
 		LastName:     p.LastName,
 		Email:        p.Email.Address,
 		PasswordHash: p.PasswordHash,
 		AvatarUrl:    p.AvatarUrl,
-		RoleId:       p.RoleId,
+		RoleID:       p.RoleId,
 	}
 }
 
-func ToAppUser(p store.DBUser) AppUser {
+func ToUser(p user_store.DBUser) User {
 	createdAt, _ := time.Parse("", p.CreatedAt)
 	updatedAt, _ := time.Parse("", p.UpdatedAt)
 
-	return AppUser{
-		Id:            p.Id,
+	return User{
+		ID:            p.Id,
 		FirstName:     p.FirstName,
 		LastName:      p.LastName,
-		Email:         p.Email,
-		RoleId:        p.RoleId,
+		Email:         mail.Address{Name: fmt.Sprintf("%s %s", p.FirstName, p.LastName), Address: p.Email},
+		RoleID:        p.RoleID,
 		AvatarUrl:     p.AvatarUrl,
 		AccountStatus: p.AccountStatus,
 		CreatedAt:     createdAt,

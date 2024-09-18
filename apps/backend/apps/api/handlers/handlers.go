@@ -6,8 +6,7 @@ import (
 
 	"github.com/go-chi/cors"
 	v1 "github.com/iamNilotpal/openpulse/apps/api/handlers/v1"
-	"github.com/iamNilotpal/openpulse/business/core/users"
-	users_store "github.com/iamNilotpal/openpulse/business/core/users/store/db"
+	"github.com/iamNilotpal/openpulse/business/core/user"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jmoiron/sqlx"
@@ -15,10 +14,15 @@ import (
 )
 
 type HandlerConfig struct {
+	Cores    Cores
 	DB       *sqlx.DB
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
 	Config   *config.OpenpulseApiConfig
+}
+
+type Cores struct {
+	UserCore *user.Core
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
@@ -38,10 +42,8 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 		},
 	})
 
-	userStore := users_store.NewPostgresStore(cfg.DB)
-	userCore := users.NewCore(userStore)
+	apiV1 := v1.New(app, cfg.Cores.UserCore, cfg.Log, cfg.Config)
+	apiV1.SetupRoutes()
 
-	v1.SetupRoutes(app, v1.V1Config{Log: cfg.Log, Config: cfg.Config, UserStore: userCore})
-
-	return app.Mux
+	return app
 }
