@@ -1,11 +1,21 @@
 package web
 
-type errorType string
+type errorCode string
 
 const (
-	UnknownErrorType    errorType = "unknown_error"
-	NotFoundErrorType   errorType = "notfound_error"
-	ServiceErrorType    errorType = "service_error"
-	InternalErrorType   errorType = "internal_error"
-	ValidationErrorType errorType = "validation_error"
+	InternalErrorCode           errorCode = "INTERNAL_ERROR"
+	DatabaseErrorCode           errorCode = "DATABASE_ERROR"
+	ServiceUnavailableErrorCode errorCode = "SERVICE_UNAVAILABLE"
+
+	UnknownErrorCode              errorCode = "UNKNOWN_ERROR"
+	InvalidInputErrorCode         errorCode = "INVALID_INPUT"
+	MissingRequiredFieldErrorCode errorCode = "MISSING_REQUIRED_FIELD"
+
+	DuplicateValueErrorCode errorCode = "DUPLICATE_VALUE"
+	NotFoundErrorCode       errorCode = "RESOURCE_NOT_FOUND"
+	AlreadyExistsErrorCode  errorCode = "RESOURCE_ALREADY_EXISTS"
 )
+
+func ToErrorCode(code string) errorCode {
+	return errorCode(code)
+}
