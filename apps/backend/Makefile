@@ -30,7 +30,6 @@ APP_IMAGE     	:= $(BASE_IMAGE_NAME)/$(APP_NAME):$(VERSION)
 VERSION       	:= "1.0.0-$(shell git rev-parse --short HEAD)"
 DATABASE_URL		:= $(DB_SCHEME)://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST)/$(DB_NAME)?sslmode=$(DB_TLS)
 
-
 # ==============================================================================
 # Install dependencies
 
