@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	userHandler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/user"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
+	"github.com/iamNilotpal/openpulse/business/web/v1/middlewares"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"go.uber.org/zap"
 )
@@ -28,10 +29,11 @@ func New(
 
 func (c *cfg) SetupRoutes() {
 	usersHandler := userHandler.New(c.repositories.User)
+	errorResponder := middlewares.ErrorResponder(c.log)
 
 	c.app.Route(version, func(r chi.Router) {
 		r.Route("/users", func(r chi.Router) {
-			r.Get("/{id}", usersHandler.QueryById)
+			r.Get("/{id}", errorResponder(usersHandler.QueryById))
 		})
 	})
 }
