@@ -13,29 +13,26 @@ type apiResponse struct {
 }
 
 type apiError struct {
-	Trace      string    `json:"-"`
-	Message    string    `json:"message"`
-	ErrorCode  errorType `json:"errorCode"`
-	StatusCode int       `json:"statusCode"`
-	Fields     any       `json:"fields,omitempty"`
+	Message   string    `json:"message"`
+	ErrorCode errorCode `json:"errorCode"`
+	Fields    any       `json:"fields,omitempty"`
 }
 
-func RespondSuccess(w http.ResponseWriter, code int, data any) error {
+func Success(w http.ResponseWriter, code int, data any) error {
 	response := apiResponse{Success: true, Data: data, StatusCode: code}
 	return respond(w, code, response)
 }
 
-func RespondError(
-	w http.ResponseWriter, code int, errorCode errorType, message string, fields any,
+func Error(
+	w http.ResponseWriter, code int, errorCode errorCode, message string, fields any,
 ) error {
 	response := apiResponse{
-		Data:    nil,
-		Success: false,
+		StatusCode: code,
+		Success:    false,
 		Error: apiError{
-			StatusCode: code,
-			Fields:     fields,
-			Message:    message,
-			ErrorCode:  errorCode,
+			Fields:    fields,
+			Message:   message,
+			ErrorCode: errorCode,
 		},
 	}
 

@@ -5,7 +5,7 @@ import (
 	"net/mail"
 	"time"
 
-	user_store "github.com/iamNilotpal/openpulse/business/core/user/store/db"
+	user_store "github.com/iamNilotpal/openpulse/business/repository/user/store/db"
 )
 
 type User struct {

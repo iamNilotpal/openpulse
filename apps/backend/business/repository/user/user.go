@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	user_store "github.com/iamNilotpal/openpulse/business/core/user/store/db"
+	user_store "github.com/iamNilotpal/openpulse/business/repository/user/store/db"
 )
 
 var (
@@ -13,15 +13,15 @@ var (
 	ErrUpdateUser = errors.New("update user data failed")
 )
 
-type Core struct {
+type Repository struct {
 	store user_store.Store
 }
 
-func NewCore(store user_store.Store) *Core {
-	return &Core{store: store}
+func NewRepository(store user_store.Store) *Repository {
+	return &Repository{store: store}
 }
 
-func (c *Core) Create(context context.Context, payload NewUser) (int, error) {
+func (c *Repository) Create(context context.Context, payload NewUser) (int, error) {
 	id, err := c.store.Create(context, ToNewDBUser(payload))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -33,7 +33,7 @@ func (c *Core) Create(context context.Context, payload NewUser) (int, error) {
 	return id, nil
 }
 
-func (c *Core) QueryById(context context.Context, id int) (User, error) {
+func (c *Repository) QueryById(context context.Context, id int) (User, error) {
 	dbUser, err := c.store.QueryById(context, id)
 	if err != nil {
 		return User{}, err
@@ -42,7 +42,7 @@ func (c *Core) QueryById(context context.Context, id int) (User, error) {
 	return ToUser(dbUser), nil
 }
 
-func (c *Core) Query(context context.Context, query QueryFilter) ([]User, error) {
+func (c *Repository) Query(context context.Context, query QueryFilter) ([]User, error) {
 	if err := query.Validate(); err != nil {
 		return []User{}, err
 	}

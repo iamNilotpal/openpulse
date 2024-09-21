@@ -1,6 +1,7 @@
 {
   "private": true,
   "name": "openpulse",
+  "license": "Server Side Public License",
   "scripts": {
     "dev": "turbo run dev",
     "lint": "turbo run lint",

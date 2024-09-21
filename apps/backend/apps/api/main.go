@@ -10,8 +10,8 @@ import (
 	"syscall"
 
 	"github.com/iamNilotpal/openpulse/apps/api/handlers"
-	"github.com/iamNilotpal/openpulse/business/core/user"
-	user_store "github.com/iamNilotpal/openpulse/business/core/user/store/db"
+	"github.com/iamNilotpal/openpulse/business/repository/user"
+	user_store "github.com/iamNilotpal/openpulse/business/repository/user/store/db"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/foundation/logger"
@@ -60,7 +60,12 @@ func run(log *zap.SugaredLogger) error {
 
 	// Initialize repositories
 	userStore := user_store.NewPostgresStore(db)
-	userCore := user.NewCore(userStore)
+	userRepository := user.NewRepository(userStore)
+
+	// Assign repositories to config
+	cfg.Repositories = config.Repositories{
+		User: userRepository,
+	}
 
 	// Initialize API support
 	mux := handlers.NewHandler(
@@ -69,9 +74,7 @@ func run(log *zap.SugaredLogger) error {
 			Log:      log,
 			Config:   cfg,
 			Shutdown: shutdown,
-			Cores: handlers.Cores{
-				UserCore: userCore,
-			}},
+		},
 	)
 
 	api := http.Server{
