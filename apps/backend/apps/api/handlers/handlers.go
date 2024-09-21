@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	v1 "github.com/iamNilotpal/openpulse/apps/api/handlers/v1"
-	"github.com/iamNilotpal/openpulse/business/core/user"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jmoiron/sqlx"
@@ -14,19 +14,14 @@ import (
 )
 
 type HandlerConfig struct {
-	Cores    Cores
 	DB       *sqlx.DB
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
 	Config   *config.OpenpulseApiConfig
 }
 
-type Cores struct {
-	UserCore *user.Core
-}
-
 func NewHandler(cfg HandlerConfig) http.Handler {
-	app := web.NewApp(web.AppConfig{Shutdown: cfg.Shutdown}, cors.Options{
+	app := web.NewApp(web.AppConfig{Shutdown: cfg.Shutdown, Cors: cors.Options{
 		MaxAge:           300,
 		AllowCredentials: true,
 		AllowedOrigins:   cfg.Config.Web.AllowedOrigins,
@@ -40,9 +35,14 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 			http.MethodDelete,
 			http.MethodOptions,
 		},
-	})
+	}},
+		middleware.Logger,
+		middleware.RealIP,
+		middleware.RequestID,
+		middleware.Recoverer,
+	)
 
-	apiV1 := v1.New(app, cfg.Cores.UserCore, cfg.Log, cfg.Config)
+	apiV1 := v1.New(app, cfg.Log, cfg.Config, cfg.Config.Repositories)
 	apiV1.SetupRoutes()
 
 	return app
