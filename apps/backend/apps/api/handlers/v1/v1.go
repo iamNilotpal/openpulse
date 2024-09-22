@@ -2,7 +2,8 @@ package v1
 
 import (
 	"github.com/go-chi/chi/v5"
-	userHandler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/user"
+	roles_handler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/roles"
+	users_handler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/users"
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
@@ -32,12 +33,20 @@ func New(
 }
 
 func (c *cfg) SetupRoutes() {
-	usersHandler := userHandler.New(c.repositories.User)
-	errorResponder := middlewares.ErrorResponder(c.log)
+	errorMiddleware := middlewares.ErrorResponder(c.log)
+
+	usersHandler := users_handler.New(c.repositories.User)
+	rolesHandler := roles_handler.New(c.repositories.Roles)
 
 	c.app.Route(version, func(r chi.Router) {
+		// 1. Roles routes
+		r.Route("/roles", func(r chi.Router) {
+			r.Post("/", errorMiddleware(rolesHandler.Create))
+		})
+
+		// 2. User routes
 		r.Route("/users", func(r chi.Router) {
-			r.Get("/{id}", errorResponder(usersHandler.QueryById))
+			r.Get("/{id}", errorMiddleware(usersHandler.QueryById))
 		})
 	})
 }

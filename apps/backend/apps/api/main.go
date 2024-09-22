@@ -11,8 +11,10 @@ import (
 
 	"github.com/iamNilotpal/openpulse/apps/api/handlers"
 	"github.com/iamNilotpal/openpulse/business/repositories"
-	"github.com/iamNilotpal/openpulse/business/repositories/user"
-	user_store "github.com/iamNilotpal/openpulse/business/repositories/user/stores/db"
+	"github.com/iamNilotpal/openpulse/business/repositories/roles"
+	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/db"
+	"github.com/iamNilotpal/openpulse/business/repositories/users"
+	"github.com/iamNilotpal/openpulse/business/repositories/users/stores/users_store"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
@@ -57,15 +59,19 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// Initialize repositories
-	userStore := user_store.NewPostgresStore(db)
-	userRepository := user.NewRepository(userStore)
+	usersStore := users_store.NewPostgresStore(db)
+	usersRepository := users.NewRepository(usersStore)
+
+	rolesStore := roles_store.NewPostgresStore(db)
+	rolesRepository := roles.NewRepository(rolesStore)
 
 	repositories := repositories.Repositories{
-		User: userRepository,
+		User:  usersRepository,
+		Roles: rolesRepository,
 	}
 
 	// Initialize authentication support
-	auth := auth.New(auth.Config{AuthConfig: cfg.Auth, UserRepo: userRepository, Logger: log})
+	auth := auth.New(auth.Config{AuthConfig: cfg.Auth, UserRepo: usersRepository, Logger: log})
 
 	// Shutdown Signals
 	shutdown := make(chan os.Signal, 1)

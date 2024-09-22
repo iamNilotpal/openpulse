@@ -1,11 +1,11 @@
-package user
+package users
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 
-	user_store "github.com/iamNilotpal/openpulse/business/repositories/user/stores/db"
+	user_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/users_store"
 )
 
 var (
