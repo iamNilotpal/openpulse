@@ -14,7 +14,7 @@ import (
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
 	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/db"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
-	"github.com/iamNilotpal/openpulse/business/repositories/users/stores/users_store"
+	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/db"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
