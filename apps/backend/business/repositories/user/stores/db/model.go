@@ -1,11 +1,13 @@
 package user_store
 
+import "database/sql"
+
 type NewDBUser struct {
 	FirstName    string
 	LastName     string
 	Email        string
 	PasswordHash []byte
-	AvatarUrl    string
+	AvatarUrl    sql.NullString
 	RoleID       int
 }
 
