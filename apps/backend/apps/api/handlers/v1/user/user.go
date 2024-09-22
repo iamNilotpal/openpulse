@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/iamNilotpal/openpulse/business/repository/user"
+	"github.com/iamNilotpal/openpulse/business/repositories/user"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 )
 

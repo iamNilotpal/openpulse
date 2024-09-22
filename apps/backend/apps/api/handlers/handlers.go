@@ -7,17 +7,21 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	v1 "github.com/iamNilotpal/openpulse/apps/api/handlers/v1"
+	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
+	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
 )
 
 type HandlerConfig struct {
-	DB       *sqlx.DB
-	Shutdown chan os.Signal
-	Log      *zap.SugaredLogger
-	Config   *config.OpenpulseApiConfig
+	DB           *sqlx.DB
+	Auth         *auth.Auth
+	Shutdown     chan os.Signal
+	Log          *zap.SugaredLogger
+	Repositories repositories.Repositories
+	Config       *config.OpenpulseApiConfig
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
@@ -42,7 +46,7 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 		middleware.Recoverer,
 	)
 
-	apiV1 := v1.New(app, cfg.Log, cfg.Config, cfg.Config.Repositories)
+	apiV1 := v1.New(app, cfg.Auth, cfg.Log, cfg.Config, cfg.Repositories)
 	apiV1.SetupRoutes()
 
 	return app

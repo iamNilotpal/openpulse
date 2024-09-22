@@ -1,11 +1,12 @@
 package user
 
 import (
+	"database/sql"
 	"fmt"
 	"net/mail"
 	"time"
 
-	user_store "github.com/iamNilotpal/openpulse/business/repository/user/store/db"
+	user_store "github.com/iamNilotpal/openpulse/business/repositories/user/stores/db"
 )
 
 type User struct {
@@ -31,10 +32,10 @@ type NewUser struct {
 }
 
 type UpdateUser struct {
-	FirstName *string
-	LastName  *string
-	Email     *mail.Address
-	AvatarUrl *string
+	FirstName string
+	LastName  string
+	Email     mail.Address
+	AvatarUrl string
 }
 
 func ToNewDBUser(p NewUser) user_store.NewDBUser {
@@ -43,7 +44,7 @@ func ToNewDBUser(p NewUser) user_store.NewDBUser {
 		LastName:     p.LastName,
 		Email:        p.Email.Address,
 		PasswordHash: p.PasswordHash,
-		AvatarUrl:    p.AvatarUrl,
+		AvatarUrl:    sql.NullString{String: p.AvatarUrl, Valid: p.AvatarUrl != ""},
 		RoleID:       p.RoleId,
 	}
 }

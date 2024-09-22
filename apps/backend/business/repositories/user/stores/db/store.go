@@ -9,6 +9,7 @@ import (
 type Store interface {
 	Create(context.Context, NewDBUser) (int, error)
 	QueryById(context context.Context, id int) (DBUser, error)
+	QueryByEmail(context context.Context, email string) (DBUser, error)
 }
 
 type PostgresStore struct {
@@ -54,6 +55,32 @@ func (p *PostgresStore) QueryById(context context.Context, id int) (DBUser, erro
 
 	var user DBUser
 	if err := p.db.QueryRowContext(context, query, id).Scan(
+		&user.Id,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.RoleID,
+		&user.AvatarUrl,
+		&user.AccountStatus,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	); err != nil {
+		return DBUser{}, err
+	}
+
+	return user, nil
+}
+
+func (p *PostgresStore) QueryByEmail(context context.Context, email string) (DBUser, error) {
+	query := `
+		SELECT
+		id, first_name, last_name, email, role_id, avatar_url, account_status, created_at, updated_at
+		FROM users
+		WHERE id = $1;
+	`
+
+	var user DBUser
+	if err := p.db.QueryRowContext(context, query, email).Scan(
 		&user.Id,
 		&user.FirstName,
 		&user.LastName,

@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/iamNilotpal/openpulse/business/sys/validate"
-	v1 "github.com/iamNilotpal/openpulse/business/web/v1"
+	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"go.uber.org/zap"
 )
 
 func ErrorResponder(log *zap.SugaredLogger) middleware {
-	h := func(handler handler) http.HandlerFunc {
+	responder := func(handler handler) http.HandlerFunc {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			err := handler(w, r)
 
@@ -22,22 +22,22 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 				fieldErrors := validate.GetFieldErrors(err)
 				errResp = web.APIError{
 					Fields:    fieldErrors.Fields(),
-					ErrorCode: v1.ToString(v1.InvalidInputErrorCode),
+					ErrorCode: errors.ToString(errors.InvalidInputErrorCode),
 					Message:   http.StatusText(http.StatusBadRequest),
 				}
 				statusCode = http.StatusBadRequest
 
-			case v1.IsRequestError(err):
-				reqErr := v1.GetRequestError(err)
+			case errors.IsRequestError(err):
+				reqErr := errors.GetRequestError(err)
 				errResp = web.APIError{
 					Message:   reqErr.Error(),
-					ErrorCode: v1.ToString(reqErr.Code),
+					ErrorCode: errors.ToString(reqErr.Code),
 				}
 				statusCode = reqErr.Status
 
 			default:
 				errResp = web.APIError{
-					ErrorCode: v1.ToString(v1.InternalErrorCode),
+					ErrorCode: errors.ToString(errors.InternalErrorCode),
 					Message:   http.StatusText(http.StatusInternalServerError),
 				}
 				statusCode = http.StatusInternalServerError
@@ -51,5 +51,5 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 		return h
 	}
 
-	return h
+	return responder
 }

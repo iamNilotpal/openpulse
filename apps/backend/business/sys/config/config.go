@@ -3,8 +3,6 @@ package config
 import (
 	"strings"
 	"time"
-
-	"github.com/iamNilotpal/openpulse/business/repository/user"
 )
 
 type Web struct {
@@ -31,15 +29,10 @@ type DB struct {
 	Password     string
 }
 
-type Repositories struct {
-	User *user.Repository
-}
-
 type OpenpulseApiConfig struct {
-	DB           DB
-	Web          Web
-	Auth         Auth
-	Repositories Repositories
+	DB   DB
+	Web  Web
+	Auth Auth
 }
 
 func NewOpenpulseConfig() *OpenpulseApiConfig {
