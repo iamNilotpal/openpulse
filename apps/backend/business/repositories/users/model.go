@@ -1,4 +1,4 @@
-package user
+package users
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	"net/mail"
 	"time"
 
-	user_store "github.com/iamNilotpal/openpulse/business/repositories/user/stores/db"
+	user_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/users_store"
 )
 
 type User struct {

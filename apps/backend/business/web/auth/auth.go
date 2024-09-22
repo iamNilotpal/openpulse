@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/iamNilotpal/openpulse/business/repositories/user"
+	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"go.uber.org/zap"
@@ -17,14 +17,14 @@ type Claims struct {
 
 type Config struct {
 	AuthConfig config.Auth
-	UserRepo   *user.Repository
+	UserRepo   *users.Repository
 	Logger     *zap.SugaredLogger
 }
 
 type Auth struct {
 	cfg      config.Auth
 	parser   *jwt.Parser
-	userRepo *user.Repository
+	userRepo *users.Repository
 	method   jwt.SigningMethod
 	logger   *zap.SugaredLogger
 }

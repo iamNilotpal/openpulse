@@ -8,20 +8,20 @@ import (
 // application with web specific context.
 type RequestError struct {
 	Status int
-	Err    error
+	Msg    string
 	Code   ErrorCode
 }
 
 // NewRequestError wraps a provided error with an HTTP status code. This
 // function should be used when handlers encounter expected errors.
-func NewRequestError(err error, status int, code ErrorCode) error {
-	return &RequestError{Err: err, Status: status, Code: code}
+func NewRequestError(msg string, status int, code ErrorCode) error {
+	return &RequestError{Msg: msg, Status: status, Code: code}
 }
 
 // Error implements the error interface. It uses the default message of the
 // wrapped error. This is what will be shown in the services' logs.
 func (re *RequestError) Error() string {
-	return re.Err.Error()
+	return re.Msg
 }
 
 // IsRequestError checks if an error of type RequestError exists.

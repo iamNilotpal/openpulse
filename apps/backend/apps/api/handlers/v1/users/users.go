@@ -1,22 +1,22 @@
-package user_handler
+package users_handler
 
 import (
 	"net/http"
 	"strconv"
 
-	"github.com/iamNilotpal/openpulse/business/repositories/user"
+	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 )
 
-type Handler struct {
-	userRepo *user.Repository
+type handler struct {
+	userRepo *users.Repository
 }
 
-func New(userRepo *user.Repository) *Handler {
-	return &Handler{userRepo: userRepo}
+func New(userRepo *users.Repository) *handler {
+	return &handler{userRepo: userRepo}
 }
 
-func (h *Handler) QueryById(w http.ResponseWriter, r *http.Request) error {
+func (h *handler) QueryById(w http.ResponseWriter, r *http.Request) error {
 	userId, err := strconv.Atoi(web.GetParam(r, "id"))
 	if err != nil {
 		return err
