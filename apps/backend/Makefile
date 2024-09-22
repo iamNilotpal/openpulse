@@ -98,13 +98,13 @@ migrate-down:
 	@migrate -database $(DATABASE_URL) -path $(MIGRATIONS_PATH) down
 
 # ==============================================================================
-# Test the application locally
+# Run application locally
 
-run:
-	go run apps/api/main.go
+build:
+	@echo "🚀🚀🚀 Building... 🚀🚀🚀"
+	@CGO_ENABLED=0 GOARCH=$(go env GOARCH) GOOS=$(go env GOOS) go build -o ./bin/openpulse -a -ldflags="-s -w" -installsuffix cgo apps/api/main.go
+	@echo "🚀🚀🚀 Build Complete 🚀🚀🚀"
 
-ready:
-	curl -il http://localhost:3000/v1/readiness
-
-live:
-	curl -il http://localhost:3000/v1/liveness
+run: build
+	@echo "🚀🚀🚀 Running Application... 🚀🚀🚀"
+	@./bin/openpulse

@@ -1,11 +1,11 @@
-package user
+package users
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 
-	user_store "github.com/iamNilotpal/openpulse/business/repositories/user/stores/db"
+	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/db"
 )
 
 var (
@@ -14,10 +14,10 @@ var (
 )
 
 type Repository struct {
-	store user_store.Store
+	store users_store.Store
 }
 
-func NewRepository(store user_store.Store) *Repository {
+func NewRepository(store users_store.Store) *Repository {
 	return &Repository{store: store}
 }
 

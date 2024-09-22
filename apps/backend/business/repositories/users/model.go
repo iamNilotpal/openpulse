@@ -1,4 +1,4 @@
-package user
+package users
 
 import (
 	"database/sql"
@@ -6,7 +6,7 @@ import (
 	"net/mail"
 	"time"
 
-	user_store "github.com/iamNilotpal/openpulse/business/repositories/user/stores/db"
+	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/db"
 )
 
 type User struct {
@@ -38,8 +38,8 @@ type UpdateUser struct {
 	AvatarUrl string
 }
 
-func ToNewDBUser(p NewUser) user_store.NewDBUser {
-	return user_store.NewDBUser{
+func ToNewDBUser(p NewUser) users_store.NewDBUser {
+	return users_store.NewDBUser{
 		FirstName:    p.FirstName,
 		LastName:     p.LastName,
 		Email:        p.Email.Address,
@@ -49,7 +49,7 @@ func ToNewDBUser(p NewUser) user_store.NewDBUser {
 	}
 }
 
-func ToUser(p user_store.DBUser) User {
+func ToUser(p users_store.DBUser) User {
 	createdAt, _ := time.Parse("", p.CreatedAt)
 	updatedAt, _ := time.Parse("", p.UpdatedAt)
 
