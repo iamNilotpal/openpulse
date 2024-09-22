@@ -10,10 +10,12 @@ import (
 	"syscall"
 
 	"github.com/iamNilotpal/openpulse/apps/api/handlers"
-	"github.com/iamNilotpal/openpulse/business/repository/user"
-	user_store "github.com/iamNilotpal/openpulse/business/repository/user/store/db"
+	"github.com/iamNilotpal/openpulse/business/repositories"
+	"github.com/iamNilotpal/openpulse/business/repositories/user"
+	user_store "github.com/iamNilotpal/openpulse/business/repositories/user/stores/db"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
+	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/foundation/logger"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -54,26 +56,30 @@ func run(log *zap.SugaredLogger) error {
 		return err
 	}
 
-	// Shutdown Signals
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-
 	// Initialize repositories
 	userStore := user_store.NewPostgresStore(db)
 	userRepository := user.NewRepository(userStore)
 
-	// Assign repositories to config
-	cfg.Repositories = config.Repositories{
+	repositories := repositories.Repositories{
 		User: userRepository,
 	}
+
+	// Initialize authentication support
+	auth := auth.New(auth.Config{AuthConfig: cfg.Auth, UserRepo: userRepository, Logger: log})
+
+	// Shutdown Signals
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	// Initialize API support
 	mux := handlers.NewHandler(
 		handlers.HandlerConfig{
-			DB:       db,
-			Log:      log,
-			Config:   cfg,
-			Shutdown: shutdown,
+			DB:           db,
+			Log:          log,
+			Config:       cfg,
+			Auth:         auth,
+			Shutdown:     shutdown,
+			Repositories: repositories,
 		},
 	)
 
