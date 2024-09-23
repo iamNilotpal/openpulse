@@ -16,7 +16,7 @@ CREATE TABLE
   );
 
 CREATE TABLE
-  IF NOT EXISTS user_preferences (
+  IF NOT EXISTS users_preferences (
     id BIGSERIAL PRIMARY KEY NOT NULL,
     user_id BIGINT NOT NULL UNIQUE,
     timezone VARCHAR(30),
@@ -26,12 +26,13 @@ CREATE TABLE
   );
 
 CREATE TABLE
-  IF NOT EXISTS user_permissions (
+  IF NOT EXISTS users_permissions (
     user_id BIGINT NOT NULL REFERENCES users (id),
     permission_id SMALLINT NOT NULL REFERENCES permissions (id),
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_by BIGINT NOT NULL REFERENCES users (id),
-    PRIMARY KEY (user_id, permission_id)
+    UNIQUE (user_id, permission_id),
+    INDEX user_id INCLUDE (permission_id)
   );

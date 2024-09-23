@@ -7,12 +7,13 @@ import (
 )
 
 type AuthError struct {
+	Status  int
 	Message string
 	Code    errors.ErrorCode
 }
 
-func NewAuthError(msg string, code errors.ErrorCode) *AuthError {
-	return &AuthError{Message: msg, Code: code}
+func NewAuthError(msg string, code errors.ErrorCode, status int) *AuthError {
+	return &AuthError{Message: msg, Code: code, Status: status}
 }
 
 func (a *AuthError) Error() string {
