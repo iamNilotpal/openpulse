@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const version = "/api/v1"
+const apiV1 = "/api/v1"
 
 type cfg struct {
 	app          *web.App
@@ -38,13 +38,11 @@ func (c *cfg) SetupRoutes() {
 	usersHandler := users_handler.New(c.repositories.User)
 	rolesHandler := roles_handler.New(c.repositories.Roles)
 
-	c.app.Route(version, func(r chi.Router) {
-		// 1. Roles routes
+	c.app.Route(apiV1, func(r chi.Router) {
 		r.Route("/roles", func(r chi.Router) {
 			r.Post("/", errorMiddleware(rolesHandler.Create))
 		})
 
-		// 2. User routes
 		r.Route("/users", func(r chi.Router) {
 			r.Get("/{id}", errorMiddleware(usersHandler.QueryById))
 		})

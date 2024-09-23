@@ -30,12 +30,12 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
 		if err, ok := err.(*pq.Error); ok {
 			if err.Code == pgerrcode.UniqueViolation {
 				return errors.NewRequestError(
-					"Role already exists", http.StatusConflict, errors.AlreadyExistsErrorCode,
+					"Role already exists", http.StatusConflict, errors.AlreadyExists,
 				)
 			}
 
 			return errors.NewRequestError(
-				"Unable to create role", http.StatusInternalServerError, errors.InternalErrorCode,
+				"Unable to create role", http.StatusInternalServerError, errors.InternalServerError,
 			)
 		}
 
