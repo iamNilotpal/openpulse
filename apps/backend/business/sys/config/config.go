@@ -31,12 +31,23 @@ type DB struct {
 	User         string
 	Host         string
 	Password     string
+	Scheme       string
+}
+
+type Cache struct {
+	DBName   string
+	Protocol string
+	User     string
+	Host     string
+	Scheme   string
+	Password string
 }
 
 type OpenpulseApiConfig struct {
-	DB   DB
-	Web  Web
-	Auth Auth
+	DB    DB
+	Web   Web
+	Auth  Auth
+	Cache Cache
 }
 
 func NewOpenpulseConfig() *OpenpulseApiConfig {
@@ -80,8 +91,17 @@ func NewOpenpulseConfig() *OpenpulseApiConfig {
 			User:         GetEnvString("DB_USER", "postgres"),
 			Name:         GetEnvString("DB_NAME", "openpulse"),
 			Host:         GetEnvString("DB_HOST", "localhost"),
+			Scheme:       GetEnvString("DB_SCHEME", "postgres"),
 			Password:     GetEnvString("DB_PASSWORD", "password"),
 			DisableTLS:   GetEnvString("DB_TLS", "disable") == "disable",
+		},
+		Cache: Cache{
+			DBName:   GetEnvString("CACHE_DB_NAME", "0"),
+			Protocol: GetEnvString("CACHE_PROTOCOL", "3"),
+			User:     GetEnvString("CACHE_DB_USER", "redis"),
+			Scheme:   GetEnvString("CACHE_DB_SCHEME", "redis"),
+			Password: GetEnvString("CACHE_DB_PASSWORD", "redis"),
+			Host:     GetEnvString("CACHE_DB_HOST", "localhost:6379"),
 		},
 		Web: Web{
 			ReadTimeout:     webReadTimeOut,
