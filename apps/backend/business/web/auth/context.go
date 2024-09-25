@@ -2,13 +2,13 @@ package auth
 
 import (
 	"context"
-	"errors"
 )
 
 type ctxKey int
 
-const userKey ctxKey = 1
+const roleKey ctxKey = 1
 const claimKey ctxKey = 2
+const permissionsKey ctxKey = 3
 
 func SetClaims(ctx context.Context, claims Claims) context.Context {
 	return context.WithValue(ctx, claimKey, claims)
@@ -22,14 +22,28 @@ func GetClaims(ctx context.Context) Claims {
 	return v
 }
 
-func SetUserID(ctx context.Context, userId int) context.Context {
-	return context.WithValue(ctx, userKey, userId)
+func SetUserRole(ctx context.Context, role UserRole) context.Context {
+	return context.WithValue(ctx, roleKey, role)
 }
 
-func GetUserId(ctx context.Context) (int, error) {
-	v, ok := ctx.Value(userKey).(int)
+func GetUserRole(ctx context.Context) UserRole {
+	v, ok := ctx.Value(roleKey).(UserRole)
 	if !ok {
-		return 0, errors.New("not found")
+		return UserRole{}
 	}
-	return v, nil
+
+	return v
+}
+
+func SetUserPermissions(ctx context.Context, permissions []UserPermissions) context.Context {
+	return context.WithValue(ctx, permissionsKey, permissions)
+}
+
+func GetUserPermissions(ctx context.Context) []UserPermissions {
+	v, ok := ctx.Value(permissionsKey).([]UserPermissions)
+	if !ok {
+		return []UserPermissions{}
+	}
+
+	return v
 }

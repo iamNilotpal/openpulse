@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -11,22 +12,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type Claims struct {
-	jwt.RegisteredClaims
-}
-
 type Config struct {
 	AuthConfig config.Auth
-	UserRepo   *users.Repository
 	Logger     *zap.SugaredLogger
+	UserRepo   *users.PostgresRepository
 }
 
 type Auth struct {
 	cfg      config.Auth
 	parser   *jwt.Parser
-	userRepo *users.Repository
 	method   jwt.SigningMethod
 	logger   *zap.SugaredLogger
+	userRepo *users.PostgresRepository
 }
 
 func New(cfg Config) *Auth {
@@ -45,12 +42,27 @@ func New(cfg Config) *Auth {
 	}
 }
 
-func (a *Auth) GenerateToken(claims Claims) (string, error) {
+func (a *Auth) GenerateAccessToken(claims Claims) (string, error) {
 	token := jwt.NewWithClaims(a.method, claims)
+	signedToken, err := token.SignedString(a.cfg.AccessTokenSecret)
 
-	signedToken, err := token.SignedString(a.cfg.Secret)
 	if err != nil {
-		return "", NewAuthError("Internal server error", errors.InternalErrorCode)
+		return "", NewAuthError(
+			"Internal Server Error", errors.InternalServerError, http.StatusInternalServerError,
+		)
+	}
+
+	return signedToken, nil
+}
+
+func (a *Auth) GenerateRefreshToken(claims Claims) (string, error) {
+	token := jwt.NewWithClaims(a.method, claims)
+	signedToken, err := token.SignedString(a.cfg.RefreshTokenSecret)
+
+	if err != nil {
+		return "", NewAuthError(
+			"Internal Server Error", errors.InternalServerError, http.StatusInternalServerError,
+		)
 	}
 
 	return signedToken, nil
@@ -61,20 +73,28 @@ func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims
 
 	if len(parts) != 2 || parts[1] != "Bearer" {
 		return Claims{}, NewAuthError(
-			"Authorization header missing. Expected format 'Bearer <token>'.", errors.InvalidAuthHeaderErrorCode,
+			"Authorization header missing. Expected format 'Bearer <token>'",
+			errors.InvalidAuthHeader,
+			http.StatusUnauthorized,
 		)
 	}
 
 	var claims Claims
 	tokenStr := parts[1]
 
-	if _, err := a.parser.ParseWithClaims(tokenStr, &claims, func(t *jwt.Token) (interface{}, error) {
-		if t.Method != a.method {
-			return "", NewAuthError("Invalid token signature", errors.InvalidTokenSignature)
-		}
-		return a.cfg.Secret, nil
-	}); err != nil {
-		return Claims{}, NewAuthError("Invalid token", errors.InvalidTokenSignature)
+	if _, err := a.parser.ParseWithClaims(
+		tokenStr, &claims, func(t *jwt.Token,
+		) (interface{}, error) {
+			if t.Method != a.method {
+				return "", NewAuthError(
+					"Invalid token signature", errors.InvalidTokenSignature, http.StatusUnauthorized,
+				)
+			}
+			return a.cfg.AccessTokenSecret, nil
+		}); err != nil {
+		return Claims{}, NewAuthError(
+			"Invalid token", errors.InvalidTokenSignature, http.StatusUnauthorized,
+		)
 	}
 
 	return claims, nil

@@ -9,11 +9,11 @@ import (
 )
 
 type handler struct {
-	userRepo *users.Repository
+	usersRepo users.Repository
 }
 
-func New(userRepo *users.Repository) *handler {
-	return &handler{userRepo: userRepo}
+func New(usersRepo users.Repository) *handler {
+	return &handler{usersRepo: usersRepo}
 }
 
 func (h *handler) QueryById(w http.ResponseWriter, r *http.Request) error {
@@ -22,7 +22,7 @@ func (h *handler) QueryById(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	user, err := h.userRepo.QueryById(r.Context(), userId)
+	user, err := h.usersRepo.QueryById(r.Context(), userId)
 	if err != nil {
 		return err
 	}

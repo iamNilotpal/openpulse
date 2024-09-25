@@ -11,10 +11,12 @@ import (
 
 	"github.com/iamNilotpal/openpulse/apps/api/handlers"
 	"github.com/iamNilotpal/openpulse/business/repositories"
+	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
+	permissions_store "github.com/iamNilotpal/openpulse/business/repositories/permissions/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
-	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/db"
+	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
-	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/db"
+	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
@@ -60,15 +62,28 @@ func run(log *zap.SugaredLogger) error {
 
 	// Initialize repositories
 	usersStore := users_store.NewPostgresStore(db)
-	usersRepository := users.NewRepository(usersStore)
+	usersRepository := users.NewPostgresRepository(usersStore)
 
 	rolesStore := roles_store.NewPostgresStore(db)
-	rolesRepository := roles.NewRepository(rolesStore)
+	rolesRepository := roles.NewPostgresRepository(rolesStore)
+
+	permissionsStore := permissions_store.NewPostgresStore(db)
+	permissionsRepository := permissions.NewPostgresRepository(permissionsStore)
 
 	repositories := repositories.Repositories{
-		User:  usersRepository,
-		Roles: rolesRepository,
+		Users:       usersRepository,
+		Roles:       rolesRepository,
+		Permissions: permissionsRepository,
 	}
+
+	// Get roles with permissions
+	rolesWithPermissions, err := rolesRepository.QueryRolesWithPermissions(context.Background())
+	if err != nil {
+		return err
+	}
+
+	// Build the Permissions Map
+	permissionsMap := buildPermissionsMap(rolesWithPermissions)
 
 	// Initialize authentication support
 	auth := auth.New(auth.Config{AuthConfig: cfg.Auth, UserRepo: usersRepository, Logger: log})
@@ -80,12 +95,13 @@ func run(log *zap.SugaredLogger) error {
 	// Initialize API support
 	mux := handlers.NewHandler(
 		handlers.HandlerConfig{
-			DB:           db,
-			Log:          log,
-			Config:       cfg,
-			Auth:         auth,
-			Shutdown:     shutdown,
-			Repositories: repositories,
+			DB:             db,
+			Log:            log,
+			Config:         cfg,
+			Auth:           auth,
+			Shutdown:       shutdown,
+			Repositories:   repositories,
+			PermissionsMap: permissionsMap,
 		},
 	)
 
@@ -124,4 +140,30 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	return nil
+}
+
+func buildPermissionsMap(permissions []roles.RolePermissions) auth.PermissionsMap {
+	permissionsMap := make(auth.PermissionsMap)
+
+	for _, permission := range permissions {
+		stored, ok := permissionsMap[permission.Role.Name]
+		if !ok {
+			stored = []auth.Permissions{
+				auth.ToPermissions(
+					auth.ToRole(permission.Role), auth.ToPermission(permission.Permission),
+				),
+			}
+		}
+
+		stored = append(
+			stored,
+			auth.ToPermissions(
+				auth.ToRole(permission.Role), auth.ToPermission(permission.Permission),
+			),
+		)
+
+		permissionsMap[permission.Permission.Name] = stored
+	}
+
+	return permissionsMap
 }
