@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/db"
+	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/postgres"
 )
 
 var (
@@ -13,15 +13,22 @@ var (
 	ErrUpdateUser = errors.New("update user data failed")
 )
 
-type Repository struct {
+type Repository interface {
+	QueryById(context context.Context, id int) (User, error)
+	Create(context context.Context, payload NewUser) (int, error)
+	QueryByEmail(context context.Context, email string) (User, error)
+	Query(context context.Context, query QueryFilter) ([]User, error)
+}
+
+type PostgresRepository struct {
 	store users_store.Store
 }
 
-func NewRepository(store users_store.Store) *Repository {
-	return &Repository{store: store}
+func NewPostgresRepository(store users_store.Store) *PostgresRepository {
+	return &PostgresRepository{store: store}
 }
 
-func (c *Repository) Create(context context.Context, payload NewUser) (int, error) {
+func (c *PostgresRepository) Create(context context.Context, payload NewUser) (int, error) {
 	id, err := c.store.Create(context, ToNewDBUser(payload))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -33,7 +40,7 @@ func (c *Repository) Create(context context.Context, payload NewUser) (int, erro
 	return id, nil
 }
 
-func (c *Repository) QueryById(context context.Context, id int) (User, error) {
+func (c *PostgresRepository) QueryById(context context.Context, id int) (User, error) {
 	dbUser, err := c.store.QueryById(context, id)
 	if err != nil {
 		return User{}, err
@@ -42,7 +49,7 @@ func (c *Repository) QueryById(context context.Context, id int) (User, error) {
 	return ToUser(dbUser), nil
 }
 
-func (c *Repository) QueryByEmail(context context.Context, email string) (User, error) {
+func (c *PostgresRepository) QueryByEmail(context context.Context, email string) (User, error) {
 	dbUser, err := c.store.QueryByEmail(context, email)
 	if err != nil {
 		return User{}, err
@@ -51,7 +58,7 @@ func (c *Repository) QueryByEmail(context context.Context, email string) (User, 
 	return ToUser(dbUser), nil
 }
 
-func (c *Repository) Query(context context.Context, query QueryFilter) ([]User, error) {
+func (c *PostgresRepository) Query(context context.Context, query QueryFilter) ([]User, error) {
 	if err := query.Validate(); err != nil {
 		return []User{}, err
 	}

@@ -6,7 +6,7 @@ import (
 	"net/mail"
 	"time"
 
-	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/db"
+	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/postgres"
 )
 
 type User struct {
@@ -38,8 +38,8 @@ type UpdateUser struct {
 	AvatarUrl string
 }
 
-func ToNewDBUser(p NewUser) users_store.NewDBUser {
-	return users_store.NewDBUser{
+func ToNewDBUser(p NewUser) users_store.DBNewUser {
+	return users_store.DBNewUser{
 		FirstName:    p.FirstName,
 		LastName:     p.LastName,
 		Email:        p.Email.Address,
