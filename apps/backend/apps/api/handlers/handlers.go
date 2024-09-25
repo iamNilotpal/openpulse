@@ -16,12 +16,13 @@ import (
 )
 
 type HandlerConfig struct {
-	DB           *sqlx.DB
-	Auth         *auth.Auth
-	Shutdown     chan os.Signal
-	Log          *zap.SugaredLogger
-	Repositories repositories.Repositories
-	Config       *config.OpenpulseApiConfig
+	DB             *sqlx.DB
+	Auth           *auth.Auth
+	Shutdown       chan os.Signal
+	Log            *zap.SugaredLogger
+	PermissionsMap auth.PermissionsMap
+	Repositories   repositories.Repositories
+	Config         *config.OpenpulseApiConfig
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
@@ -46,7 +47,8 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 		middleware.Recoverer,
 	)
 
-	apiV1 := v1.New(app, cfg.Auth, cfg.Log, cfg.Config, cfg.Repositories)
+	// Create API V1
+	apiV1 := v1.New(app, cfg.Auth, cfg.Log, cfg.Config, cfg.PermissionsMap, cfg.Repositories)
 	apiV1.SetupRoutes()
 
 	return app

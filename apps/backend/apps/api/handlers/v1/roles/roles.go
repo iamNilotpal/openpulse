@@ -11,10 +11,10 @@ import (
 )
 
 type handler struct {
-	roles *roles.Repository
+	roles roles.Repository
 }
 
-func New(rolesRepo *roles.Repository) *handler {
+func New(rolesRepo roles.Repository) *handler {
 	return &handler{roles: rolesRepo}
 }
 
@@ -30,12 +30,12 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
 		if err, ok := err.(*pq.Error); ok {
 			if err.Code == pgerrcode.UniqueViolation {
 				return errors.NewRequestError(
-					"Role already exists", http.StatusConflict, errors.AlreadyExistsErrorCode,
+					"Role already exists", http.StatusConflict, errors.AlreadyExists,
 				)
 			}
 
 			return errors.NewRequestError(
-				"Unable to create role", http.StatusInternalServerError, errors.InternalErrorCode,
+				"Unable to create role", http.StatusInternalServerError, errors.InternalServerError,
 			)
 		}
 

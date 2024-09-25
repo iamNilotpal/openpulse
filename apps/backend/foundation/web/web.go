@@ -39,7 +39,8 @@ func NewApp(cfg AppConfig, middlewares ...Middleware) *App {
 	}
 }
 
-// SignalShutdown is used to gracefully shutdown the app when an integrity issue is identified.
+// SignalShutdown is used to gracefully shutdown the app when an integrity issue is
+// identified.
 func (a *App) SignalShutdown() {
 	a.shutdown <- syscall.SIGTERM
 }

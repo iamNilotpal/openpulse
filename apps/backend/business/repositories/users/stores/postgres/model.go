@@ -2,7 +2,7 @@ package users_store
 
 import "database/sql"
 
-type NewDBUser struct {
+type DBNewUser struct {
 	FirstName    string
 	LastName     string
 	Email        string

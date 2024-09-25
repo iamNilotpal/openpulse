@@ -22,7 +22,7 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 				fieldErrors := validate.GetFieldErrors(err)
 				errResp = web.APIError{
 					Fields:    fieldErrors.Fields(),
-					ErrorCode: errors.ToString(errors.InvalidInputErrorCode),
+					ErrorCode: errors.CodeToString(errors.InvalidInput),
 					Message:   http.StatusText(http.StatusBadRequest),
 				}
 				statusCode = http.StatusBadRequest
@@ -31,13 +31,13 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 				reqErr := errors.GetRequestError(err)
 				errResp = web.APIError{
 					Message:   reqErr.Error(),
-					ErrorCode: errors.ToString(reqErr.Code),
+					ErrorCode: errors.CodeToString(reqErr.Code),
 				}
 				statusCode = reqErr.Status
 
 			default:
 				errResp = web.APIError{
-					ErrorCode: errors.ToString(errors.InternalErrorCode),
+					ErrorCode: errors.CodeToString(errors.InternalServerError),
 					Message:   http.StatusText(http.StatusInternalServerError),
 				}
 				statusCode = http.StatusInternalServerError

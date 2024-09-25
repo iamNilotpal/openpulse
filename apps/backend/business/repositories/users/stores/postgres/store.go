@@ -7,20 +7,20 @@ import (
 )
 
 type Store interface {
-	Create(context.Context, NewDBUser) (int, error)
 	QueryById(context context.Context, id int) (DBUser, error)
+	Create(context context.Context, payload DBNewUser) (int, error)
 	QueryByEmail(context context.Context, email string) (DBUser, error)
 }
 
-type PostgresStore struct {
+type postgresStore struct {
 	db *sqlx.DB
 }
 
-func NewPostgresStore(db *sqlx.DB) *PostgresStore {
-	return &PostgresStore{db: db}
+func NewPostgresStore(db *sqlx.DB) *postgresStore {
+	return &postgresStore{db: db}
 }
 
-func (p *PostgresStore) Create(context context.Context, payload NewDBUser) (int, error) {
+func (p *postgresStore) Create(context context.Context, payload DBNewUser) (int, error) {
 	query := `
 		INSERT INTO
 		users(first_name, last_name, email, password_hash, role_id)
@@ -45,7 +45,7 @@ func (p *PostgresStore) Create(context context.Context, payload NewDBUser) (int,
 	return int(id), nil
 }
 
-func (p *PostgresStore) QueryById(context context.Context, id int) (DBUser, error) {
+func (p *postgresStore) QueryById(context context.Context, id int) (DBUser, error) {
 	query := `
 		SELECT
 		id, first_name, last_name, email, role_id, avatar_url, account_status, created_at, updated_at
@@ -71,7 +71,7 @@ func (p *PostgresStore) QueryById(context context.Context, id int) (DBUser, erro
 	return user, nil
 }
 
-func (p *PostgresStore) QueryByEmail(context context.Context, email string) (DBUser, error) {
+func (p *postgresStore) QueryByEmail(context context.Context, email string) (DBUser, error) {
 	query := `
 		SELECT
 		id, first_name, last_name, email, role_id, avatar_url, account_status, created_at, updated_at
