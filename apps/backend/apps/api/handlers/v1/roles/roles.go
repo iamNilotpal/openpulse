@@ -11,10 +11,10 @@ import (
 )
 
 type handler struct {
-	roles *roles.Repository
+	roles roles.Repository
 }
 
-func New(rolesRepo *roles.Repository) *handler {
+func New(rolesRepo roles.Repository) *handler {
 	return &handler{roles: rolesRepo}
 }
 
