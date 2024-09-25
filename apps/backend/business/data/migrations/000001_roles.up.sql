@@ -32,10 +32,11 @@ CREATE TABLE
   );
 
 CREATE TABLE
-  IF NOT EXISTS role_permissions (
+  IF NOT EXISTS roles_permissions (
     role_id SMALLINT NOT NULL REFERENCES roles (id),
     permission_id SMALLINT NOT NULL REFERENCES permissions (id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (role_id, permission_id)
+    UNIQUE (role_id, permission_id),
+    INDEX (role_id) INCLUDE (permission_id)
   );

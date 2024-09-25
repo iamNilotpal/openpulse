@@ -3,24 +3,25 @@ package errors
 type ErrorCode string
 
 const (
-	TokenExpiredErrorCode      ErrorCode = "TOKEN_EXPIRED"
-	AccountSuspendedErrorCode  ErrorCode = "ACCOUNT_SUSPENDED"
-	InvalidAuthHeaderErrorCode ErrorCode = "INVALID_TOKEN_HEADER"
-	InvalidTokenSignature      ErrorCode = "INVALID_TOKEN_SIGNATURE"
+	DuplicateValue ErrorCode = "DUPLICATE_VALUE"
+	NotFound       ErrorCode = "RESOURCE_NOT_FOUND"
+	AlreadyExists  ErrorCode = "RESOURCE_ALREADY_EXISTS"
 
-	DuplicateValueErrorCode ErrorCode = "DUPLICATE_VALUE"
-	NotFoundErrorCode       ErrorCode = "RESOURCE_NOT_FOUND"
-	AlreadyExistsErrorCode  ErrorCode = "RESOURCE_ALREADY_EXISTS"
+	DatabaseError       ErrorCode = "DATABASE_ERROR"
+	InternalServerError ErrorCode = "INTERNAL_ERROR"
+	ServiceUnavailable  ErrorCode = "SERVICE_UNAVAILABLE"
 
-	InternalErrorCode           ErrorCode = "INTERNAL_ERROR"
-	DatabaseErrorCode           ErrorCode = "DATABASE_ERROR"
-	ServiceUnavailableErrorCode ErrorCode = "SERVICE_UNAVAILABLE"
+	InvalidInput         ErrorCode = "INVALID_INPUT"
+	MissingRequiredField ErrorCode = "MISSING_REQUIRED_FIELD"
 
-	UnknownErrorCode              ErrorCode = "UNKNOWN_ERROR"
-	InvalidInputErrorCode         ErrorCode = "INVALID_INPUT"
-	MissingRequiredFieldErrorCode ErrorCode = "MISSING_REQUIRED_FIELD"
+	Forbidden             ErrorCode = "FORBIDDEN"
+	Unauthorized          ErrorCode = "UNAUTHORIZED"
+	TokenExpired          ErrorCode = "TOKEN_EXPIRED"
+	AccountSuspended      ErrorCode = "ACCOUNT_SUSPENDED"
+	InvalidAuthHeader     ErrorCode = "INVALID_TOKEN_HEADER"
+	InvalidTokenSignature ErrorCode = "INVALID_TOKEN_SIGNATURE"
 )
 
-func ToString(code ErrorCode) string {
+func CodeToString(code ErrorCode) string {
 	return string(code)
 }

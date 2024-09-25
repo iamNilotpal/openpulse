@@ -3,7 +3,8 @@ package roles
 import (
 	"time"
 
-	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/db"
+	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
+	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/postgres"
 )
 
 type Role struct {
@@ -12,6 +13,11 @@ type Role struct {
 	Description string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+type RolePermissions struct {
+	Role       Role
+	Permission permissions.Permission
 }
 
 type NewRole struct {
@@ -42,5 +48,12 @@ func ToRole(r roles_store.DBRole) Role {
 		Description: r.Description,
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
+	}
+}
+
+func ToRoleWithPermissions(r roles_store.DBRolePermissions) RolePermissions {
+	return RolePermissions{
+		Role:       ToRole(r.Role),
+		Permission: permissions.ToPermission(r.Permission),
 	}
 }

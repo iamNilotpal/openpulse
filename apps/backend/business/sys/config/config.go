@@ -15,8 +15,12 @@ type Web struct {
 }
 
 type Auth struct {
-	Issuer string
-	Secret string
+	Issuer              string
+	AccessTokenSecret   string
+	RefreshTokenSecret  string
+	Audience            string
+	AccessTokenExpTime  time.Duration
+	RefreshTokenExpTime time.Duration
 }
 
 type DB struct {
@@ -36,7 +40,7 @@ type OpenpulseApiConfig struct {
 }
 
 func NewOpenpulseConfig() *OpenpulseApiConfig {
-	webReadTimeOut, err := time.ParseDuration(GetEnvString("WEB_READ_TIMEOUT", "5s"))
+	webReadTimeOut, err := time.ParseDuration(GetEnvString("WEB_READ_TIMEOUT", "10s"))
 	if err != nil {
 		webReadTimeOut = time.Second * 5
 	}
@@ -54,6 +58,16 @@ func NewOpenpulseConfig() *OpenpulseApiConfig {
 	webShutdownTimeout, err := time.ParseDuration(GetEnvString("WEB_WRITE_TIMEOUT", "20s"))
 	if err != nil {
 		webShutdownTimeout = time.Second * 20
+	}
+
+	accessTokenExp, err := time.ParseDuration(GetEnvString("ACCESS_TOKEN_EXPIRATION_TIME", "3600s"))
+	if err != nil {
+		accessTokenExp = time.Second * 3600
+	}
+
+	refreshTokenExp, err := time.ParseDuration(GetEnvString("REFRESH_TOKEN_EXPIRATION_TIME", "2190h"))
+	if err != nil {
+		refreshTokenExp = time.Hour * 2190
 	}
 
 	origins := GetEnvString("ALLOWED_ORIGINS", "http://localhost:3000")
@@ -78,9 +92,15 @@ func NewOpenpulseConfig() *OpenpulseApiConfig {
 			APIHost:         GetEnvString("WEB_API_HOST", "localhost:3001"),
 		},
 		Auth: Auth{
-			Issuer: GetEnvString("AUTH_ISSUER", "open-pulse-backend"),
-			Secret: GetEnvString(
-				"AUTH_SECRET", "92c3ba3f929dc49a3468c0ff6b7340997c04d522af3a5216f43d71a3b5c97788c64484",
+			AccessTokenExpTime:  accessTokenExp,
+			RefreshTokenExpTime: refreshTokenExp,
+			Audience:            GetEnvString("AUDIENCE", "localhost:3001"),
+			Issuer:              GetEnvString("AUTH_ISSUER", "open-pulse-backend"),
+			AccessTokenSecret: GetEnvString(
+				"ACCESS_TOKEN_SECRET", "92c3ba3f929dc49a3468c0ff6b7340997c04d522af3a5216f43d71a3b5c97788c64484",
+			),
+			RefreshTokenSecret: GetEnvString(
+				"REFRESH_TOKEN_SECRET", "92c3ba3f929dc49a3468c0ff6b7340997c04d522af3a5216f43d71a3b5c97788c64484",
 			),
 		},
 	}

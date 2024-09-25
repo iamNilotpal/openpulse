@@ -2,8 +2,7 @@ package v1
 
 import (
 	"github.com/go-chi/chi/v5"
-	roles_handler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/roles"
-	users_handler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/users"
+	auth_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/auth"
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
@@ -12,14 +11,15 @@ import (
 	"go.uber.org/zap"
 )
 
-const version = "/api/v1"
+const apiV1 = "/api/v1"
 
 type cfg struct {
-	app          *web.App
-	auth         *auth.Auth
-	log          *zap.SugaredLogger
-	repositories repositories.Repositories
-	config       *config.OpenpulseApiConfig
+	app            *web.App
+	auth           *auth.Auth
+	log            *zap.SugaredLogger
+	permissionsMap auth.PermissionsMap
+	repositories   repositories.Repositories
+	config         *config.OpenpulseApiConfig
 }
 
 func New(
@@ -27,26 +27,27 @@ func New(
 	auth *auth.Auth,
 	log *zap.SugaredLogger,
 	config *config.OpenpulseApiConfig,
+	permissionsMap auth.PermissionsMap,
 	repositories repositories.Repositories,
+
 ) *cfg {
-	return &cfg{app: app, auth: auth, log: log, config: config, repositories: repositories}
+	return &cfg{
+		app:            app,
+		log:            log,
+		auth:           auth,
+		config:         config,
+		repositories:   repositories,
+		permissionsMap: permissionsMap,
+	}
 }
 
 func (c *cfg) SetupRoutes() {
 	errorMiddleware := middlewares.ErrorResponder(c.log)
+	authHandler := auth_handlers.New(c.config.Auth, c.auth, c.repositories.Users, c.permissionsMap)
 
-	usersHandler := users_handler.New(c.repositories.User)
-	rolesHandler := roles_handler.New(c.repositories.Roles)
-
-	c.app.Route(version, func(r chi.Router) {
-		// 1. Roles routes
-		r.Route("/roles", func(r chi.Router) {
-			r.Post("/", errorMiddleware(rolesHandler.Create))
-		})
-
-		// 2. User routes
-		r.Route("/users", func(r chi.Router) {
-			r.Get("/{id}", errorMiddleware(usersHandler.QueryById))
-		})
+	/* Auth Routes - Register, Login */
+	c.app.Route(apiV1, func(r chi.Router) {
+		r.Post("/auth/register", errorMiddleware(authHandler.Register))
+		r.Post("/auth/login", errorMiddleware(authHandler.Login))
 	})
 }
