@@ -1,11 +1,15 @@
 package repositories
 
 import (
+	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
+	"github.com/iamNilotpal/openpulse/business/repositories/teams"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 )
 
 type Repositories struct {
-	User  *users.Repository
-	Roles *roles.Repository
+	Teams       teams.Repository
+	Users       users.Repository
+	Roles       roles.Repository
+	Permissions permissions.Repository
 }
