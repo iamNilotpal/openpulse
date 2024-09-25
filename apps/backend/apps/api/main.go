@@ -17,6 +17,7 @@ import (
 	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/postgres"
+	"github.com/iamNilotpal/openpulse/business/sys/cache"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
@@ -60,6 +61,18 @@ func run(log *zap.SugaredLogger) error {
 		return err
 	}
 
+	// Initialize Cache
+	redis, err := cache.Open(cfg.Cache)
+	if err != nil {
+		log.Infow("CACHE DATABASE CONNECTION ERROR", "error", err)
+		return err
+	}
+
+	if err = cache.StatusCheck(context.Background(), redis); err != nil {
+		log.Infow("CACHE Status Check Error", "error", err)
+		return err
+	}
+
 	// Initialize repositories
 	usersStore := users_store.NewPostgresStore(db)
 	usersRepository := users.NewPostgresRepository(usersStore)
@@ -99,6 +112,7 @@ func run(log *zap.SugaredLogger) error {
 			Log:            log,
 			Config:         cfg,
 			Auth:           auth,
+			Cache:          redis,
 			Shutdown:       shutdown,
 			Repositories:   repositories,
 			PermissionsMap: permissionsMap,
