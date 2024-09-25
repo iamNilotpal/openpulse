@@ -23,7 +23,7 @@ func Open(cfg config.DB) (*sqlx.DB, error) {
 		Host:     cfg.Host,
 		Path:     cfg.Name,
 		RawQuery: q.Encode(),
-		Scheme:   "postgres",
+		Scheme:   cfg.Scheme,
 		User:     url.UserPassword(cfg.User, cfg.Password),
 	}
 

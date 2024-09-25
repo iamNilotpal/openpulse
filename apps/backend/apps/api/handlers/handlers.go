@@ -12,12 +12,14 @@ import (
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
 type HandlerConfig struct {
 	DB             *sqlx.DB
 	Auth           *auth.Auth
+	Cache          *redis.Client
 	Shutdown       chan os.Signal
 	Log            *zap.SugaredLogger
 	PermissionsMap auth.PermissionsMap
