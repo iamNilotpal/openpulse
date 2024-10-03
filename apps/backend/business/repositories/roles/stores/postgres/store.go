@@ -7,11 +7,11 @@ import (
 )
 
 type Store interface {
-	Create(context context.Context, permission NewDBRole) (int, error)
-	GetAll(context context.Context) ([]DBRole, error)
-	QueryById(context context.Context, id int) (DBRole, error)
-	QueryByName(context context.Context, name string) (DBRole, error)
-	QueryRolesWithPermissions(context context.Context) ([]DBRolePermissions, error)
+	Create(context context.Context, permission NewRole) (int, error)
+	GetAll(context context.Context) ([]Role, error)
+	QueryById(context context.Context, id int) (Role, error)
+	QueryByName(context context.Context, name string) (Role, error)
+	GetRolesWithPermissions(context context.Context) ([]RoleWithPermission, error)
 }
 
 type postgresStore struct {
@@ -22,10 +22,15 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
 }
 
-func (s *postgresStore) Create(context context.Context, nr NewDBRole) (int, error) {
-	query := `INSERT INTO ROLES (name, description) VALUES ($1, $2) RETURNING id;`
+func (s *postgresStore) Create(context context.Context, nr NewRole) (int, error) {
+	query := `
+		INSERT INTO ROLES (name, description, is_system_role, created_by)
+		VALUES ($1, $2, $3, $4) RETURNING id;
+	`
 
-	result, err := s.db.ExecContext(context, query, nr.Name, nr.Description)
+	result, err := s.db.ExecContext(
+		context, query, nr.Name, nr.Description, nr.IsSystemRole, nr.CreatorId,
+	)
 	if err != nil {
 		return 0, err
 	}
@@ -38,124 +43,223 @@ func (s *postgresStore) Create(context context.Context, nr NewDBRole) (int, erro
 	return int(id), nil
 }
 
-func (s *postgresStore) GetAll(context context.Context) ([]DBRole, error) {
-	query := `SELECT id, name, description, created_at, updated_at FROM roles;`
+func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
+	query := `
+		SELECT
+			r.id AS roleId,
+			r.name AS roleName,
+			r.description AS roleDescription,
+			r.is_system_role AS isSystemRole,
+			rcb.id AS roleAuthorId,
+			rcb.email AS roleAuthorEmail,
+			rcb.first_name AS roleAuthorFirstName,
+			rcb.last_name AS roleAuthorLastName,
+			rub.id AS roleAuthorId,
+			rub.email AS roleAuthorEmail,
+			rub.first_name AS roleUpdaterFirstName,
+			rub.last_name AS roleUpdatedLastName,
+			r.created_at AS roleCreatedAt,
+			r.updated_at AS roleUpdatedAt
+		FROM
+			roles r
+			LEFT JOIN users rcb ON rcb.id = r.created_by
+			LEFT JOIN users rub ON rub.id = r.updated_by;
+	`
 
 	rows, err := s.db.QueryContext(context, query)
 	if err != nil {
-		return []DBRole{}, err
+		return []Role{}, err
 	}
 
 	defer rows.Close()
-	roles := make([]DBRole, 0)
+	roles := make([]Role, 0)
 
 	for rows.Next() {
-		var role DBRole
+		var role Role
 
 		if err := rows.Scan(
-			&role.Id, &role.Name, &role.Description, &role.CreatedAt, &role.UpdatedAt,
+			&role.Id,
+			&role.Name,
+			&role.Description,
+			&role.IsSystemRole,
+			&role.CreatedBy.Id,
+			&role.CreatedBy.Email,
+			&role.CreatedBy.FirstName,
+			&role.CreatedBy.LastName,
+			&role.UpdatedBy.Id,
+			&role.UpdatedBy.Email,
+			&role.UpdatedBy.FirstName,
+			&role.UpdatedBy.LastName,
+			&role.CreatedAt,
+			&role.UpdatedAt,
 		); err != nil {
-			return []DBRole{}, err
+			return []Role{}, err
 		}
 
 		roles = append(roles, role)
 	}
 
 	if err = rows.Err(); err != nil {
-		return []DBRole{}, err
+		return []Role{}, err
 	}
 
 	return roles, nil
 }
 
-func (s *postgresStore) QueryById(context context.Context, id int) (DBRole, error) {
-	var role DBRole
+func (s *postgresStore) QueryById(context context.Context, id int) (Role, error) {
+	var role Role
 	query := `
-		SELECT id, name, description, created_at, updated_at
-		FROM roles
-		WHERE id = $1;
+		SELECT
+			r.id AS roleId,
+			r.name AS roleName,
+			r.description AS roleDescription,
+			r.is_system_role AS isSystemRole,
+			rcb.id AS roleAuthorId,
+			rcb.email AS roleAuthorEmail,
+			rcb.first_name AS roleAuthorFirstName,
+			rcb.last_name AS roleAuthorLastName,
+			rub.id AS roleAuthorId,
+			rub.email AS roleAuthorEmail,
+			rub.first_name AS roleUpdaterFirstName,
+			rub.last_name AS roleUpdatedLastName,
+			r.created_at AS roleCreatedAt,
+			r.updated_at AS roleUpdatedAt
+		FROM
+			roles r
+			LEFT JOIN users rcb ON rcb.id = r.created_by
+			LEFT JOIN users rub ON rub.id = r.updated_by
+		WHERE
+			r.id = $1;
 	`
 
 	if err := s.db.QueryRowContext(context, query, id).Scan(
-		&role.Id, &role.Name, &role.Description, &role.CreatedAt, &role.UpdatedAt,
+		&role.Id,
+		&role.Name,
+		&role.Description,
+		&role.IsSystemRole,
+		&role.CreatedBy.Id,
+		&role.CreatedBy.Email,
+		&role.CreatedBy.FirstName,
+		&role.CreatedBy.LastName,
+		&role.UpdatedBy.Id,
+		&role.UpdatedBy.Email,
+		&role.UpdatedBy.FirstName,
+		&role.UpdatedBy.LastName,
+		&role.CreatedAt,
+		&role.UpdatedAt,
 	); err != nil {
-		return DBRole{}, err
+		return Role{}, err
 	}
 
 	return role, nil
 }
 
-func (s *postgresStore) QueryByName(context context.Context, name string) (DBRole, error) {
-	var role DBRole
+func (s *postgresStore) QueryByName(context context.Context, name string) (Role, error) {
+	var role Role
 	query := `
-		SELECT id, name, description, created_at, updated_at
-		FROM roles
-		WHERE name = $1;
+		SELECT
+			r.id AS roleId,
+			r.name AS roleName,
+			r.description AS roleDescription,
+			r.is_system_role AS isSystemRole,
+			rcb.id AS roleAuthorId,
+			rcb.email AS roleAuthorEmail,
+			rcb.first_name AS roleAuthorFirstName,
+			rcb.last_name AS roleAuthorLastName,
+			rub.id AS roleAuthorId,
+			rub.email AS roleAuthorEmail,
+			rub.first_name AS roleUpdaterFirstName,
+			rub.last_name AS roleUpdatedLastName,
+			r.created_at AS roleCreatedAt,
+			r.updated_at AS roleUpdatedAt
+		FROM
+			roles r
+			LEFT JOIN users rcb ON rcb.id = r.created_by
+			LEFT JOIN users rub ON rub.id = r.updated_by
+		WHERE
+			r.name = $1;
 	`
 
 	if err := s.db.QueryRowContext(context, query, name).Scan(
-		&role.Id, &role.Name, &role.Description, &role.CreatedAt, &role.UpdatedAt,
+		&role.Id,
+		&role.Name,
+		&role.Description,
+		&role.IsSystemRole,
+		&role.CreatedBy.Id,
+		&role.CreatedBy.Email,
+		&role.CreatedBy.FirstName,
+		&role.CreatedBy.LastName,
+		&role.UpdatedBy.Id,
+		&role.UpdatedBy.Email,
+		&role.UpdatedBy.FirstName,
+		&role.UpdatedBy.LastName,
+		&role.CreatedAt,
+		&role.UpdatedAt,
 	); err != nil {
-		return DBRole{}, err
+		return Role{}, err
 	}
 
 	return role, nil
 }
 
-func (s *postgresStore) QueryRolesWithPermissions(context context.Context) ([]DBRolePermissions, error) {
+func (s *postgresStore) GetRolesWithPermissions(context context.Context) ([]RoleWithPermission, error) {
 	query := `
 		SELECT
-			r.id AS role_id,
-			r.name AS role_name,
-			r.description AS role_description,
-			r.created_at AS role_created_at,
-			r.updated_at AS role_updated_at,
-			p.id AS permission_id,
-			p.name AS permission_name,
-			p.description AS permission_description,
-			p.action AS permission_action,
-			p.resource AS permission_resource,
-			p.created_at AS permission_created_at,
-			p.updated_at AS permission_updated_at
+			r.id AS roleID,
+			r.name AS roleName,
+			r.description AS roleDescription,
+			r.is_system_role AS isSystemRole,
+			r.created_at AS roleCreatedAt,
+			r.updated_at AS roleUpdatedAt,
+			p.id AS permissionId,
+			p.name AS permissionName,
+			p.description AS permissionDescription,
+			p.action AS permissionAction,
+			p.created_at AS permissionCreatedAt,
+			p.updated_at AS permissionUpdatedAt,
+			rp.created_at AS rolePermissionCreatedAt,
+			rp.updated_at AS rolePermissionUpdatedAt
 		FROM
-			roles_permissions AS rp
-			JOIN roles r ON r.id = rp.role_id
+			roles r
+			JOIN roles_permissions rp ON rp.role_id = r.id
 			JOIN permissions p ON p.id = rp.permission_id;
 	`
 
 	rows, err := s.db.QueryContext(context, query)
 	if err != nil {
-		return []DBRolePermissions{}, err
+		return []RoleWithPermission{}, err
 	}
 
 	defer rows.Close()
-	rolesWithPermissions := make([]DBRolePermissions, 0)
+	rolesWithPermissions := make([]RoleWithPermission, 0)
 
 	for rows.Next() {
-		var row DBRolePermissions
+		var row RoleWithPermission
 
 		if err := rows.Scan(
 			&row.Role.Id,
 			&row.Role.Name,
 			&row.Role.Description,
+			&row.Role.IsSystemRole,
 			&row.Role.CreatedAt,
 			&row.Role.UpdatedAt,
 			&row.Permission.Id,
 			&row.Permission.Name,
 			&row.Permission.Description,
 			&row.Permission.Action,
-			&row.Permission.Resource,
 			&row.Permission.CreatedAt,
 			&row.Permission.UpdatedAt,
+			&row.CreatedAt,
+			&row.UpdatedAt,
 		); err != nil {
-			return []DBRolePermissions{}, err
+			return []RoleWithPermission{}, err
 		}
 
 		rolesWithPermissions = append(rolesWithPermissions, row)
 	}
 
 	if err := rows.Err(); err != nil {
-		return []DBRolePermissions{}, err
+		return []RoleWithPermission{}, err
 	}
 
 	return rolesWithPermissions, nil

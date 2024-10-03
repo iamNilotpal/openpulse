@@ -3,13 +3,16 @@ package auth
 import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
+	"github.com/iamNilotpal/openpulse/business/repositories/resources"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
 )
 
-type PermissionsMap map[string][]Permissions
+type AuthedRolesMap map[string]AuthRole
+type AuthedPermissionsMap map[string][]AuthAccessControl
 
 type Claims struct {
 	RoleId    int
+	UserId    int
 	SessionId int
 	jwt.RegisteredClaims
 }
@@ -19,66 +22,71 @@ type UserRole struct {
 }
 
 type UserPermission struct {
+	Id      int
+	Enabled bool
+	Action  permissions.PermissionAction
+}
+
+type UserResource struct {
 	Id       int
-	Enabled  bool
-	Action   string
-	Resource string
+	Resource resources.ResourceType
 }
 
-type Role struct {
-	Id int
-}
-
-type Permission struct {
-	Id       int
-	Action   string
-	Resource string
-}
-
-type Permissions struct {
-	Role
-	Permission
-}
-type UserPermissions struct {
+type UserAccessControl struct {
 	Role       UserRole
+	Resource   UserResource
 	Permission UserPermission
 }
 
-func ToRole(role roles.Role) Role {
-	return Role{Id: role.Id}
+type AuthRole struct {
+	Id int
 }
 
-func ToPermission(p permissions.Permission) Permission {
-	return Permission{Id: p.Id, Action: p.Action, Resource: p.Resource}
+type AuthPermission struct {
+	Id     int
+	Action permissions.PermissionAction
 }
 
-func ToUserRole(role roles.Role) UserRole {
+type AuthResource struct {
+	Id       int
+	Resource resources.ResourceType
+}
+
+type AuthAccessControl struct {
+	Role       AuthRole
+	Resource   AuthResource
+	Permission AuthPermission
+}
+
+func ToAuthedRole(role roles.Role) AuthRole {
+	return AuthRole{Id: role.Id}
+}
+
+func ToAuthedPermission(p permissions.Permission) AuthPermission {
+	return AuthPermission{Id: p.Id, Action: p.Action}
+}
+
+func ToAuthedUserRole(role roles.Role) UserRole {
 	return UserRole{Id: role.Id}
 }
 
-func ToUserPermission(p permissions.UserPermission) UserPermission {
-	return UserPermission{Id: p.Id, Action: p.Action, Resource: p.Resource, Enabled: p.Enabled}
-}
-
-func ToPermissions(role Role, permission Permission) Permissions {
-	return Permissions{
-		Role: Role{Id: role.Id},
-		Permission: Permission{
-			Id:       permission.Id,
-			Action:   permission.Action,
-			Resource: permission.Resource,
+func ToAuthedPermissions(role AuthRole, permission AuthPermission) AuthAccessControl {
+	return AuthAccessControl{
+		Role: AuthRole{Id: role.Id},
+		Permission: AuthPermission{
+			Id:     permission.Id,
+			Action: permission.Action,
 		},
 	}
 }
 
-func ToUserPermissions(role UserRole, permission UserPermission) UserPermissions {
-	return UserPermissions{
+func ToAuthedUserPermissions(role UserRole, permission UserPermission) UserAccessControl {
+	return UserAccessControl{
 		Role: UserRole{Id: role.Id},
 		Permission: UserPermission{
-			Id:       permission.Id,
-			Action:   permission.Action,
-			Enabled:  permission.Enabled,
-			Resource: permission.Resource,
+			Id:      permission.Id,
+			Action:  permission.Action,
+			Enabled: permission.Enabled,
 		},
 	}
 }

@@ -38,7 +38,7 @@ func StatusCheck(ctx context.Context, client *redis.Client) error {
 	}
 
 	for attempts := 1; ; attempts++ {
-		if err := client.Ping(ctx).Err(); err == nil {
+		if _, err := client.Ping(ctx).Result(); err == nil {
 			break
 		}
 

@@ -19,10 +19,11 @@ import (
 type HandlerConfig struct {
 	DB             *sqlx.DB
 	Auth           *auth.Auth
+	RolesMap       auth.AuthedRolesMap
 	Cache          *redis.Client
 	Shutdown       chan os.Signal
 	Log            *zap.SugaredLogger
-	PermissionsMap auth.PermissionsMap
+	PermissionsMap auth.AuthedPermissionsMap
 	Repositories   repositories.Repositories
 	Config         *config.OpenpulseApiConfig
 }
@@ -50,8 +51,16 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 	)
 
 	// Create API V1
-	apiV1 := v1.New(app, cfg.Auth, cfg.Log, cfg.Config, cfg.PermissionsMap, cfg.Repositories)
-	apiV1.SetupRoutes()
+	apiV1 := v1.New(
+		app,
+		cfg.Auth,
+		cfg.Log,
+		cfg.RolesMap,
+		cfg.Config,
+		cfg.PermissionsMap,
+		cfg.Repositories,
+	)
 
+	apiV1.SetupRoutes()
 	return app
 }

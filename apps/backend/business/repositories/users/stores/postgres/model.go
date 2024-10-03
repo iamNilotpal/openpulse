@@ -2,7 +2,7 @@ package users_store
 
 import "database/sql"
 
-type DBNewUser struct {
+type NewUser struct {
 	FirstName    string
 	LastName     string
 	Email        string
@@ -11,7 +11,7 @@ type DBNewUser struct {
 	RoleID       int
 }
 
-type DBUser struct {
+type User struct {
 	Id            int
 	FirstName     string
 	LastName      string
@@ -21,4 +21,19 @@ type DBUser struct {
 	AccountStatus string
 	CreatedAt     string
 	UpdatedAt     string
+}
+
+type Role struct {
+	Id int
+}
+
+type Permission struct {
+	Id       int
+	Action   string
+	Resource string
+}
+
+type UserPermissions struct {
+	Role       Role
+	Permission Permission
 }

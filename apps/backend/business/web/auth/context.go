@@ -35,14 +35,14 @@ func GetUserRole(ctx context.Context) UserRole {
 	return v
 }
 
-func SetUserPermissions(ctx context.Context, permissions []UserPermissions) context.Context {
+func SetUserPermissions(ctx context.Context, permissions []UserAccessControl) context.Context {
 	return context.WithValue(ctx, permissionsKey, permissions)
 }
 
-func GetUserPermissions(ctx context.Context) []UserPermissions {
-	v, ok := ctx.Value(permissionsKey).([]UserPermissions)
+func GetUserPermissions(ctx context.Context) []UserAccessControl {
+	v, ok := ctx.Value(permissionsKey).([]UserAccessControl)
 	if !ok {
-		return []UserPermissions{}
+		return []UserAccessControl{}
 	}
 
 	return v

@@ -4,23 +4,29 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 )
 
 func Authorize(
-	requiredPermissions ...[]auth.Permissions,
+	requiredPermissions ...[]auth.AuthAccessControl,
 ) func(http.Handler) http.Handler {
 	a := func(handler http.Handler) http.Handler {
 		m := func(w http.ResponseWriter, r *http.Request) {
 			userPermissions := auth.GetUserPermissions(r.Context())
 
 			if !checkPermissions(requiredPermissions, userPermissions) {
-				web.Error(w, http.StatusForbidden, web.APIError{
-					Message:   http.StatusText(http.StatusForbidden),
-					ErrorCode: errors.CodeToString(errors.Forbidden),
-				})
+				web.Error(
+					w,
+					http.StatusForbidden,
+					web.NewAPIError(
+						http.StatusText(http.StatusForbidden),
+						errors.FromErrorCode(errors.Forbidden),
+						nil,
+					),
+				)
 				return
 			}
 
@@ -34,7 +40,7 @@ func Authorize(
 }
 
 func checkPermissions(
-	requiredPermissions [][]auth.Permissions, userPermissions []auth.UserPermissions,
+	requiredPermissions [][]auth.AuthAccessControl, userPermissions []auth.UserAccessControl,
 ) bool {
 	if len(requiredPermissions) == 0 {
 		return true
@@ -48,8 +54,10 @@ func checkPermissions(
 			if uPermission.Permission.Enabled &&
 				uPermission.Role.Id == rPermission.Role.Id &&
 				uPermission.Permission.Id == rPermission.Permission.Id &&
-				strings.EqualFold(uPermission.Permission.Action, rPermission.Permission.Action) &&
-				strings.EqualFold(uPermission.Permission.Resource, rPermission.Permission.Resource) {
+				strings.EqualFold(
+					permissions.FromPermissionAction(uPermission.Permission.Action),
+					permissions.FromPermissionAction(rPermission.Permission.Action),
+				) {
 				return true
 			}
 		}

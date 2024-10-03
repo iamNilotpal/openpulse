@@ -22,6 +22,10 @@ const (
 	InvalidTokenSignature ErrorCode = "INVALID_TOKEN_SIGNATURE"
 )
 
-func CodeToString(code ErrorCode) string {
+func FromErrorCode(code ErrorCode) string {
 	return string(code)
+}
+
+func ToErrorCode(code string) ErrorCode {
+	return ErrorCode(code)
 }

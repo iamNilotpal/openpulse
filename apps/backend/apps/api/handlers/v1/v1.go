@@ -16,8 +16,9 @@ const apiV1 = "/api/v1"
 type cfg struct {
 	app            *web.App
 	auth           *auth.Auth
+	rolesMap       auth.AuthedRolesMap
 	log            *zap.SugaredLogger
-	permissionsMap auth.PermissionsMap
+	permissionsMap auth.AuthedPermissionsMap
 	repositories   repositories.Repositories
 	config         *config.OpenpulseApiConfig
 }
@@ -26,8 +27,9 @@ func New(
 	app *web.App,
 	auth *auth.Auth,
 	log *zap.SugaredLogger,
+	rolesMap auth.AuthedRolesMap,
 	config *config.OpenpulseApiConfig,
-	permissionsMap auth.PermissionsMap,
+	permissionsMap auth.AuthedPermissionsMap,
 	repositories repositories.Repositories,
 
 ) *cfg {
@@ -36,6 +38,7 @@ func New(
 		log:            log,
 		auth:           auth,
 		config:         config,
+		rolesMap:       rolesMap,
 		repositories:   repositories,
 		permissionsMap: permissionsMap,
 	}
@@ -43,7 +46,13 @@ func New(
 
 func (c *cfg) SetupRoutes() {
 	errorMiddleware := middlewares.ErrorResponder(c.log)
-	authHandler := auth_handlers.New(c.config.Auth, c.auth, c.repositories.Users, c.permissionsMap)
+	authHandler := auth_handlers.New(
+		c.config.Auth,
+		c.auth,
+		c.rolesMap,
+		c.repositories.Users,
+		c.permissionsMap,
+	)
 
 	/* Auth Routes - Register, Login */
 	c.app.Route(apiV1, func(r chi.Router) {

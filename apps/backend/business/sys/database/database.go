@@ -7,7 +7,7 @@ import (
 
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 func Open(cfg config.DB) (*sqlx.DB, error) {
@@ -68,4 +68,24 @@ func StatusCheck(ctx context.Context, db *sqlx.DB) error {
 	const q = `SELECT TRUE`
 	var tmp bool
 	return db.QueryRowContext(ctx, q).Scan(&tmp)
+}
+
+func CheckPQError(err error, f func(*pq.Error) bool) bool {
+	e, ok := err.(*pq.Error)
+	if !ok {
+		return false
+	}
+
+	ok = f(e)
+	return ok
+}
+
+func MultipleQueryParams[T any](data []T, format func(index int, val T, isLast bool) string) []string {
+	params := make([]string, 0, len(data))
+
+	for i, v := range data {
+		params = append(params, format(i, v, i == len(data)-1))
+	}
+
+	return params
 }

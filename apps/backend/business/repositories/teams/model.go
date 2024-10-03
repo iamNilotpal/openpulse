@@ -22,15 +22,15 @@ type NewTeam struct {
 	Description string
 }
 
-func ToDBNewTeam(t NewTeam) teams_store.DBNewTeam {
-	return teams_store.DBNewTeam{
+func ToNewDBTeam(t NewTeam) teams_store.NewTeam {
+	return teams_store.NewTeam{
 		Name:        t.Name,
 		AdminId:     t.AdminId,
 		Description: t.Description,
 	}
 }
 
-func ToTeam(t teams_store.DBTeam) Team {
+func FromDBTeam(t teams_store.Team) Team {
 	return Team{
 		Id:           t.Id,
 		Name:         t.Name,

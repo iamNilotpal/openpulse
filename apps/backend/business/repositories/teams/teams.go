@@ -20,7 +20,7 @@ func NewRepository(store teams_store.Store) *PostgresRepository {
 }
 
 func (r *PostgresRepository) Create(context context.Context, team NewTeam) (int, error) {
-	id, err := r.s.Create(context, ToDBNewTeam(team))
+	id, err := r.s.Create(context, ToNewDBTeam(team))
 	return id, err
 }
 
@@ -30,5 +30,5 @@ func (r *PostgresRepository) QueryById(context context.Context, id int) (Team, e
 		return Team{}, err
 	}
 
-	return ToTeam(team), err
+	return FromDBTeam(team), err
 }

@@ -45,7 +45,7 @@ func Check(val any) error {
 			return err
 		}
 
-		fields := make(FieldErrors, len(vErrors))
+		fields := make(FieldErrors, 0, len(vErrors))
 		for i, vError := range vErrors {
 			field := FieldError{Field: vError.Field(), Err: vError.Translate(translator)}
 			fields[i] = field

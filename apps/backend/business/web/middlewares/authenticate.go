@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
@@ -22,21 +21,23 @@ func Authenticate(
 			if err != nil {
 				if auth.IsAuthError(err) {
 					authErr := auth.ExtractAuthError(err)
-
-					web.Error(w, authErr.Status, web.APIError{
-						Message:   authErr.Error(),
-						ErrorCode: errors.CodeToString(authErr.Code),
-					})
+					web.Error(
+						w,
+						authErr.Status,
+						web.NewAPIError(authErr.Error(), errors.FromErrorCode(authErr.Code), nil),
+					)
 					return
 				}
 
 				web.Error(
 					w,
 					http.StatusInternalServerError,
-					web.APIError{
-						ErrorCode: errors.CodeToString(errors.InternalServerError),
-						Message:   http.StatusText(http.StatusInternalServerError),
-					})
+					web.NewAPIError(
+						http.StatusText(http.StatusInternalServerError),
+						errors.FromErrorCode(errors.InternalServerError),
+						nil,
+					),
+				)
 				return
 			}
 
@@ -45,51 +46,54 @@ func Authenticate(
 				web.Error(
 					w,
 					http.StatusUnauthorized,
-					web.APIError{
-						ErrorCode: errors.CodeToString(errors.Unauthorized),
-						Message:   http.StatusText(http.StatusUnauthorized),
-					},
+					web.NewAPIError(
+						http.StatusText(http.StatusUnauthorized),
+						errors.FromErrorCode(errors.Unauthorized),
+						nil,
+					),
 				)
 				return
 			}
 
-			userId, err := strconv.Atoi(claims.Subject)
-			if err != nil {
-				web.Error(
-					w,
-					http.StatusUnauthorized,
-					web.APIError{
-						ErrorCode: errors.CodeToString(errors.Unauthorized),
-						Message:   http.StatusText(http.StatusUnauthorized),
-					},
-				)
-				return
-			}
+			// userId, err := strconv.Atoi(claims.Subject)
+			// if err != nil {
+			// 	web.Error(
+			// 		w,
+			// 		http.StatusUnauthorized,
+			// 		web.NewAPIError(
+			// 			http.StatusText(http.StatusUnauthorized),
+			// 			errors.FromErrorCode(errors.Unauthorized),
+			// 			nil,
+			// 		),
+			// 	)
+			// 	return
+			// }
 
-			permissions, err := permissions.QueryByUserId(r.Context(), userId)
-			if err != nil {
-				web.Error(
-					w,
-					http.StatusUnauthorized,
-					web.APIError{
-						ErrorCode: errors.CodeToString(errors.Unauthorized),
-						Message:   http.StatusText(http.StatusUnauthorized),
-					},
-				)
-				return
-			}
+			// permissions, err := permissions.QueryByUserId(r.Context(), userId)
+			// if err != nil {
+			// 	web.Error(
+			// 		w,
+			// 		http.StatusUnauthorized,
+			// 		web.NewAPIError(
+			// 			http.StatusText(http.StatusUnauthorized),
+			// 			errors.FromErrorCode(errors.Unauthorized),
+			// 			nil,
+			// 		),
+			// 	)
+			// 	return
+			// }
 
-			authPermissions := make([]auth.UserPermissions, len(permissions))
-			for i, p := range permissions {
-				authPermissions[i] = auth.ToUserPermissions(
-					auth.ToUserRole(role),
-					auth.ToUserPermission(p),
-				)
-			}
+			// authPermissions := make([]auth.UserAccessControl, 0, len(permissions))
+			// for i, p := range permissions {
+			// 	authPermissions[i] = auth.ToAuthedUserPermissions(
+			// 		auth.ToAuthedUserRole(role),
+			// 		auth.ToAuthedUserPermission(p),
+			// 	)
+			// }
 
 			r = r.WithContext(auth.SetClaims(r.Context(), claims))
-			r = r.WithContext(auth.SetUserRole(r.Context(), auth.ToUserRole(role)))
-			r = r.WithContext(auth.SetUserPermissions(r.Context(), authPermissions))
+			r = r.WithContext(auth.SetUserRole(r.Context(), auth.ToAuthedUserRole(role)))
+			// r = r.WithContext(auth.SetUserPermissions(r.Context(), authPermissions))
 
 			handler.ServeHTTP(w, r)
 		}

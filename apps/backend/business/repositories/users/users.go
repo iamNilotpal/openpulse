@@ -2,20 +2,13 @@ package users
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 
 	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/postgres"
 )
 
-var (
-	ErrNotFound   = errors.New("user not found")
-	ErrUpdateUser = errors.New("update user data failed")
-)
-
 type Repository interface {
 	QueryById(context context.Context, id int) (User, error)
-	Create(context context.Context, payload NewUser) (int, error)
+	Create(context context.Context, payload NewUser, permissions []UserPermissions) (int, error)
 	QueryByEmail(context context.Context, email string) (User, error)
 	Query(context context.Context, query QueryFilter) ([]User, error)
 }
@@ -28,16 +21,16 @@ func NewPostgresRepository(store users_store.Store) *PostgresRepository {
 	return &PostgresRepository{store: store}
 }
 
-func (c *PostgresRepository) Create(context context.Context, payload NewUser) (int, error) {
-	id, err := c.store.Create(context, ToNewDBUser(payload))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, ErrNotFound
-		}
-		return 0, err
+func (c *PostgresRepository) Create(
+	context context.Context, payload NewUser, permissions []UserPermissions,
+) (int, error) {
+	perms := make([]users_store.UserPermissions, 0, len(permissions))
+	for i, p := range permissions {
+		perms[i] = ToDBUserPermission(p)
 	}
 
-	return id, nil
+	id, err := c.store.Create(context, ToNewDBUser(payload), perms)
+	return id, err
 }
 
 func (c *PostgresRepository) QueryById(context context.Context, id int) (User, error) {
@@ -46,7 +39,7 @@ func (c *PostgresRepository) QueryById(context context.Context, id int) (User, e
 		return User{}, err
 	}
 
-	return ToUser(dbUser), nil
+	return FromDBUser(dbUser), nil
 }
 
 func (c *PostgresRepository) QueryByEmail(context context.Context, email string) (User, error) {
@@ -55,7 +48,7 @@ func (c *PostgresRepository) QueryByEmail(context context.Context, email string)
 		return User{}, err
 	}
 
-	return ToUser(dbUser), nil
+	return FromDBUser(dbUser), nil
 }
 
 func (c *PostgresRepository) Query(context context.Context, query QueryFilter) ([]User, error) {
