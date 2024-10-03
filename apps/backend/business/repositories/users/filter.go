@@ -1,16 +1,14 @@
 package users
 
 import (
-	"net/mail"
-
 	"github.com/iamNilotpal/openpulse/business/sys/validate"
 )
 
 type QueryFilter struct {
-	ID        int          `validate:"omitempty"`
-	Email     mail.Address `validate:"omitempty"`
-	FirstName string       `validate:"omitempty,min=3"`
-	LastName  string       `validate:"omitempty,min=3"`
+	ID        int    `validate:"omitempty"`
+	Email     string `validate:"omitempty"`
+	FirstName string `validate:"omitempty,min=3"`
+	LastName  string `validate:"omitempty,min=3"`
 }
 
 // Validate checks the data in the model is considered clean.
@@ -33,6 +31,6 @@ func (qf *QueryFilter) WithLastName(lastName string) {
 	qf.LastName = lastName
 }
 
-func (qf *QueryFilter) WithEmail(email mail.Address) {
+func (qf *QueryFilter) WithEmail(email string) {
 	qf.Email = email
 }

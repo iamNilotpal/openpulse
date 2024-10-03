@@ -1,21 +1,31 @@
 package roles_store
 
-import permissions_store "github.com/iamNilotpal/openpulse/business/repositories/permissions/stores/postgres"
+import (
+	modified_by "github.com/iamNilotpal/openpulse/business/data/modified-by"
+	permissions_store "github.com/iamNilotpal/openpulse/business/repositories/permissions/stores/postgres"
+)
 
-type DBRole struct {
-	Id          int
-	Name        string
-	Description string
-	CreatedAt   string
-	UpdatedAt   string
+type Role struct {
+	Id           int
+	IsSystemRole bool
+	Name         string
+	Description  string
+	CreatedBy    modified_by.ModifiedBy
+	UpdatedBy    modified_by.ModifiedBy
+	CreatedAt    string
+	UpdatedAt    string
 }
 
-type NewDBRole struct {
-	Name        string
-	Description string
+type NewRole struct {
+	CreatorId    int
+	IsSystemRole bool
+	Name         string
+	Description  string
 }
 
-type DBRolePermissions struct {
-	Role       DBRole
-	Permission permissions_store.DBPermission
+type RoleWithPermission struct {
+	Role       Role
+	Permission permissions_store.Permission
+	CreatedAt  string
+	UpdatedAt  string
 }

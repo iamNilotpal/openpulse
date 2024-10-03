@@ -90,16 +90,22 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// Get roles with permissions
-	rolesWithPermissions, err := rolesRepository.QueryRolesWithPermissions(context.Background())
+	rolesWithPermissions, err := rolesRepository.GetRolesWithPermissions(context.Background())
 	if err != nil {
 		return err
 	}
 
 	// Build the Permissions Map
-	permissionsMap := buildPermissionsMap(rolesWithPermissions)
+	permissionsMap, rolesMap := buildPermissionsMap(rolesWithPermissions)
 
 	// Initialize authentication support
-	auth := auth.New(auth.Config{AuthConfig: cfg.Auth, UserRepo: usersRepository, Logger: log})
+	auth := auth.New(
+		auth.Config{
+			AuthConfig: cfg.Auth,
+			Logger:     log,
+			UserRepo:   usersRepository,
+		},
+	)
 
 	// Shutdown Signals
 	shutdown := make(chan os.Signal, 1)
@@ -114,6 +120,7 @@ func run(log *zap.SugaredLogger) error {
 			Auth:           auth,
 			Cache:          redis,
 			Shutdown:       shutdown,
+			RolesMap:       rolesMap,
 			Repositories:   repositories,
 			PermissionsMap: permissionsMap,
 		},
@@ -156,28 +163,31 @@ func run(log *zap.SugaredLogger) error {
 	return nil
 }
 
-func buildPermissionsMap(permissions []roles.RolePermissions) auth.PermissionsMap {
-	permissionsMap := make(auth.PermissionsMap)
+func buildPermissionsMap(permissions []roles.RoleWithPermission) (auth.AuthedPermissionsMap, auth.AuthedRolesMap) {
+	rolesMap := make(auth.AuthedRolesMap)
+	permissionsMap := make(auth.AuthedPermissionsMap)
 
 	for _, permission := range permissions {
 		stored, ok := permissionsMap[permission.Role.Name]
+		rolesMap[permission.Role.Name] = auth.ToAuthedRole(permission.Role)
+
 		if !ok {
-			stored = []auth.Permissions{
-				auth.ToPermissions(
-					auth.ToRole(permission.Role), auth.ToPermission(permission.Permission),
+			stored = []auth.AuthAccessControl{
+				auth.ToAuthedPermissions(
+					auth.ToAuthedRole(permission.Role), auth.ToAuthedPermission(permission.Permission),
 				),
 			}
 		}
 
 		stored = append(
 			stored,
-			auth.ToPermissions(
-				auth.ToRole(permission.Role), auth.ToPermission(permission.Permission),
+			auth.ToAuthedPermissions(
+				auth.ToAuthedRole(permission.Role), auth.ToAuthedPermission(permission.Permission),
 			),
 		)
 
 		permissionsMap[permission.Permission.Name] = stored
 	}
 
-	return permissionsMap
+	return permissionsMap, rolesMap
 }

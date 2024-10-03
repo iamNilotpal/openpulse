@@ -7,11 +7,11 @@ import (
 )
 
 type Repository interface {
-	Create(context context.Context, nr NewRole) (int, error)
+	Create(context context.Context, permission NewRole) (int, error)
 	GetAll(context context.Context) ([]Role, error)
 	QueryById(context context.Context, id int) (Role, error)
 	QueryByName(context context.Context, name string) (Role, error)
-	QueryRolesWithPermissions(context context.Context) ([]RolePermissions, error)
+	GetRolesWithPermissions(context context.Context) ([]RoleWithPermission, error)
 }
 
 type PostgresRepository struct {
@@ -33,9 +33,9 @@ func (r *PostgresRepository) GetAll(context context.Context) ([]Role, error) {
 		return []Role{}, err
 	}
 
-	roles := make([]Role, len(dbRoles))
+	roles := make([]Role, 0, len(dbRoles))
 	for i, dbRole := range dbRoles {
-		roles[i] = ToRole(dbRole)
+		roles[i] = FromDBRole(dbRole)
 	}
 
 	return roles, nil
@@ -47,7 +47,7 @@ func (r *PostgresRepository) QueryById(context context.Context, id int) (Role, e
 		return Role{}, err
 	}
 
-	return ToRole(dbRole), nil
+	return FromDBRole(dbRole), nil
 }
 
 func (r *PostgresRepository) QueryByName(context context.Context, name string) (Role, error) {
@@ -56,20 +56,20 @@ func (r *PostgresRepository) QueryByName(context context.Context, name string) (
 		return Role{}, err
 	}
 
-	return ToRole(dbRole), nil
+	return FromDBRole(dbRole), nil
 }
 
-func (r *PostgresRepository) QueryRolesWithPermissions(context context.Context) (
-	[]RolePermissions, error,
+func (r *PostgresRepository) GetRolesWithPermissions(context context.Context) (
+	[]RoleWithPermission, error,
 ) {
-	dbRolesWithPermissions, err := r.store.QueryRolesWithPermissions(context)
+	dbRolesWithPermissions, err := r.store.GetRolesWithPermissions(context)
 	if err != nil {
-		return []RolePermissions{}, err
+		return []RoleWithPermission{}, err
 	}
 
-	data := make([]RolePermissions, len(dbRolesWithPermissions))
+	data := make([]RoleWithPermission, 0, len(dbRolesWithPermissions))
 	for i, r := range dbRolesWithPermissions {
-		data[i] = ToRoleWithPermissions(r)
+		data[i] = FromDBRoleWithPermission(r)
 	}
 
 	return data, nil

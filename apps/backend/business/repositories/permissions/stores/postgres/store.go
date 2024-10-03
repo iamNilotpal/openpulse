@@ -7,9 +7,8 @@ import (
 )
 
 type Store interface {
-	QueryById(context context.Context, id int) (DBPermission, error)
-	Create(context context.Context, permission DBNewPermission) (int, error)
-	QueryByUserId(context context.Context, userId int) ([]DBUserPermission, error)
+	QueryById(context context.Context, id int) (Permission, error)
+	Create(context context.Context, permission NewPermission) (int, error)
 }
 
 type postgresStore struct {
@@ -20,19 +19,19 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
 }
 
-func (s *postgresStore) Create(context context.Context, permission DBNewPermission) (int, error) {
+func (s *postgresStore) Create(context context.Context, np NewPermission) (int, error) {
 	query := `
-		INSERT INTO permissions (name, description, action, resource)
+		INSERT INTO permissions (name, description, action, created_by)
 		VALUES ($1, $2, $3, $4);
 	`
 
 	result, err := s.db.ExecContext(
 		context,
 		query,
-		permission.Name,
-		permission.Description,
-		permission.Action,
-		permission.Resource,
+		np.Name,
+		np.Description,
+		np.Action,
+		np.CreatorId,
 	)
 
 	if err != nil {
@@ -47,11 +46,30 @@ func (s *postgresStore) Create(context context.Context, permission DBNewPermissi
 	return int(id), nil
 }
 
-func (s *postgresStore) QueryById(context context.Context, id int) (DBPermission, error) {
-	var permission DBPermission
+func (s *postgresStore) QueryById(context context.Context, id int) (Permission, error) {
+	var permission Permission
 	query := `
-		SELECT id, name, description, action, resource, created_at, updated_at
-		WHERE id = $1;
+		SELECT
+			p.id AS permissionId,
+			p.name AS permissionName,
+			P.description AS permissionDescription,
+			p.action AS permissionAction,
+			pcb.id AS permissionCreatorId,
+			pcb.email AS permissionCreatorEmail,
+			pcb.first_name AS permissionCreatorFirstName,
+			pcb.last_name AS permissionCreatorLastName,
+			pub.id AS permissionUpdaterId,
+			pub.email AS permissionUpdaterEmail,
+			pub.first_name AS permissionUpdaterFirstName,
+			pub.last_name AS permissionUpdaterLastName,
+			p.created_at as permissionCreatedAt,
+			p.updated_at as permissionUpdatedAt
+		FROM
+			permissions p
+			LEFT JOIN users pcb ON pcb.id = p.id
+			LEFT JOIN users pub ON pub.id = p.id
+		WHERE
+			id = $1;
 	`
 
 	if err := s.db.QueryRowContext(context, query, id).Scan(
@@ -59,66 +77,19 @@ func (s *postgresStore) QueryById(context context.Context, id int) (DBPermission
 		&permission.Name,
 		&permission.Description,
 		&permission.Action,
-		&permission.Resource,
+		&permission.CreatedBy.Id,
+		&permission.CreatedBy.Email,
+		&permission.CreatedBy.FirstName,
+		&permission.CreatedBy.LastName,
+		&permission.UpdatedBy.Id,
+		&permission.UpdatedBy.Email,
+		&permission.UpdatedBy.FirstName,
+		&permission.UpdatedBy.LastName,
 		&permission.CreatedAt,
 		&permission.UpdatedAt,
 	); err != nil {
-		return DBPermission{}, err
+		return Permission{}, err
 	}
 
 	return permission, nil
-}
-
-func (s *postgresStore) QueryByUserId(context context.Context, userId int) ([]DBUserPermission, error) {
-	query := `
-		SELECT
-			p.id AS id,
-			p.name AS name,
-			p.action AS action,
-			up.enabled AS enabled,
-			p.resource AS resource,
-			p.description AS description
-			up.updated_by AS updated_by
-			p.created_At AS created_at
-			p.updated_at AS updated_at
-		FROM
-			users_permissions up
-			JOIN permissions p ON p.id = up.permission_id
-		WHERE
-			up.user_id = $1;
-	`
-
-	rows, err := s.db.QueryContext(context, query, userId)
-	if err != nil {
-		return []DBUserPermission{}, err
-	}
-
-	defer rows.Close()
-	permissions := make([]DBUserPermission, 0)
-
-	for rows.Next() {
-		var permission DBUserPermission
-
-		if err := rows.Scan(
-			&permission.Id,
-			&permission.Name,
-			&permission.Action,
-			&permission.Enabled,
-			&permission.Resource,
-			&permission.Description,
-			&permission.UpdatedBy,
-			&permission.CreatedAt,
-			&permission.UpdatedAt,
-		); err != nil {
-			return []DBUserPermission{}, err
-		}
-
-		permissions = append(permissions, permission)
-	}
-
-	if err = rows.Err(); err != nil {
-		return []DBUserPermission{}, err
-	}
-
-	return permissions, nil
 }

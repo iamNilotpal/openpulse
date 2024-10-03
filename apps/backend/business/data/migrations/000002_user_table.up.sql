@@ -1,3 +1,7 @@
+CREATE TYPE system_appearance_type AS ENUM ('light', 'dark', 'system');
+
+CREATE TYPE user_account_status_type AS ENUM ('active', 'suspended', 'deleted');
+
 CREATE TABLE
   IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY NOT NULL,
@@ -7,20 +11,22 @@ CREATE TABLE
     password_hash BYTEA NOT NULL,
     phone_number VARCHAR(15) UNIQUE,
     avatar_url TEXT,
-    account_status VARCHAR(15) CHECK (
-      account_status IN ('active', 'suspended', "deleted")
-    ) DEFAULT 'active',
-    role_id SMALLINT NOT NULL REFERENCES roles (id),
+    account_status user_account_status_type DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
+ALTER TABLE users
+ADD COLUMN role_id SMALLINT NOT NULL REFERENCES roles (id);
+
+ALTER TABLE users
+ADD COLUMN preference_id BIGINT NOT NULL REFERENCES users_preferences (id);
+
 CREATE TABLE
   IF NOT EXISTS users_preferences (
-    id BIGSERIAL PRIMARY KEY NOT NULL,
-    user_id BIGINT NOT NULL UNIQUE,
-    timezone VARCHAR(30),
-    appearance VARCHAR(6) NOT NULL CHECK (theme IN ('light', 'dark', 'system')) DEFAULT 'system',
+    id BIGSERIAL PRIMARY KEY NOT NULl,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users (id),
+    appearance system_appearance_type DEFAULT 'system',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
@@ -33,6 +39,6 @@ CREATE TABLE
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_by BIGINT NOT NULL REFERENCES users (id),
-    UNIQUE (user_id, permission_id),
+    PRIMARY KEY (user_id, permission_id),
     INDEX user_id INCLUDE (permission_id)
   );

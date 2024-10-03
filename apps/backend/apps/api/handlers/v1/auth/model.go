@@ -8,7 +8,7 @@ type RegisterUserPayload struct {
 }
 
 type RegisterUserResponse struct {
-	UserEmail    string `json:"email"`
+	RoleId       int    `json:"roleId"`
 	UserId       int    `json:"userId"`
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`

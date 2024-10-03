@@ -14,16 +14,16 @@ import (
 
 type Config struct {
 	AuthConfig config.Auth
+	UserRepo   users.Repository
 	Logger     *zap.SugaredLogger
-	UserRepo   *users.PostgresRepository
 }
 
 type Auth struct {
 	cfg      config.Auth
 	parser   *jwt.Parser
+	userRepo users.Repository
 	method   jwt.SigningMethod
 	logger   *zap.SugaredLogger
-	userRepo *users.PostgresRepository
 }
 
 func New(cfg Config) *Auth {
@@ -83,8 +83,9 @@ func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims
 	tokenStr := parts[1]
 
 	if _, err := a.parser.ParseWithClaims(
-		tokenStr, &claims, func(t *jwt.Token,
-		) (interface{}, error) {
+		tokenStr,
+		&claims,
+		func(t *jwt.Token) (interface{}, error) {
 			if t.Method != a.method {
 				return "", NewAuthError(
 					"Invalid token signature", errors.InvalidTokenSignature, http.StatusUnauthorized,

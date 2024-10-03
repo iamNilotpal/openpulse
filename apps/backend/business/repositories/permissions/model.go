@@ -3,72 +3,53 @@ package permissions
 import (
 	"time"
 
+	modified_by "github.com/iamNilotpal/openpulse/business/data/modified-by"
 	permissions_store "github.com/iamNilotpal/openpulse/business/repositories/permissions/stores/postgres"
 )
 
 type NewPermission struct {
+	CreatorId   int
 	Name        string
 	Description string
-	Action      string
-	Resource    string
+	Action      PermissionAction
 }
 
 type Permission struct {
 	Id          int
 	Name        string
 	Description string
-	Action      string
-	Resource    string
+	Action      PermissionAction
+	CreatedBy   modified_by.ModifiedBy
+	UpdatedBy   modified_by.ModifiedBy
 	CreateAt    time.Time
 	UpdatedAt   time.Time
 }
 
-type UserPermission struct {
-	Id          int
-	Enabled     bool
-	Name        string
-	Description string
-	Action      string
-	Resource    string
-	CreateAt    string
-	UpdatedAt   string
-	UpdatedBy   string
-}
-
-func ToDBNewPermission(p NewPermission) permissions_store.DBNewPermission {
-	return permissions_store.DBNewPermission{
+func NewDBPermission(p NewPermission) permissions_store.NewPermission {
+	return permissions_store.NewPermission{
 		Name:        p.Name,
-		Action:      p.Action,
-		Resource:    p.Resource,
+		CreatorId:   p.CreatorId,
 		Description: p.Description,
+		Action:      FromPermissionAction(p.Action),
 	}
 }
 
-func ToPermission(p permissions_store.DBPermission) Permission {
+func FromDBPermission(p permissions_store.Permission) Permission {
 	createdAt, _ := time.Parse("", p.CreatedAt)
 	updatedAt, _ := time.Parse("", p.UpdatedAt)
 
 	return Permission{
 		Id:          p.Id,
 		Name:        p.Name,
-		Action:      p.Action,
 		CreateAt:    createdAt,
 		UpdatedAt:   updatedAt,
-		Resource:    p.Resource,
 		Description: p.Description,
-	}
-}
-
-func ToUserPermission(p permissions_store.DBUserPermission) UserPermission {
-	return UserPermission{
-		Id:          p.Id,
-		Name:        p.Name,
-		Action:      p.Action,
-		Enabled:     p.Enabled,
-		Resource:    p.Resource,
-		CreateAt:    p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
-		UpdatedBy:   p.UpdatedBy,
-		Description: p.Description,
+		Action:      ToPermissionAction(p.Action),
+		CreatedBy: modified_by.New(
+			p.CreatedBy.Id, p.CreatedBy.Email, p.CreatedBy.FirstName, p.CreatedBy.LastName,
+		),
+		UpdatedBy: modified_by.New(
+			p.UpdatedBy.Id, p.UpdatedBy.Email, p.UpdatedBy.FirstName, p.UpdatedBy.LastName,
+		),
 	}
 }

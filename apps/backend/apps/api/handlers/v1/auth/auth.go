@@ -2,31 +2,42 @@ package auth_handlers
 
 import (
 	"net/http"
-	"net/mail"
 	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
+	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
+	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
+	"github.com/jackc/pgerrcode"
+	"github.com/lib/pq"
 )
 
 type handler struct {
 	auth           *auth.Auth
 	cfg            config.Auth
+	rolesMap       auth.AuthedRolesMap
 	usersRepo      users.Repository
-	permissionsMap auth.PermissionsMap
+	permissionsMap auth.AuthedPermissionsMap
 }
 
 func New(
 	cfg config.Auth,
 	auth *auth.Auth,
+	rolesMap auth.AuthedRolesMap,
 	usersRepo users.Repository,
-	permissionsMap auth.PermissionsMap,
+	permissionsMap auth.AuthedPermissionsMap,
 ) *handler {
-	return &handler{cfg: cfg, auth: auth, usersRepo: usersRepo, permissionsMap: permissionsMap}
+	return &handler{
+		cfg:            cfg,
+		auth:           auth,
+		rolesMap:       rolesMap,
+		usersRepo:      usersRepo,
+		permissionsMap: permissionsMap,
+	}
 }
 
 func (h *handler) Register(w http.ResponseWriter, r *http.Request) error {
@@ -35,22 +46,48 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	userId, err := h.usersRepo.Create(r.Context(), users.NewUser{
-		RoleId:       1,
-		AvatarUrl:    "",
-		PasswordHash: []byte{},
-		LastName:     payload.LastName,
-		FirstName:    payload.FirstName,
-		Email:        mail.Address{Address: payload.Email},
-	})
+	admin := h.rolesMap["admin"]
+	adminPerms := h.permissionsMap["admin"]
+	permissions := make([]users.UserPermissions, 0, len(adminPerms))
+
+	for i, p := range adminPerms {
+		permissions[i] = users.UserPermissions{
+			Role:       users.Role{Id: p.Role.Id},
+			Permission: users.Permission{Id: p.Permission.Id},
+		}
+	}
+
+	userId, err := h.usersRepo.Create(
+		r.Context(),
+		users.NewUser{
+			AvatarUrl:    "",
+			RoleId:       admin.Id,
+			LastName:     payload.LastName,
+			FirstName:    payload.FirstName,
+			Email:        payload.Email,
+			PasswordHash: []byte{},
+		},
+		permissions,
+	)
 
 	if err != nil {
+		if ok := database.CheckPQError(err, func(err *pq.Error) bool {
+			return err.Code == pgerrcode.UniqueViolation
+		}); ok {
+			return errors.NewRequestError(
+				"User with same email already exists",
+				http.StatusBadRequest,
+				errors.DuplicateValue,
+			)
+		}
+
 		return err
 	}
 
 	accessToken, err := h.auth.GenerateAccessToken(
 		auth.Claims{
-			RoleId: 1,
+			UserId: userId,
+			RoleId: admin.Id,
 			RegisteredClaims: jwt.RegisteredClaims{
 				Issuer:    h.cfg.Issuer,
 				Subject:   strconv.Itoa(userId),
@@ -67,7 +104,8 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) error {
 
 	refreshToken, err := h.auth.GenerateRefreshToken(
 		auth.Claims{
-			RoleId: 1,
+			UserId: userId,
+			RoleId: admin.Id,
 			RegisteredClaims: jwt.RegisteredClaims{
 				Issuer:    h.cfg.Issuer,
 				Subject:   strconv.Itoa(userId),
@@ -82,12 +120,16 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return web.Success(w, http.StatusCreated, RegisterUserResponse{
-		UserId:       userId,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		UserEmail:    payload.Email,
-	})
+	return web.Success(
+		w,
+		http.StatusCreated,
+		RegisterUserResponse{
+			UserId:       userId,
+			RoleId:       admin.Id,
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
+	)
 }
 
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) error {

@@ -9,7 +9,6 @@ import (
 type Repository interface {
 	Create(context context.Context, permission NewPermission) (int, error)
 	QueryById(context context.Context, id int) (Permission, error)
-	QueryByUserId(context context.Context, userId int) ([]UserPermission, error)
 }
 
 type PostgresRepository struct {
@@ -21,7 +20,7 @@ func NewPostgresRepository(store permissions_store.Store) *PostgresRepository {
 }
 
 func (r *PostgresRepository) Create(context context.Context, permission NewPermission) (int, error) {
-	id, err := r.s.Create(context, ToDBNewPermission(permission))
+	id, err := r.s.Create(context, NewDBPermission(permission))
 	return id, err
 }
 
@@ -31,19 +30,5 @@ func (r *PostgresRepository) QueryById(context context.Context, id int) (Permiss
 		return Permission{}, nil
 	}
 
-	return ToPermission(permission), nil
-}
-
-func (r *PostgresRepository) QueryByUserId(context context.Context, userId int) ([]UserPermission, error) {
-	dbUserPermissions, err := r.s.QueryByUserId(context, userId)
-	if err != nil {
-		return []UserPermission{}, nil
-	}
-
-	permissions := make([]UserPermission, len(dbUserPermissions))
-	for i, p := range dbUserPermissions {
-		permissions[i] = ToUserPermission(p)
-	}
-
-	return permissions, nil
+	return FromDBPermission(permission), nil
 }

@@ -1,6 +1,6 @@
 package teams_store
 
-type DBTeam struct {
+type Team struct {
 	Id           int
 	Name         string
 	Description  string
@@ -10,7 +10,7 @@ type DBTeam struct {
 	UpdatedAt    string
 }
 
-type DBNewTeam struct {
+type NewTeam struct {
 	AdminId     int
 	Name        string
 	Description string

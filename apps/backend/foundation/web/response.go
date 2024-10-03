@@ -18,6 +18,10 @@ type APIError struct {
 	Fields    any    `json:"fields,omitempty"`
 }
 
+func NewAPIError(msg, code string, fields any) APIError {
+	return APIError{Message: msg, ErrorCode: code, Fields: fields}
+}
+
 func Success(w http.ResponseWriter, code int, data any) error {
 	response := apiResponse{Success: true, Data: data, StatusCode: code}
 	return respond(w, code, response)
