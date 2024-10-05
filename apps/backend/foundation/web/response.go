@@ -18,7 +18,7 @@ type APIError struct {
 	Fields    any    `json:"fields,omitempty"`
 }
 
-func NewAPIError(msg, code string, fields any) APIError {
+func CreateAPIError(msg, code string, fields any) APIError {
 	return APIError{Message: msg, ErrorCode: code, Fields: fields}
 }
 

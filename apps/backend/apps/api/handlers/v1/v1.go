@@ -14,33 +14,35 @@ import (
 const apiV1 = "/api/v1"
 
 type cfg struct {
-	app            *web.App
-	auth           *auth.Auth
-	rolesMap       auth.AuthedRolesMap
-	log            *zap.SugaredLogger
-	permissionsMap auth.AuthedPermissionsMap
-	repositories   repositories.Repositories
-	config         *config.OpenpulseApiConfig
+	app                    *web.App
+	auth                   *auth.Auth
+	rolesMap               auth.RoleConfigMap
+	log                    *zap.SugaredLogger
+	repositories           repositories.Repositories
+	config                 *config.OpenpulseApiConfig
+	resourcePermissionsMap auth.ResourcePermissionsMap
+	rolePermissionsMap     auth.RoleResourcesPermissionsMap
 }
 
 func New(
 	app *web.App,
 	auth *auth.Auth,
 	log *zap.SugaredLogger,
-	rolesMap auth.AuthedRolesMap,
 	config *config.OpenpulseApiConfig,
-	permissionsMap auth.AuthedPermissionsMap,
 	repositories repositories.Repositories,
-
+	rolesMap auth.RoleConfigMap,
+	resourcePermissionsMap auth.ResourcePermissionsMap,
+	rolePermissionsMap auth.RoleResourcesPermissionsMap,
 ) *cfg {
 	return &cfg{
-		app:            app,
-		log:            log,
-		auth:           auth,
-		config:         config,
-		rolesMap:       rolesMap,
-		repositories:   repositories,
-		permissionsMap: permissionsMap,
+		app:                    app,
+		log:                    log,
+		auth:                   auth,
+		config:                 config,
+		rolesMap:               rolesMap,
+		repositories:           repositories,
+		rolePermissionsMap:     rolePermissionsMap,
+		resourcePermissionsMap: resourcePermissionsMap,
 	}
 }
 
@@ -51,7 +53,7 @@ func (c *cfg) SetupRoutes() {
 		c.auth,
 		c.rolesMap,
 		c.repositories.Users,
-		c.permissionsMap,
+		c.rolePermissionsMap,
 	)
 
 	/* Auth Routes - Register, Login */

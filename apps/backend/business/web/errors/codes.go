@@ -7,7 +7,6 @@ const (
 	NotFound       ErrorCode = "RESOURCE_NOT_FOUND"
 	AlreadyExists  ErrorCode = "RESOURCE_ALREADY_EXISTS"
 
-	DatabaseError       ErrorCode = "DATABASE_ERROR"
 	InternalServerError ErrorCode = "INTERNAL_ERROR"
 	ServiceUnavailable  ErrorCode = "SERVICE_UNAVAILABLE"
 
@@ -17,7 +16,6 @@ const (
 	Forbidden             ErrorCode = "FORBIDDEN"
 	Unauthorized          ErrorCode = "UNAUTHORIZED"
 	TokenExpired          ErrorCode = "TOKEN_EXPIRED"
-	AccountSuspended      ErrorCode = "ACCOUNT_SUSPENDED"
 	InvalidAuthHeader     ErrorCode = "INVALID_TOKEN_HEADER"
 	InvalidTokenSignature ErrorCode = "INVALID_TOKEN_SIGNATURE"
 )

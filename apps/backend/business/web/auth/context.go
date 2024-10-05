@@ -8,7 +8,7 @@ type ctxKey int
 
 const roleKey ctxKey = 1
 const claimKey ctxKey = 2
-const permissionsKey ctxKey = 3
+const resourcesKey ctxKey = 3
 
 func SetClaims(ctx context.Context, claims Claims) context.Context {
 	return context.WithValue(ctx, claimKey, claims)
@@ -22,27 +22,27 @@ func GetClaims(ctx context.Context) Claims {
 	return v
 }
 
-func SetUserRole(ctx context.Context, role UserRole) context.Context {
+func SetRole(ctx context.Context, role UserRoleConfig) context.Context {
 	return context.WithValue(ctx, roleKey, role)
 }
 
-func GetUserRole(ctx context.Context) UserRole {
-	v, ok := ctx.Value(roleKey).(UserRole)
+func GetRole(ctx context.Context) UserRoleConfig {
+	v, ok := ctx.Value(roleKey).(UserRoleConfig)
 	if !ok {
-		return UserRole{}
+		return UserRoleConfig{}
 	}
 
 	return v
 }
 
-func SetUserPermissions(ctx context.Context, permissions []UserAccessControl) context.Context {
-	return context.WithValue(ctx, permissionsKey, permissions)
+func SetResourcesMap(ctx context.Context, resPermissions UserResourcePermissionsMap) context.Context {
+	return context.WithValue(ctx, resourcesKey, resPermissions)
 }
 
-func GetUserPermissions(ctx context.Context) []UserAccessControl {
-	v, ok := ctx.Value(permissionsKey).([]UserAccessControl)
+func GetResourcesMap(ctx context.Context) UserResourcePermissionsMap {
+	v, ok := ctx.Value(resourcesKey).(UserResourcePermissionsMap)
 	if !ok {
-		return []UserAccessControl{}
+		return UserResourcePermissionsMap{}
 	}
 
 	return v

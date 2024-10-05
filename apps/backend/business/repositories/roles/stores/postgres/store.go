@@ -11,7 +11,7 @@ type Store interface {
 	GetAll(context context.Context) ([]Role, error)
 	QueryById(context context.Context, id int) (Role, error)
 	QueryByName(context context.Context, name string) (Role, error)
-	GetRolesWithPermissions(context context.Context) ([]RoleWithPermission, error)
+	GetRolesResourcesPermissions(context context.Context) ([]RoleAccessControl, error)
 }
 
 type postgresStore struct {
@@ -24,12 +24,12 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 
 func (s *postgresStore) Create(context context.Context, nr NewRole) (int, error) {
 	query := `
-		INSERT INTO ROLES (name, description, is_system_role, created_by)
-		VALUES ($1, $2, $3, $4) RETURNING id;
+		INSERT INTO ROLES (name, description, is_system_role, role, created_by)
+		VALUES ($1, $2, $3, $4, $5) RETURNING id;
 	`
 
 	result, err := s.db.ExecContext(
-		context, query, nr.Name, nr.Description, nr.IsSystemRole, nr.CreatorId,
+		context, query, nr.Name, nr.Description, nr.IsSystemRole, nr.Role, nr.CreatorId,
 	)
 	if err != nil {
 		return 0, err
@@ -50,6 +50,7 @@ func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
 			r.name AS roleName,
 			r.description AS roleDescription,
 			r.is_system_role AS isSystemRole,
+			r.role AS role,
 			rcb.id AS roleAuthorId,
 			rcb.email AS roleAuthorEmail,
 			rcb.first_name AS roleAuthorFirstName,
@@ -82,6 +83,7 @@ func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
 			&role.Name,
 			&role.Description,
 			&role.IsSystemRole,
+			&role.Role,
 			&role.CreatedBy.Id,
 			&role.CreatedBy.Email,
 			&role.CreatedBy.FirstName,
@@ -114,6 +116,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Role, error)
 			r.name AS roleName,
 			r.description AS roleDescription,
 			r.is_system_role AS isSystemRole,
+			r.role AS role,
 			rcb.id AS roleAuthorId,
 			rcb.email AS roleAuthorEmail,
 			rcb.first_name AS roleAuthorFirstName,
@@ -137,6 +140,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Role, error)
 		&role.Name,
 		&role.Description,
 		&role.IsSystemRole,
+		&role.Role,
 		&role.CreatedBy.Id,
 		&role.CreatedBy.Email,
 		&role.CreatedBy.FirstName,
@@ -162,6 +166,7 @@ func (s *postgresStore) QueryByName(context context.Context, name string) (Role,
 			r.name AS roleName,
 			r.description AS roleDescription,
 			r.is_system_role AS isSystemRole,
+			r.role AS role,
 			rcb.id AS roleAuthorId,
 			rcb.email AS roleAuthorEmail,
 			rcb.first_name AS roleAuthorFirstName,
@@ -185,6 +190,7 @@ func (s *postgresStore) QueryByName(context context.Context, name string) (Role,
 		&role.Name,
 		&role.Description,
 		&role.IsSystemRole,
+		&role.Role,
 		&role.CreatedBy.Id,
 		&role.CreatedBy.Email,
 		&role.CreatedBy.FirstName,
@@ -202,65 +208,54 @@ func (s *postgresStore) QueryByName(context context.Context, name string) (Role,
 	return role, nil
 }
 
-func (s *postgresStore) GetRolesWithPermissions(context context.Context) ([]RoleWithPermission, error) {
+func (s *postgresStore) GetRolesResourcesPermissions(context context.Context) (
+	[]RoleAccessControl, error,
+) {
 	query := `
 		SELECT
-			r.id AS roleID,
-			r.name AS roleName,
-			r.description AS roleDescription,
-			r.is_system_role AS isSystemRole,
-			r.created_at AS roleCreatedAt,
-			r.updated_at AS roleUpdatedAt,
-			p.id AS permissionId,
-			p.name AS permissionName,
-			p.description AS permissionDescription,
-			p.action AS permissionAction,
-			p.created_at AS permissionCreatedAt,
-			p.updated_at AS permissionUpdatedAt,
-			rp.created_at AS rolePermissionCreatedAt,
-			rp.updated_at AS rolePermissionUpdatedAt
+			ro.id AS roleId,
+			ro.role AS role,
+			res.id AS resourceId,
+			res.resource AS resourceType,
+			ps.id AS permissionId,
+			ps.action AS permissionAction
 		FROM
-			roles r
-			JOIN roles_permissions rp ON rp.role_id = r.id
-			JOIN permissions p ON p.id = rp.permission_id;
+			roles ro
+			JOIN roles_resources rr ON rr.role_id = ro.id
+			JOIN resources res ON res.id = rr.resource_id
+			JOIN resource_permissions rp ON rp.resource_id = res.id
+			JOIN permissions ps ON ps.id = rp.permission_id
+		ORDER BY ro.id, res.id, ps.id;
 	`
 
 	rows, err := s.db.QueryContext(context, query)
 	if err != nil {
-		return []RoleWithPermission{}, err
+		return []RoleAccessControl{}, err
 	}
 
 	defer rows.Close()
-	rolesWithPermissions := make([]RoleWithPermission, 0)
+	accessControls := make([]RoleAccessControl, 0)
 
 	for rows.Next() {
-		var row RoleWithPermission
+		var row RoleAccessControl
 
 		if err := rows.Scan(
 			&row.Role.Id,
-			&row.Role.Name,
-			&row.Role.Description,
-			&row.Role.IsSystemRole,
-			&row.Role.CreatedAt,
-			&row.Role.UpdatedAt,
+			&row.Role.Role,
+			&row.Resource.Id,
+			&row.Resource.Resource,
 			&row.Permission.Id,
-			&row.Permission.Name,
-			&row.Permission.Description,
 			&row.Permission.Action,
-			&row.Permission.CreatedAt,
-			&row.Permission.UpdatedAt,
-			&row.CreatedAt,
-			&row.UpdatedAt,
 		); err != nil {
-			return []RoleWithPermission{}, err
+			return []RoleAccessControl{}, err
 		}
 
-		rolesWithPermissions = append(rolesWithPermissions, row)
+		accessControls = append(accessControls, row)
 	}
 
 	if err := rows.Err(); err != nil {
-		return []RoleWithPermission{}, err
+		return []RoleAccessControl{}, err
 	}
 
-	return rolesWithPermissions, nil
+	return accessControls, nil
 }

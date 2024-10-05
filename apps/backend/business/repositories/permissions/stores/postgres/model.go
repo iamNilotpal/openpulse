@@ -2,7 +2,6 @@ package permissions_store
 
 import (
 	modified_by "github.com/iamNilotpal/openpulse/business/data/modified-by"
-	resources_store "github.com/iamNilotpal/openpulse/business/repositories/resources/store/postgres"
 )
 
 type Permission struct {
@@ -23,11 +22,7 @@ type NewPermission struct {
 	Action      string
 }
 
-type PermissionWithResource struct {
-	Permission Permission
-	Resource   resources_store.Resource
-	UpdatedBy  modified_by.ModifiedBy
-	CreatedBy  modified_by.ModifiedBy
-	CreatedAt  string
-	UpdatedAt  string
+type PermissionAccessConfig struct {
+	Id     int
+	Action string
 }
