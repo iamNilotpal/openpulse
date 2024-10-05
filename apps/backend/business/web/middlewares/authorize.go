@@ -2,26 +2,50 @@ package middlewares
 
 import (
 	"net/http"
-	"strings"
 
-	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 )
 
-func Authorize(
-	requiredPermissions ...[]auth.AuthAccessControl,
-) func(http.Handler) http.Handler {
+type Options struct {
+	Strict              bool
+	RequiredRole        auth.RoleConfig
+	RequiredPermissions []auth.PermissionConfig
+}
+
+func Authorize(options Options) func(http.Handler) http.Handler {
 	a := func(handler http.Handler) http.Handler {
 		m := func(w http.ResponseWriter, r *http.Request) {
-			userPermissions := auth.GetUserPermissions(r.Context())
+			userRole := auth.GetRole(r.Context())
+			userResources := auth.GetResourcesMap(r.Context())
 
-			if !checkPermissions(requiredPermissions, userPermissions) {
+			if len(userResources) == 0 ||
+				!auth.CheckRoleAccessControl(options.RequiredRole, userRole) {
 				web.Error(
 					w,
 					http.StatusForbidden,
-					web.NewAPIError(
+					web.CreateAPIError(
+						http.StatusText(http.StatusForbidden),
+						errors.FromErrorCode(errors.Forbidden),
+						nil,
+					),
+				)
+				return
+			}
+
+			userPermissions := make([]auth.UserPermissionConfig, 0)
+			for _, v := range userResources {
+				userPermissions = append(userPermissions, v...)
+			}
+
+			if !auth.CheckPermissionAccessControl(
+				options.Strict, userPermissions, options.RequiredPermissions,
+			) {
+				web.Error(
+					w,
+					http.StatusForbidden,
+					web.CreateAPIError(
 						http.StatusText(http.StatusForbidden),
 						errors.FromErrorCode(errors.Forbidden),
 						nil,
@@ -32,36 +56,7 @@ func Authorize(
 
 			handler.ServeHTTP(w, r)
 		}
-
 		return http.HandlerFunc(m)
 	}
-
 	return a
-}
-
-func checkPermissions(
-	requiredPermissions [][]auth.AuthAccessControl, userPermissions []auth.UserAccessControl,
-) bool {
-	if len(requiredPermissions) == 0 {
-		return true
-	}
-
-	for _, rr := range requiredPermissions {
-		for i := 0; i < len(requiredPermissions); i++ {
-			rPermission := rr[i]
-			uPermission := userPermissions[i]
-
-			if uPermission.Permission.Enabled &&
-				uPermission.Role.Id == rPermission.Role.Id &&
-				uPermission.Permission.Id == rPermission.Permission.Id &&
-				strings.EqualFold(
-					permissions.FromPermissionAction(uPermission.Permission.Action),
-					permissions.FromPermissionAction(rPermission.Permission.Action),
-				) {
-				return true
-			}
-		}
-	}
-
-	return false
 }

@@ -17,48 +17,52 @@ import (
 )
 
 type HandlerConfig struct {
-	DB             *sqlx.DB
-	Auth           *auth.Auth
-	RolesMap       auth.AuthedRolesMap
-	Cache          *redis.Client
-	Shutdown       chan os.Signal
-	Log            *zap.SugaredLogger
-	PermissionsMap auth.AuthedPermissionsMap
-	Repositories   repositories.Repositories
-	Config         *config.OpenpulseApiConfig
+	DB                     *sqlx.DB
+	Auth                   *auth.Auth
+	Cache                  *redis.Client
+	Shutdown               chan os.Signal
+	Log                    *zap.SugaredLogger
+	RolesMap               auth.RoleConfigMap
+	Repositories           repositories.Repositories
+	Config                 *config.OpenpulseApiConfig
+	ResourcePermissionsMap auth.ResourcePermissionsMap
+	RolePermissionsMap     auth.RoleResourcesPermissionsMap
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
-	app := web.NewApp(web.AppConfig{Shutdown: cfg.Shutdown, Cors: cors.Options{
-		MaxAge:           300,
-		AllowCredentials: true,
-		AllowedOrigins:   cfg.Config.Web.AllowedOrigins,
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		AllowedMethods: []string{
-			http.MethodGet,
-			http.MethodPut,
-			http.MethodPost,
-			http.MethodHead,
-			http.MethodPatch,
-			http.MethodDelete,
-			http.MethodOptions,
+	app := web.NewApp(web.AppConfig{
+		Shutdown: cfg.Shutdown,
+		Cors: cors.Options{
+			MaxAge:           300,
+			AllowCredentials: true,
+			AllowedOrigins:   cfg.Config.Web.AllowedOrigins,
+			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+			AllowedMethods: []string{
+				http.MethodGet,
+				http.MethodPut,
+				http.MethodPost,
+				http.MethodHead,
+				http.MethodPatch,
+				http.MethodDelete,
+				http.MethodOptions,
+			},
 		},
-	}},
+	},
 		middleware.Logger,
 		middleware.RealIP,
 		middleware.RequestID,
 		middleware.Recoverer,
 	)
 
-	// Create API V1
 	apiV1 := v1.New(
 		app,
 		cfg.Auth,
 		cfg.Log,
-		cfg.RolesMap,
 		cfg.Config,
-		cfg.PermissionsMap,
 		cfg.Repositories,
+		cfg.RolesMap,
+		cfg.ResourcePermissionsMap,
+		cfg.RolePermissionsMap,
 	)
 
 	apiV1.SetupRoutes()

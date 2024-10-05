@@ -10,11 +10,10 @@ CREATE TABLE
   );
 
 CREATE TABLE
-  IF NOT EXISTS team_users (
+  IF NOT EXISTS teams_users_roles (
     team_id BIGINT NOT NULL REFERENCES teams (id),
     user_id BIGINT NOT NULL REFERENCES users (id),
-    role_id BIGINT NOT NULL REFERENCES roles (id),
-    INDEX (team_id),
-    INDEX (user_id),
-    UNIQUE (team_id, user_id),
+    role_id SMALLINT NOT NULL REFERENCES roles (id),
+    UNIQUE (team_id, user_id, role_id),
+    INDEX (team_id)
   );

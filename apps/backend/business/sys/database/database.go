@@ -76,15 +76,14 @@ func CheckPQError(err error, f func(*pq.Error) bool) bool {
 		return false
 	}
 
-	ok = f(e)
-	return ok
+	return f(e)
 }
 
-func MultipleQueryParams[T any](data []T, format func(index int, val T, isLast bool) string) []string {
+func BuildQueryParams[T any](data []T, format func(index int, isLast bool, val T) string) []string {
 	params := make([]string, 0, len(data))
 
 	for i, v := range data {
-		params = append(params, format(i, v, i == len(data)-1))
+		params = append(params, format(i, i == len(data)-1, v))
 	}
 
 	return params

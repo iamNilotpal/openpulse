@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	stdErrors "errors"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -69,7 +71,7 @@ func (a *Auth) GenerateRefreshToken(claims Claims) (string, error) {
 }
 
 func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims, error) {
-	parts := strings.Split(bearerToken, " ")
+	parts := strings.Split(strings.TrimSpace(bearerToken), " ")
 
 	if len(parts) != 2 || parts[1] != "Bearer" {
 		return Claims{}, NewAuthError(
@@ -82,7 +84,7 @@ func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims
 	var claims Claims
 	tokenStr := parts[1]
 
-	if _, err := a.parser.ParseWithClaims(
+	_, err := a.parser.ParseWithClaims(
 		tokenStr,
 		&claims,
 		func(t *jwt.Token) (interface{}, error) {
@@ -92,11 +94,69 @@ func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims
 				)
 			}
 			return a.cfg.AccessTokenSecret, nil
-		}); err != nil {
+		},
+	)
+
+	if err != nil {
+		if stdErrors.Is(err, jwt.ErrTokenExpired) {
+			return Claims{}, NewAuthError(
+				"Session expired.", errors.TokenExpired, http.StatusUnauthorized,
+			)
+		}
+
 		return Claims{}, NewAuthError(
 			"Invalid token", errors.InvalidTokenSignature, http.StatusUnauthorized,
 		)
 	}
 
 	return claims, nil
+}
+
+func CheckRoleAccessControl(requiredRole RoleConfig, userRole UserRoleConfig) bool {
+	if requiredRole.Id != userRole.Id || requiredRole.Role != userRole.Role {
+		return false
+	}
+	return true
+}
+
+func CheckResourceAccessControl(
+	requiredResource ResourceConfig, userResource UserResourceConfig,
+) bool {
+	if requiredResource.Id != userResource.Id || requiredResource.Resource != userResource.Resource {
+		return false
+	}
+	return true
+}
+
+func CheckPermissionAccessControl(
+	strict bool,
+	userPermissions []UserPermissionConfig,
+	requiredPermissions []PermissionConfig,
+) bool {
+	if len(requiredPermissions) == 0 {
+		return true
+	}
+
+	if len(userPermissions) == 0 || (strict && len(requiredPermissions) > len(userPermissions)) {
+		return false
+	}
+
+	for _, rp := range requiredPermissions {
+		index := slices.IndexFunc(
+			userPermissions,
+			func(v UserPermissionConfig) bool {
+				return v.Id == rp.Id && v.Action == rp.Action
+			},
+		)
+
+		if index == -1 {
+			return false
+		}
+
+		if up := userPermissions[index]; !up.Enabled {
+			return false
+		}
+	}
+
+	return true
 }

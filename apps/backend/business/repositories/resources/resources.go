@@ -9,6 +9,7 @@ import (
 type Repository interface {
 	Create(context context.Context, nr NewResource) (int, error)
 	QueryById(context context.Context, id int) (Resource, error)
+	QueryAllResourcesWithPermissions(context context.Context) ([]ResourceWithPermission, error)
 }
 
 type PostgresRepository struct {
@@ -30,4 +31,20 @@ func (r *PostgresRepository) QueryById(context context.Context, id int) (Resourc
 	}
 
 	return FromDBResource(dbResource), nil
+}
+
+func (r *PostgresRepository) QueryAllResourcesWithPermissions(context context.Context) (
+	[]ResourceWithPermission, error,
+) {
+	dbResourcesWithPermissions, err := r.store.QueryAllResourcesWithPermissions(context)
+	if err != nil {
+		return []ResourceWithPermission{}, err
+	}
+
+	rps := make([]ResourceWithPermission, 0, len(dbResourcesWithPermissions))
+	for i, rp := range dbResourcesWithPermissions {
+		rps[i] = FromDBResourceWithPermission(rp)
+	}
+
+	return rps, nil
 }
