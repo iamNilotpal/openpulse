@@ -17,14 +17,15 @@ type Options struct {
 func Authorize(options Options) func(http.Handler) http.Handler {
 	a := func(handler http.Handler) http.Handler {
 		m := func(w http.ResponseWriter, r *http.Request) {
-			userRole := auth.GetUserRole(r.Context())
-			userResources := auth.GetUserResources(r.Context())
+			userRole := auth.GetRole(r.Context())
+			userResources := auth.GetResourcesMap(r.Context())
 
-			if !auth.CheckRoleAccessControl(options.RequiredRole, userRole) {
+			if len(userResources) == 0 ||
+				!auth.CheckRoleAccessControl(options.RequiredRole, userRole) {
 				web.Error(
 					w,
 					http.StatusForbidden,
-					web.NewAPIError(
+					web.CreateAPIError(
 						http.StatusText(http.StatusForbidden),
 						errors.FromErrorCode(errors.Forbidden),
 						nil,
@@ -36,7 +37,6 @@ func Authorize(options Options) func(http.Handler) http.Handler {
 			userPermissions := make([]auth.UserPermissionConfig, 0)
 			for _, v := range userResources {
 				userPermissions = append(userPermissions, v...)
-
 			}
 
 			if !auth.CheckPermissionAccessControl(
@@ -45,7 +45,7 @@ func Authorize(options Options) func(http.Handler) http.Handler {
 				web.Error(
 					w,
 					http.StatusForbidden,
-					web.NewAPIError(
+					web.CreateAPIError(
 						http.StatusText(http.StatusForbidden),
 						errors.FromErrorCode(errors.Forbidden),
 						nil,

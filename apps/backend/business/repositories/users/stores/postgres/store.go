@@ -46,7 +46,7 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 
 // 	params := database.MultipleQueryParams(
 // 		permissions,
-// 		func(index int, v AccessControl, isLast bool) string {
+// 		func(index int, isLast bool, v AccessControl) string {
 // 			args = append(args, id, v.Permission.Id, true, id)
 // 			return "(?, ?, ?, ?)"
 // 		},

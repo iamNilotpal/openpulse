@@ -22,7 +22,7 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 				fieldErrors := validate.GetFieldErrors(err)
 
 				statusCode = http.StatusBadRequest
-				errResp = web.NewAPIError(
+				errResp = web.CreateAPIError(
 					http.StatusText(http.StatusBadRequest),
 					errors.FromErrorCode(errors.InvalidInput),
 					fieldErrors.Fields(),
@@ -32,7 +32,7 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 				reqErr := errors.GetRequestError(err)
 
 				statusCode = reqErr.Status
-				errResp = web.NewAPIError(
+				errResp = web.CreateAPIError(
 					reqErr.Error(),
 					errors.FromErrorCode(reqErr.Code),
 					nil,
@@ -40,7 +40,7 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 
 			default:
 				statusCode = http.StatusInternalServerError
-				errResp = web.NewAPIError(
+				errResp = web.CreateAPIError(
 					http.StatusText(http.StatusInternalServerError),
 					errors.FromErrorCode(errors.InternalServerError),
 					nil,

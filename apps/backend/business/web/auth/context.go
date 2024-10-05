@@ -22,11 +22,11 @@ func GetClaims(ctx context.Context) Claims {
 	return v
 }
 
-func SetUserRole(ctx context.Context, role UserRoleConfig) context.Context {
+func SetRole(ctx context.Context, role UserRoleConfig) context.Context {
 	return context.WithValue(ctx, roleKey, role)
 }
 
-func GetUserRole(ctx context.Context) UserRoleConfig {
+func GetRole(ctx context.Context) UserRoleConfig {
 	v, ok := ctx.Value(roleKey).(UserRoleConfig)
 	if !ok {
 		return UserRoleConfig{}
@@ -35,11 +35,11 @@ func GetUserRole(ctx context.Context) UserRoleConfig {
 	return v
 }
 
-func SetUserResources(ctx context.Context, resources UserResourcePermissionsMap) context.Context {
-	return context.WithValue(ctx, resourcesKey, resources)
+func SetResourcesMap(ctx context.Context, resPermissions UserResourcePermissionsMap) context.Context {
+	return context.WithValue(ctx, resourcesKey, resPermissions)
 }
 
-func GetUserResources(ctx context.Context) UserResourcePermissionsMap {
+func GetResourcesMap(ctx context.Context) UserResourcePermissionsMap {
 	v, ok := ctx.Value(resourcesKey).(UserResourcePermissionsMap)
 	if !ok {
 		return UserResourcePermissionsMap{}

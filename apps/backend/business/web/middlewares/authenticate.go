@@ -24,7 +24,7 @@ func Authenticate(
 					web.Error(
 						w,
 						authErr.Status,
-						web.NewAPIError(authErr.Error(), errors.FromErrorCode(authErr.Code), nil),
+						web.CreateAPIError(authErr.Error(), errors.FromErrorCode(authErr.Code), nil),
 					)
 					return
 				}
@@ -32,7 +32,7 @@ func Authenticate(
 				web.Error(
 					w,
 					http.StatusInternalServerError,
-					web.NewAPIError(
+					web.CreateAPIError(
 						http.StatusText(http.StatusInternalServerError),
 						errors.FromErrorCode(errors.InternalServerError),
 						nil,
@@ -46,7 +46,7 @@ func Authenticate(
 				web.Error(
 					w,
 					http.StatusUnauthorized,
-					web.NewAPIError(
+					web.CreateAPIError(
 						http.StatusText(http.StatusUnauthorized),
 						errors.FromErrorCode(errors.Unauthorized),
 						nil,
@@ -60,7 +60,7 @@ func Authenticate(
 				web.Error(
 					w,
 					http.StatusUnauthorized,
-					web.NewAPIError(
+					web.CreateAPIError(
 						http.StatusText(http.StatusUnauthorized),
 						errors.FromErrorCode(errors.Unauthorized),
 						nil,
@@ -89,8 +89,8 @@ func Authenticate(
 			}
 
 			r = r.WithContext(auth.SetClaims(r.Context(), claims))
-			r = r.WithContext(auth.SetUserRole(r.Context(), auth.NewUserRoleConfig(role)))
-			r = r.WithContext(auth.SetUserResources(r.Context(), userResourcesMap))
+			r = r.WithContext(auth.SetRole(r.Context(), auth.NewUserRoleConfig(role)))
+			r = r.WithContext(auth.SetResourcesMap(r.Context(), userResourcesMap))
 
 			handler.ServeHTTP(w, r)
 		}
