@@ -32,13 +32,16 @@ CREATE TABLE
   );
 
 CREATE TABLE
-  IF NOT EXISTS users_permissions (
+  IF NOT EXISTS users_access_controls (
     user_id BIGINT NOT NULL REFERENCES users (id),
+    role_id SMALLINT NOT NULL REFERENCES roles (id),
+    resource_id SMALLINT NOT NULL REFERENCES resources (id),
     permission_id SMALLINT NOT NULL REFERENCES permissions (id),
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_by BIGINT NOT NULL REFERENCES users (id),
-    PRIMARY KEY (user_id, permission_id),
-    INDEX user_id INCLUDE (permission_id)
+    PRIMARY KEY (user_id, role_id, resource_id, permission_id),
+    INDEX (user_id),
+    INDEX (role_id)
   );

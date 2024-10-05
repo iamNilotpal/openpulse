@@ -90,22 +90,16 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// Get roles with permissions
-	rolesWithPermissions, err := rolesRepository.GetRolesWithPermissions(context.Background())
+	permissions, err := rolesRepository.GetRolesResourcesPermissions(context.Background())
 	if err != nil {
 		return err
 	}
 
 	// Build the Permissions Map
-	permissionsMap, rolesMap := buildPermissionsMap(rolesWithPermissions)
+	rolesMap, resPermissionsMap, rolePermissionsMap := buildRBACMaps(permissions)
 
 	// Initialize authentication support
-	auth := auth.New(
-		auth.Config{
-			AuthConfig: cfg.Auth,
-			Logger:     log,
-			UserRepo:   usersRepository,
-		},
-	)
+	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepository})
 
 	// Shutdown Signals
 	shutdown := make(chan os.Signal, 1)
@@ -114,15 +108,16 @@ func run(log *zap.SugaredLogger) error {
 	// Initialize API support
 	mux := handlers.NewHandler(
 		handlers.HandlerConfig{
-			DB:             db,
-			Log:            log,
-			Config:         cfg,
-			Auth:           auth,
-			Cache:          redis,
-			Shutdown:       shutdown,
-			RolesMap:       rolesMap,
-			Repositories:   repositories,
-			PermissionsMap: permissionsMap,
+			DB:                     db,
+			Log:                    log,
+			Config:                 cfg,
+			Auth:                   auth,
+			Cache:                  redis,
+			Shutdown:               shutdown,
+			RolesMap:               rolesMap,
+			Repositories:           repositories,
+			ResourcePermissionsMap: resPermissionsMap,
+			RolePermissionsMap:     rolePermissionsMap,
 		},
 	)
 
@@ -163,31 +158,52 @@ func run(log *zap.SugaredLogger) error {
 	return nil
 }
 
-func buildPermissionsMap(permissions []roles.RoleWithPermission) (auth.AuthedPermissionsMap, auth.AuthedRolesMap) {
-	rolesMap := make(auth.AuthedRolesMap)
-	permissionsMap := make(auth.AuthedPermissionsMap)
+func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
+	auth.RoleConfigMap, auth.ResourcePermissionsMap, auth.RoleResourcesPermissionsMap,
+) {
+	rolesMap := make(auth.RoleConfigMap)
+	resourcesPermissionsMap := make(auth.ResourcePermissionsMap)
+	roleResourcesPermissionsMap := make(auth.RoleResourcesPermissionsMap)
 
-	for _, permission := range permissions {
-		stored, ok := permissionsMap[permission.Role.Name]
-		rolesMap[permission.Role.Name] = auth.ToAuthedRole(permission.Role)
-
-		if !ok {
-			stored = []auth.AuthAccessControl{
-				auth.ToAuthedPermissions(
-					auth.ToAuthedRole(permission.Role), auth.ToAuthedPermission(permission.Permission),
-				),
-			}
+	for _, rac := range roleAccessControls {
+		// 1. Assign to roles map.
+		if _, ok := rolesMap[rac.Role.Role]; !ok {
+			rolesMap[rac.Role.Role] = auth.NewRoleConfig(rac.Role)
 		}
 
-		stored = append(
-			stored,
-			auth.ToAuthedPermissions(
-				auth.ToAuthedRole(permission.Role), auth.ToAuthedPermission(permission.Permission),
-			),
-		)
+		// 2. Check if any value exists for current role
+		resPermsMap, ok := roleResourcesPermissionsMap[rac.Role.Role]
 
-		permissionsMap[permission.Permission.Name] = stored
+		// 3. If not then assign new value with resource and permissions
+		if !ok {
+			resPermsMap := make(auth.ResourcePermissionsMap)
+			permissions := []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)}
+
+			resPermsMap[rac.Resource.Resource] = permissions
+			roleResourcesPermissionsMap[rac.Role.Role] = resPermsMap
+			resourcesPermissionsMap = resPermsMap
+			continue
+		}
+
+		// 4. Check any value exists for current resource
+		permissions, ok := resPermsMap[rac.Resource.Resource]
+
+		// 5. If not then assign new value with permissions
+		if !ok {
+			permissions := []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)}
+
+			resPermsMap[rac.Resource.Resource] = permissions
+			roleResourcesPermissionsMap[rac.Role.Role] = resPermsMap
+			resourcesPermissionsMap = resPermsMap
+			continue
+		}
+
+		// 6. If yes, append new permission to the existing resource.
+		permissions = append(permissions, auth.NewPermissionConfig(rac.Permission))
+		resPermsMap[rac.Resource.Resource] = permissions
+		roleResourcesPermissionsMap[rac.Role.Role] = resPermsMap
+		resourcesPermissionsMap = resPermsMap
 	}
 
-	return permissionsMap, rolesMap
+	return rolesMap, resourcesPermissionsMap, roleResourcesPermissionsMap
 }

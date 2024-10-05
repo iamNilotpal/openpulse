@@ -1,3 +1,14 @@
+-- Enum for role types
+CREATE TYPE IF NOT EXISTS app_role_type AS ENUM (
+  'super_admin',
+  'admin',
+  'team_admin',
+  'team_billing_admin',
+  'team_lead',
+  'team_responder',
+  'team_member',
+);
+
 -- Enum for action types
 CREATE TYPE IF NOT EXISTS permission_action_type AS ENUM ('view', 'create', 'update', 'delete', 'manage');
 
@@ -25,12 +36,38 @@ CREATE TABLE
     id SMALLSERIAL PRIMARY KEY NOT NULL,
     name VARCHAR(80) UNIQUE NOT NULL,
     description TEXT NOT NULL,
+    role app_role_type NOT NULL,
     is_system_role BOOLEAN NOT NULL,
     updated_by BIGINT REFERENCES users (id),
     created_by BIGINT NOT NULL REFERENCES users (id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX (is_system_role)
+    INDEX (is_system_role),
+    INDEX (role_type)
+  );
+
+CREATE TABLE
+  IF NOT EXISTS resources (
+    id SMALLINT PRIMARY KEY NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    resource resource_type NOT NULL,
+    updated_by BIGINT REFERENCES users (id),
+    created_by BIGINT NOT NULL REFERENCES users (id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+
+CREATE TABLE
+  IF NOT EXISTS roles_resources (
+    role_id SMALLINT NOT NULL REFERENCES roles (id),
+    resource_id SMALLINT NOT NULL REFERENCES resources (id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_by BIGINT REFERENCES users (id),
+    created_by BIGINT NOT NULL REFERENCES users (id),
+    PRIMARY KEY (role_id, resource_id),
+    INDEX (role_id)
   );
 
 CREATE TABLE
@@ -39,29 +76,6 @@ CREATE TABLE
     name VARCHAR(80) UNIQUE NOT NULL,
     description TEXT NOT NULL,
     action permission_action_type NOT NULL,
-    updated_by BIGINT REFERENCES users (id),
-    created_by BIGINT NOT NULL REFERENCES users (id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  );
-
-CREATE TABLE
-  IF NOT EXISTS roles_permissions (
-    role_id SMALLINT NOT NULL REFERENCES roles (id),
-    permission_id SMALLINT NOT NULL REFERENCES permissions (id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_by BIGINT REFERENCES users (id),
-    created_by BIGINT NOT NULL REFERENCES users (id),
-    PRIMARY KEY (role_id, permission_id),
-    INDEX (role_id) INCLUDE (permission_id)
-  );
-
-CREATE TABLE
-  IF NOT EXISTS resources (
-    id SMALLINT PRIMARY KEY NOT NULL,
-    display_name VARCHAR(100) NOT NULL,
-    resource resource_type NOT NULL,
     updated_by BIGINT REFERENCES users (id),
     created_by BIGINT NOT NULL REFERENCES users (id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

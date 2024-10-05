@@ -11,7 +11,7 @@ type Repository interface {
 	GetAll(context context.Context) ([]Role, error)
 	QueryById(context context.Context, id int) (Role, error)
 	QueryByName(context context.Context, name string) (Role, error)
-	GetRolesWithPermissions(context context.Context) ([]RoleWithPermission, error)
+	GetRolesResourcesPermissions(context context.Context) ([]RoleAccessControl, error)
 }
 
 type PostgresRepository struct {
@@ -59,17 +59,17 @@ func (r *PostgresRepository) QueryByName(context context.Context, name string) (
 	return FromDBRole(dbRole), nil
 }
 
-func (r *PostgresRepository) GetRolesWithPermissions(context context.Context) (
-	[]RoleWithPermission, error,
+func (r *PostgresRepository) GetRolesResourcesPermissions(context context.Context) (
+	[]RoleAccessControl, error,
 ) {
-	dbRolesWithPermissions, err := r.store.GetRolesWithPermissions(context)
+	dbRolesWithPermissions, err := r.store.GetRolesResourcesPermissions(context)
 	if err != nil {
-		return []RoleWithPermission{}, err
+		return []RoleAccessControl{}, err
 	}
 
-	data := make([]RoleWithPermission, 0, len(dbRolesWithPermissions))
+	data := make([]RoleAccessControl, 0, len(dbRolesWithPermissions))
 	for i, r := range dbRolesWithPermissions {
-		data[i] = FromDBRoleWithPermission(r)
+		data[i] = FromDBRoleAccessControl(r)
 	}
 
 	return data, nil

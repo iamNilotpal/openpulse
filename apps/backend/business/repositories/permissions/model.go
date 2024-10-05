@@ -25,6 +25,11 @@ type Permission struct {
 	UpdatedAt   time.Time
 }
 
+type PermissionAccessConfig struct {
+	Id     int
+	Action PermissionAction
+}
+
 func NewDBPermission(p NewPermission) permissions_store.NewPermission {
 	return permissions_store.NewPermission{
 		Name:        p.Name,
@@ -51,5 +56,12 @@ func FromDBPermission(p permissions_store.Permission) Permission {
 		UpdatedBy: modified_by.New(
 			p.UpdatedBy.Id, p.UpdatedBy.Email, p.UpdatedBy.FirstName, p.UpdatedBy.LastName,
 		),
+	}
+}
+
+func FromDBPermissionAccessDetails(r permissions_store.PermissionAccessConfig) PermissionAccessConfig {
+	return PermissionAccessConfig{
+		Id:     r.Id,
+		Action: ToPermissionAction(r.Action),
 	}
 }

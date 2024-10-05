@@ -3,21 +3,21 @@ package resources
 type ResourceType string
 
 var (
-	ResourceTeams            = "teams"
-	ResourceTeamMembers      = "team_members"
-	ResourceBillings         = "billings"
-	ResourceGlobalAPITokens  = "global_api_tokens"
-	ResourceTeamAPITokens    = "team_api_tokens"
-	ResourceMonitors         = "monitors"
-	ResourceHeartbeats       = "heartbeats"
-	ResourceIntegrations     = "integrations"
-	ResourceIncidents        = "incidents"
-	ResourceInvitations      = "invitations"
-	ResourceStatusPages      = "status_pages"
-	ResourceEscalationPolicy = "escalation_policy"
-	ResourceOnCallCalenders  = "on_call_calenders"
-	ResourceSources          = "sources"
-	ResourceDashboards       = "dashboards"
+	ResourceTeams            ResourceType = "teams"
+	ResourceTeamMembers      ResourceType = "team_members"
+	ResourceBillings         ResourceType = "billings"
+	ResourceGlobalAPITokens  ResourceType = "global_api_tokens"
+	ResourceTeamAPITokens    ResourceType = "team_api_tokens"
+	ResourceMonitors         ResourceType = "monitors"
+	ResourceHeartbeats       ResourceType = "heartbeats"
+	ResourceIntegrations     ResourceType = "integrations"
+	ResourceIncidents        ResourceType = "incidents"
+	ResourceInvitations      ResourceType = "invitations"
+	ResourceStatusPages      ResourceType = "status_pages"
+	ResourceEscalationPolicy ResourceType = "escalation_policy"
+	ResourceOnCallCalenders  ResourceType = "on_call_calenders"
+	ResourceSources          ResourceType = "sources"
+	ResourceDashboards       ResourceType = "dashboards"
 )
 
 func FromResourceType(s ResourceType) string {

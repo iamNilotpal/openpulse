@@ -9,6 +9,7 @@ import (
 type Store interface {
 	Create(context context.Context, nr NewResource) (int, error)
 	QueryById(context context.Context, id int) (Resource, error)
+	QueryAllResourcesWithPermissions(context context.Context) ([]ResourceWithPermission, error)
 }
 
 type postgresStore struct {
@@ -21,11 +22,11 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 
 func (s *postgresStore) Create(context context.Context, nr NewResource) (int, error) {
 	query := `
-		INSERT INTO resources (display_name, resource, created_by)
-		VALUES ($1, $2, $3);
+		INSERT INTO resources (display_name, description, resource, created_by)
+		VALUES ($1, $2, $3, $4);
 	`
 
-	result, err := s.db.ExecContext(context, query, nr.Name, nr.Resource)
+	result, err := s.db.ExecContext(context, query, nr.Name, nr.Description, nr.Resource, nr.CreatorId)
 	if err != nil {
 		return 0, err
 	}
@@ -43,6 +44,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Resource, er
 		SELECT
 			r.id AS resourceId,
 			r.display_name AS resourceName,
+			r.description AS resourceDescription,
 			r.resource AS resource,
 			rcb.id AS resourceAuthorId,
 			rcb.email AS resourceAuthorEmail,
@@ -66,6 +68,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Resource, er
 	if err := s.db.QueryRowContext(context, query, id).Scan(
 		&resource.Id,
 		&resource.Name,
+		&resource.Description,
 		&resource.Resource,
 		&resource.CreatedBy.Id,
 		&resource.CreatedBy.Email,
@@ -82,4 +85,50 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Resource, er
 	}
 
 	return resource, nil
+}
+
+func (s *postgresStore) QueryAllResourcesWithPermissions(context context.Context) (
+	[]ResourceWithPermission, error,
+) {
+	query := `
+		SELECT
+			res.id AS resourceId,
+			res.resource AS resource,
+			pem.id AS permissionId,
+			pem.action AS permissionAction
+		FROM
+			resource_permissions rp
+			JOIN resources res ON res.id = rp.resource_id
+			JOIN permissions pem ON pem.id = rp.permission_id
+		ORDER BY res.id, pem.id;
+	`
+
+	rows, err := s.db.QueryContext(context, query)
+	if err != nil {
+		return []ResourceWithPermission{}, nil
+	}
+
+	defer rows.Close()
+	resourceWithPermissions := make([]ResourceWithPermission, 0)
+
+	for rows.Next() {
+		var rp ResourceWithPermission
+
+		if err := rows.Scan(
+			&rp.Resource.Id,
+			&rp.Resource.Resource,
+			&rp.Permission.Id,
+			&rp.Permission.Action,
+		); err != nil {
+			return []ResourceWithPermission{}, nil
+		}
+
+		resourceWithPermissions = append(resourceWithPermissions, rp)
+	}
+
+	if err = rows.Err(); err != nil {
+		return []ResourceWithPermission{}, nil
+	}
+
+	return resourceWithPermissions, nil
 }

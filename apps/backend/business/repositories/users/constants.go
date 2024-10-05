@@ -9,6 +9,14 @@ var (
 	AccountSuspended AccountStatus = "suspended"
 )
 
+func ToSystemAppearance(s string) SystemAppearance {
+	return SystemAppearance(s)
+}
+
+func FromSystemAppearance(s SystemAppearance) string {
+	return string(s)
+}
+
 var (
 	AppearanceLight  SystemAppearance = "light"
 	AppearanceDark   SystemAppearance = "dark"
@@ -21,12 +29,4 @@ func FromAccountStatus(s AccountStatus) string {
 
 func ToAccountStatus(s string) AccountStatus {
 	return AccountStatus(s)
-}
-
-func ToSystemAppearance(s string) SystemAppearance {
-	return SystemAppearance(s)
-}
-
-func FromSystemAppearance(s SystemAppearance) string {
-	return string(s)
 }
