@@ -3,8 +3,6 @@ package roles
 type AppRole string
 
 var (
-	RoleSuperAdmin       AppRole = "super_admin"
-	RoleAdmin            AppRole = "admin"
 	RoleTeamAdmin        AppRole = "team_admin"
 	RoleTeamBillingAdmin AppRole = "team_billing_admin"
 	RoleTeamLead         AppRole = "team_lead"
