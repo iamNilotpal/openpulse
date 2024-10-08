@@ -14,14 +14,14 @@ import (
 const apiV1 = "/api/v1"
 
 type cfg struct {
-	app                    *web.App
-	auth                   *auth.Auth
-	rolesMap               auth.RoleConfigMap
-	log                    *zap.SugaredLogger
-	repositories           repositories.Repositories
-	config                 *config.OpenpulseApiConfig
-	resourcePermissionsMap auth.ResourcePermissionsMap
-	rolePermissionsMap     auth.RoleResourcesPermissionsMap
+	app                         *web.App
+	auth                        *auth.Auth
+	rolesMap                    auth.RoleConfigMap
+	log                         *zap.SugaredLogger
+	repositories                *repositories.Repositories
+	config                      *config.OpenpulseApiConfig
+	resourcePermissionsMap      auth.ResourcePermissionsMap
+	roleResourcesPermissionsMap auth.RoleResourcesPermissionsMap
 }
 
 func New(
@@ -29,20 +29,20 @@ func New(
 	auth *auth.Auth,
 	log *zap.SugaredLogger,
 	config *config.OpenpulseApiConfig,
-	repositories repositories.Repositories,
+	repositories *repositories.Repositories,
 	rolesMap auth.RoleConfigMap,
 	resourcePermissionsMap auth.ResourcePermissionsMap,
 	rolePermissionsMap auth.RoleResourcesPermissionsMap,
 ) *cfg {
 	return &cfg{
-		app:                    app,
-		log:                    log,
-		auth:                   auth,
-		config:                 config,
-		rolesMap:               rolesMap,
-		repositories:           repositories,
-		rolePermissionsMap:     rolePermissionsMap,
-		resourcePermissionsMap: resourcePermissionsMap,
+		app:                         app,
+		log:                         log,
+		auth:                        auth,
+		config:                      config,
+		rolesMap:                    rolesMap,
+		repositories:                repositories,
+		roleResourcesPermissionsMap: rolePermissionsMap,
+		resourcePermissionsMap:      resourcePermissionsMap,
 	}
 }
 
@@ -53,7 +53,7 @@ func (c *cfg) SetupRoutes() {
 		c.auth,
 		c.rolesMap,
 		c.repositories.Users,
-		c.rolePermissionsMap,
+		c.roleResourcesPermissionsMap,
 	)
 
 	/* Auth Routes - Register, Login */

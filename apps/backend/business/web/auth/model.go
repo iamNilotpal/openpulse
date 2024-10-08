@@ -9,9 +9,10 @@ import (
 )
 
 type Claims struct {
-	RoleId    int
-	UserId    int
-	SessionId int
+	TeamId       int
+	UserId       int
+	RoleId       int
+	SessionToken string
 	jwt.RegisteredClaims
 }
 
