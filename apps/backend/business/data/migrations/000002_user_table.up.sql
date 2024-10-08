@@ -11,28 +11,17 @@ CREATE TABLE
     password_hash BYTEA NOT NULL,
     phone_number VARCHAR(15) UNIQUE,
     avatar_url TEXT,
+    is_verified BOOLEAN NOT NULL,
     account_status user_account_status_type DEFAULT 'active',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  );
-
-ALTER TABLE users
-ADD COLUMN role_id SMALLINT NOT NULL REFERENCES roles (id);
-
-ALTER TABLE users
-ADD COLUMN preference_id BIGINT NOT NULL REFERENCES users_preferences (id);
-
-CREATE TABLE
-  IF NOT EXISTS users_preferences (
-    id BIGSERIAL PRIMARY KEY NOT NULl,
-    user_id BIGINT NOT NULL UNIQUE REFERENCES users (id),
-    appearance system_appearance_type DEFAULT 'system',
+    organization_designation VARCHAR(100),
+    role_id SMALLINT NOT NULL REFERENCES roles (id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
 CREATE TABLE
   IF NOT EXISTS users_access_controls (
+    id BIGSERIAL PRIMARY KEY NOT NULL,
     user_id BIGINT NOT NULL REFERENCES users (id),
     role_id SMALLINT NOT NULL REFERENCES roles (id),
     resource_id SMALLINT NOT NULL REFERENCES resources (id),
@@ -40,8 +29,19 @@ CREATE TABLE
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_by BIGINT NOT NULL REFERENCES users (id),
-    PRIMARY KEY (user_id, role_id, resource_id, permission_id),
-    INDEX (user_id),
-    INDEX (role_id)
+    UNIQUE (user_id, role_id, resource_id, permission_id),
+    INDEX (user_id, role_id)
   );
+
+CREATE TABLE
+  IF NOT EXISTS users_preferences (
+    id BIGSERIAL PRIMARY KEY NOT NULl,
+    user_id BIGINT NOT NULL REFERENCES users (id),
+    appearance system_appearance_type DEFAULT 'system',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id)
+  );
+
+ALTER TABLE users
+ADD COLUMN preference_id BIGINT REFERENCES users_preferences (id);

@@ -108,16 +108,16 @@ func run(log *zap.SugaredLogger) error {
 	// Initialize API support
 	mux := handlers.NewHandler(
 		handlers.HandlerConfig{
-			DB:                     db,
-			Log:                    log,
-			Config:                 cfg,
-			Auth:                   auth,
-			Cache:                  redis,
-			Shutdown:               shutdown,
-			RolesMap:               rolesMap,
-			Repositories:           repositories,
-			ResourcePermissionsMap: resPermissionsMap,
-			RolePermissionsMap:     rolePermissionsMap,
+			DB:                          db,
+			Log:                         log,
+			Config:                      cfg,
+			Auth:                        auth,
+			Cache:                       redis,
+			Shutdown:                    shutdown,
+			RolesMap:                    rolesMap,
+			Repositories:                &repositories,
+			ResourcePermissionsMap:      resPermissionsMap,
+			RoleResourcesPermissionsMap: rolePermissionsMap,
 		},
 	)
 

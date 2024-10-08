@@ -17,16 +17,16 @@ import (
 )
 
 type HandlerConfig struct {
-	DB                     *sqlx.DB
-	Auth                   *auth.Auth
-	Cache                  *redis.Client
-	Shutdown               chan os.Signal
-	Log                    *zap.SugaredLogger
-	RolesMap               auth.RoleConfigMap
-	Repositories           repositories.Repositories
-	Config                 *config.OpenpulseApiConfig
-	ResourcePermissionsMap auth.ResourcePermissionsMap
-	RolePermissionsMap     auth.RoleResourcesPermissionsMap
+	DB                          *sqlx.DB
+	Auth                        *auth.Auth
+	Cache                       *redis.Client
+	Shutdown                    chan os.Signal
+	Log                         *zap.SugaredLogger
+	RolesMap                    auth.RoleConfigMap
+	Repositories                *repositories.Repositories
+	Config                      *config.OpenpulseApiConfig
+	ResourcePermissionsMap      auth.ResourcePermissionsMap
+	RoleResourcesPermissionsMap auth.RoleResourcesPermissionsMap
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
@@ -62,7 +62,7 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 		cfg.Repositories,
 		cfg.RolesMap,
 		cfg.ResourcePermissionsMap,
-		cfg.RolePermissionsMap,
+		cfg.RoleResourcesPermissionsMap,
 	)
 
 	apiV1.SetupRoutes()
