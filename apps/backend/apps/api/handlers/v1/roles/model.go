@@ -3,6 +3,7 @@ package roles_handler
 import "github.com/iamNilotpal/openpulse/business/sys/validate"
 
 type NewAppRole struct {
+	Role        string `validate:"required" json:"role"`
 	Name        string `validate:"required,min=3" json:"name"`
 	Description string `validate:"required,min=10" json:"description"`
 }

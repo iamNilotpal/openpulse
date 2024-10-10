@@ -10,8 +10,7 @@ type Store interface {
 	Create(context context.Context, permission NewRole) (int, error)
 	GetAll(context context.Context) ([]Role, error)
 	QueryById(context context.Context, id int) (Role, error)
-	QueryByName(context context.Context, name string) (Role, error)
-	GetRolesResourcesPermissions(context context.Context) ([]RoleAccessControl, error)
+	GetRolesAccessControl(context context.Context) ([]RoleAccessControl, error)
 }
 
 type postgresStore struct {
@@ -24,13 +23,11 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 
 func (s *postgresStore) Create(context context.Context, nr NewRole) (int, error) {
 	query := `
-		INSERT INTO ROLES (name, description, is_system_role, role, created_by)
+		INSERT INTO ROLES (name, description, is_system_role, role)
 		VALUES ($1, $2, $3, $4, $5) RETURNING id;
 	`
 
-	result, err := s.db.ExecContext(
-		context, query, nr.Name, nr.Description, nr.IsSystemRole, nr.Role, nr.CreatorId,
-	)
+	result, err := s.db.ExecContext(context, query, nr.Name, nr.Description, nr.IsSystemRole, nr.Role)
 	if err != nil {
 		return 0, err
 	}
@@ -51,20 +48,10 @@ func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
 			r.description AS roleDescription,
 			r.is_system_role AS isSystemRole,
 			r.role AS role,
-			rcb.id AS roleAuthorId,
-			rcb.email AS roleAuthorEmail,
-			rcb.first_name AS roleAuthorFirstName,
-			rcb.last_name AS roleAuthorLastName,
-			rub.id AS roleAuthorId,
-			rub.email AS roleAuthorEmail,
-			rub.first_name AS roleUpdaterFirstName,
-			rub.last_name AS roleUpdatedLastName,
 			r.created_at AS roleCreatedAt,
 			r.updated_at AS roleUpdatedAt
 		FROM
 			roles r
-			LEFT JOIN users rcb ON rcb.id = r.created_by
-			LEFT JOIN users rub ON rub.id = r.updated_by;
 	`
 
 	rows, err := s.db.QueryContext(context, query)
@@ -84,14 +71,6 @@ func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
 			&role.Description,
 			&role.IsSystemRole,
 			&role.Role,
-			&role.CreatedBy.Id,
-			&role.CreatedBy.Email,
-			&role.CreatedBy.FirstName,
-			&role.CreatedBy.LastName,
-			&role.UpdatedBy.Id,
-			&role.UpdatedBy.Email,
-			&role.UpdatedBy.FirstName,
-			&role.UpdatedBy.LastName,
 			&role.CreatedAt,
 			&role.UpdatedAt,
 		); err != nil {
@@ -117,20 +96,10 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Role, error)
 			r.description AS roleDescription,
 			r.is_system_role AS isSystemRole,
 			r.role AS role,
-			rcb.id AS roleAuthorId,
-			rcb.email AS roleAuthorEmail,
-			rcb.first_name AS roleAuthorFirstName,
-			rcb.last_name AS roleAuthorLastName,
-			rub.id AS roleAuthorId,
-			rub.email AS roleAuthorEmail,
-			rub.first_name AS roleUpdaterFirstName,
-			rub.last_name AS roleUpdatedLastName,
 			r.created_at AS roleCreatedAt,
 			r.updated_at AS roleUpdatedAt
 		FROM
 			roles r
-			LEFT JOIN users rcb ON rcb.id = r.created_by
-			LEFT JOIN users rub ON rub.id = r.updated_by
 		WHERE
 			r.id = $1;
 	`
@@ -141,14 +110,6 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Role, error)
 		&role.Description,
 		&role.IsSystemRole,
 		&role.Role,
-		&role.CreatedBy.Id,
-		&role.CreatedBy.Email,
-		&role.CreatedBy.FirstName,
-		&role.CreatedBy.LastName,
-		&role.UpdatedBy.Id,
-		&role.UpdatedBy.Email,
-		&role.UpdatedBy.FirstName,
-		&role.UpdatedBy.LastName,
 		&role.CreatedAt,
 		&role.UpdatedAt,
 	); err != nil {
@@ -158,59 +119,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Role, error)
 	return role, nil
 }
 
-func (s *postgresStore) QueryByName(context context.Context, name string) (Role, error) {
-	var role Role
-	query := `
-		SELECT
-			r.id AS roleId,
-			r.name AS roleName,
-			r.description AS roleDescription,
-			r.is_system_role AS isSystemRole,
-			r.role AS role,
-			rcb.id AS roleAuthorId,
-			rcb.email AS roleAuthorEmail,
-			rcb.first_name AS roleAuthorFirstName,
-			rcb.last_name AS roleAuthorLastName,
-			rub.id AS roleAuthorId,
-			rub.email AS roleAuthorEmail,
-			rub.first_name AS roleUpdaterFirstName,
-			rub.last_name AS roleUpdatedLastName,
-			r.created_at AS roleCreatedAt,
-			r.updated_at AS roleUpdatedAt
-		FROM
-			roles r
-			LEFT JOIN users rcb ON rcb.id = r.created_by
-			LEFT JOIN users rub ON rub.id = r.updated_by
-		WHERE
-			r.name = $1;
-	`
-
-	if err := s.db.QueryRowContext(context, query, name).Scan(
-		&role.Id,
-		&role.Name,
-		&role.Description,
-		&role.IsSystemRole,
-		&role.Role,
-		&role.CreatedBy.Id,
-		&role.CreatedBy.Email,
-		&role.CreatedBy.FirstName,
-		&role.CreatedBy.LastName,
-		&role.UpdatedBy.Id,
-		&role.UpdatedBy.Email,
-		&role.UpdatedBy.FirstName,
-		&role.UpdatedBy.LastName,
-		&role.CreatedAt,
-		&role.UpdatedAt,
-	); err != nil {
-		return Role{}, err
-	}
-
-	return role, nil
-}
-
-func (s *postgresStore) GetRolesResourcesPermissions(context context.Context) (
-	[]RoleAccessControl, error,
-) {
+func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]RoleAccessControl, error) {
 	query := `
 		SELECT
 			ro.id AS roleId,

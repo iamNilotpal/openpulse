@@ -3,12 +3,10 @@ package permissions
 import (
 	"time"
 
-	modified_by "github.com/iamNilotpal/openpulse/business/data/modified-by"
 	permissions_store "github.com/iamNilotpal/openpulse/business/repositories/permissions/stores/postgres"
 )
 
 type NewPermission struct {
-	CreatorId   int
 	Name        string
 	Description string
 	Action      PermissionAction
@@ -19,8 +17,6 @@ type Permission struct {
 	Name        string
 	Description string
 	Action      PermissionAction
-	CreatedBy   modified_by.ModifiedBy
-	UpdatedBy   modified_by.ModifiedBy
 	CreateAt    time.Time
 	UpdatedAt   time.Time
 }
@@ -33,9 +29,8 @@ type PermissionAccessConfig struct {
 func NewDBPermission(p NewPermission) permissions_store.NewPermission {
 	return permissions_store.NewPermission{
 		Name:        p.Name,
-		CreatorId:   p.CreatorId,
 		Description: p.Description,
-		Action:      FromPermissionAction(p.Action),
+		Action:      ParseAction(p.Action),
 	}
 }
 
@@ -49,19 +44,10 @@ func FromDBPermission(p permissions_store.Permission) Permission {
 		CreateAt:    createdAt,
 		UpdatedAt:   updatedAt,
 		Description: p.Description,
-		Action:      ToPermissionAction(p.Action),
-		CreatedBy: modified_by.New(
-			p.CreatedBy.Id, p.CreatedBy.Email, p.CreatedBy.FirstName, p.CreatedBy.LastName,
-		),
-		UpdatedBy: modified_by.New(
-			p.UpdatedBy.Id, p.UpdatedBy.Email, p.UpdatedBy.FirstName, p.UpdatedBy.LastName,
-		),
+		Action:      ParseActionInt(p.Action),
 	}
 }
 
 func FromDBPermissionAccessDetails(r permissions_store.PermissionAccessConfig) PermissionAccessConfig {
-	return PermissionAccessConfig{
-		Id:     r.Id,
-		Action: ToPermissionAction(r.Action),
-	}
+	return PermissionAccessConfig{Id: r.Id, Action: ParseActionInt(r.Action)}
 }

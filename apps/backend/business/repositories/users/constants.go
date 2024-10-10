@@ -1,7 +1,6 @@
 package users
 
 type AccountStatus string
-type SystemAppearance string
 
 const (
 	AccountActiveInt int = iota + 1
@@ -39,16 +38,18 @@ func ParseStatusInt(v int) AccountStatus {
 	return accountStatus[v]
 }
 
+type SystemAppearance string
+
 const (
 	AppearanceLight  SystemAppearance = "light"
 	AppearanceDark   SystemAppearance = "dark"
 	AppearanceSystem SystemAppearance = "suspended"
 )
 
-func ToSystemAppearance(s string) SystemAppearance {
+func ParseAppearanceString(s string) SystemAppearance {
 	return SystemAppearance(s)
 }
 
-func FromSystemAppearance(s SystemAppearance) string {
+func ParseAppearance(s SystemAppearance) string {
 	return string(s)
 }

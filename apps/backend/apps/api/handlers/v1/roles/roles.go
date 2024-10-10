@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
-	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jackc/pgerrcode"
@@ -25,11 +24,20 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	claims := auth.GetClaims(r.Context())
+	ro, err := roles.ParseRoleString(role.Role)
+	if err != nil {
+		return err
+	}
 
 	id, err := h.roles.Create(
-		r.Context(), roles.ConstructRole(role.Name, role.Description, claims.UserId, false),
+		r.Context(), roles.NewRole{
+			Role:         ro,
+			IsSystemRole: true,
+			Name:         role.Name,
+			Description:  role.Description,
+		},
 	)
+
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err.Code == pgerrcode.UniqueViolation {

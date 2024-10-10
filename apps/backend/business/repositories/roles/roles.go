@@ -7,11 +7,10 @@ import (
 )
 
 type Repository interface {
-	Create(context context.Context, permission NewRole) (int, error)
+	Create(context context.Context, nr NewRole) (int, error)
 	GetAll(context context.Context) ([]Role, error)
 	QueryById(context context.Context, id int) (Role, error)
-	QueryByName(context context.Context, name string) (Role, error)
-	GetRolesResourcesPermissions(context context.Context) ([]RoleAccessControl, error)
+	GetRolesAccessControl(context context.Context) ([]RoleAccessControl, error)
 }
 
 type PostgresRepository struct {
@@ -50,19 +49,10 @@ func (r *PostgresRepository) QueryById(context context.Context, id int) (Role, e
 	return FromDBRole(dbRole), nil
 }
 
-func (r *PostgresRepository) QueryByName(context context.Context, name string) (Role, error) {
-	dbRole, err := r.store.QueryByName(context, name)
-	if err != nil {
-		return Role{}, err
-	}
-
-	return FromDBRole(dbRole), nil
-}
-
-func (r *PostgresRepository) GetRolesResourcesPermissions(context context.Context) (
+func (r *PostgresRepository) GetRolesAccessControl(context context.Context) (
 	[]RoleAccessControl, error,
 ) {
-	dbRolesWithPermissions, err := r.store.GetRolesResourcesPermissions(context)
+	dbRolesWithPermissions, err := r.store.GetRolesAccessControl(context)
 	if err != nil {
 		return []RoleAccessControl{}, err
 	}

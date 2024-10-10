@@ -51,7 +51,7 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	adminRole := h.rolesMap[roles.RoleTeamAdmin]
+	adminRole := h.rolesMap[roles.RoleTeamAdminString]
 	userId, err := h.usersRepo.Create(
 		r.Context(),
 		users.NewUser{

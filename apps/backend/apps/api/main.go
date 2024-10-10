@@ -102,7 +102,7 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// Get roles with permissions
-	permissions, err := rolesRepo.GetRolesResourcesPermissions(context.Background())
+	permissions, err := rolesRepo.GetRolesAccessControl(context.Background())
 	if err != nil {
 		return err
 	}

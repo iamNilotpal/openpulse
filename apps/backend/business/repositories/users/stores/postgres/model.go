@@ -16,7 +16,7 @@ type User struct {
 	Email         string
 	Phone         string
 	AvatarUrl     string
-	AccountStatus string
+	AccountStatus int
 	Preference    Preference
 	Resources     []ResourcePermission
 	CreatedAt     string
@@ -33,24 +33,24 @@ type Preference struct {
 type Role struct {
 	Id           int
 	IsSystemRole bool
+	Role         int
 	Name         string
 	Description  string
-	Role         string
 }
 
 type Resource struct {
 	Id          int
+	Resource    int
 	Name        string
 	Description string
-	Resource    string
 }
 
 type Permission struct {
 	Id          int
+	Action      int
 	Enabled     bool
 	Name        string
 	Description string
-	Action      string
 }
 
 type ResourcePermission struct {
