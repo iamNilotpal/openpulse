@@ -6,7 +6,6 @@ type NewUser struct {
 	LastName     string
 	Email        string
 	PasswordHash []byte
-	AvatarUrl    string
 }
 
 type User struct {

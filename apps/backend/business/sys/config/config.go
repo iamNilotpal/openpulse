@@ -43,14 +43,22 @@ type Cache struct {
 	Password string
 }
 
-type OpenpulseApiConfig struct {
+type Email struct {
+	Issuer       string
+	Secret       string
+	Audience     string
+	TokenExpTime time.Duration
+}
+
+type OpenpulseAPIConfig struct {
 	DB    DB
 	Web   Web
 	Auth  Auth
 	Cache Cache
+	Email Email
 }
 
-func NewOpenpulseConfig() *OpenpulseApiConfig {
+func NewOpenpulseConfig() *OpenpulseAPIConfig {
 	webReadTimeOut, err := time.ParseDuration(GetEnvString("WEB_READ_TIMEOUT", "10s"))
 	if err != nil {
 		webReadTimeOut = time.Second * 5
@@ -81,10 +89,15 @@ func NewOpenpulseConfig() *OpenpulseApiConfig {
 		refreshTokenExp = time.Hour * 2190
 	}
 
+	emailTokenExpTime, err := time.ParseDuration(GetEnvString("EMAIL_TOKEN_EXPIRATION_TIME", "1800s"))
+	if err != nil {
+		emailTokenExpTime = time.Second * 1800
+	}
+
 	origins := GetEnvString("ALLOWED_ORIGINS", "http://localhost:3000")
 	allowedOrigins := strings.Split(origins, ",")
 
-	return &OpenpulseApiConfig{
+	return &OpenpulseAPIConfig{
 		DB: DB{
 			MaxIdleConns: GetEnvInt("DB_MAX_IDLE_CONN", 5),
 			MaxOpenConns: GetEnvInt("DB_MAX_OPEN_CONN", 20),
@@ -122,6 +135,12 @@ func NewOpenpulseConfig() *OpenpulseApiConfig {
 			RefreshTokenSecret: GetEnvString(
 				"REFRESH_TOKEN_SECRET", "92c3ba3f929dc49a3468c0ff6b7340997c04d522af3a5216f43d71a3b5c97788c64484",
 			),
+		},
+		Email: Email{
+			TokenExpTime: emailTokenExpTime,
+			Issuer:       GetEnvString("EMAIL_ISSUER", ""),
+			Secret:       GetEnvString("EMAIL_SECRET", ""),
+			Audience:     GetEnvString("EMAIL_AUDIENCE", ""),
 		},
 	}
 }

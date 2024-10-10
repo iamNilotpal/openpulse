@@ -10,7 +10,7 @@ import (
 
 type Options struct {
 	Strict              bool
-	RequiredRole        auth.RoleConfig
+	RequiredRoles       []auth.RoleConfig
 	RequiredPermissions []auth.PermissionConfig
 }
 
@@ -21,7 +21,7 @@ func Authorize(options Options) func(http.Handler) http.Handler {
 			userResources := auth.GetResourcesMap(r.Context())
 
 			if len(userResources) == 0 ||
-				!auth.CheckRoleAccessControl(options.RequiredRole, userRole) {
+				!auth.CheckRoleAccessControl(options.RequiredRoles, userRole) {
 				web.Error(
 					w,
 					http.StatusForbidden,
