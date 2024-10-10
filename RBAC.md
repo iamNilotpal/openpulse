@@ -22,9 +22,9 @@ The **Organization Admin** role is the top-level administrator with full access 
 - Defining global API tokens and monitoring solutions.
 - Managing security levels, escalations, and on-call scheduling for all teams.
 
-### 2. **Admin**
+### 2. **Team Admin**
 
-The **Admin** role shares most responsibilities with the Org Admin, but with a focus on team-level management and more granular control over specific resources.
+The **Team Admin** role shares most responsibilities with the Org Admin, but with a focus on team-level management and more granular control over specific resources.
 
 - **Permissions**: Similar to Org Admin, with full access to create, view, update, delete, and manage resources at both the organizational and team levels.
 - **Resources**: Admins can control billing, dashboards, global API tokens, heartbeats, incidents, integrations, monitors, on-call calendars, escalation policies, security levels, sources, status pages, team members, teams, and overall organizational settings.
@@ -117,7 +117,7 @@ The `update` action allows users to **modify existing resources**. This permissi
 
 The `delete` action grants the ability to **remove resources** from the system. This is a powerful permission that should be carefully assigned, as it involves the permanent removal of data or configurations.
 
-- **Example**: An **Admin** with `delete` permissions on **team members** can remove individuals from the organization or a team, effectively revoking their access to all associated resources.
+- **Example**: An **Team Admin** with `delete` permissions on **team members** can remove individuals from the organization or a team, effectively revoking their access to all associated resources.
 
 ### 5. **Manage**
 
@@ -171,7 +171,7 @@ Monitors are used to track the performance and availability of services or appli
 
 Heartbeats are periodic checks that ensure a system or service is running as expected. If a heartbeat check fails, it can trigger an alert, signaling potential downtime. Managing heartbeats is critical for ensuring system uptime.
 
-- **Example**: An **Admin** can configure how often heartbeats check for system health and what actions to take if a service is unresponsive.
+- **Example**: An **Team Admin** can configure how often heartbeats check for system health and what actions to take if a service is unresponsive.
 
 ### 8. **Integrations**
 
@@ -195,7 +195,7 @@ Invitations allow new users to join teams or the organization. Permissions to ma
 
 Status pages provide real-time or historical updates on the health and availability of services. These are often publicly accessible and used to inform users of any ongoing issues.
 
-- **Example**: An **Admin** can configure a status page to display the current state of the organization’s services and past incidents.
+- **Example**: An **Team Admin** can configure a status page to display the current state of the organization’s services and past incidents.
 
 ### 12. **Escalation Policies**
 
