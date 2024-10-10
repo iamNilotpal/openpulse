@@ -3,6 +3,8 @@ package v1
 import (
 	"github.com/go-chi/chi/v5"
 	auth_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/auth"
+	invitations_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/invitations"
+	onboarding_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/onboarding"
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
@@ -13,52 +15,33 @@ import (
 
 const apiV1 = "/api/v1"
 
-type cfg struct {
-	app                         *web.App
-	auth                        *auth.Auth
-	rolesMap                    auth.RoleConfigMap
-	log                         *zap.SugaredLogger
-	repositories                *repositories.Repositories
-	config                      *config.OpenpulseApiConfig
-	resourcePermissionsMap      auth.ResourcePermissionsMap
-	roleResourcesPermissionsMap auth.RoleResourcesPermissionsMap
+type Config struct {
+	App                         *web.App
+	Auth                        *auth.Auth
+	Log                         *zap.SugaredLogger
+	Repositories                *repositories.Repositories
+	APIConfig                   *config.OpenpulseAPIConfig
+	RolesMap                    auth.RoleConfigMap
+	ResourcePermissionsMap      auth.ResourcePermissionsMap
+	RoleResourcesPermissionsMap auth.RoleResourcesPermissionsMap
 }
 
-func New(
-	app *web.App,
-	auth *auth.Auth,
-	log *zap.SugaredLogger,
-	config *config.OpenpulseApiConfig,
-	repositories *repositories.Repositories,
-	rolesMap auth.RoleConfigMap,
-	resourcePermissionsMap auth.ResourcePermissionsMap,
-	rolePermissionsMap auth.RoleResourcesPermissionsMap,
-) *cfg {
-	return &cfg{
-		app:                         app,
-		log:                         log,
-		auth:                        auth,
-		config:                      config,
-		rolesMap:                    rolesMap,
-		repositories:                repositories,
-		roleResourcesPermissionsMap: rolePermissionsMap,
-		resourcePermissionsMap:      resourcePermissionsMap,
-	}
-}
+func SetupRoutes(cfg Config) {
+	errorMiddleware := middlewares.ErrorResponder(cfg.Log)
 
-func (c *cfg) SetupRoutes() {
-	errorMiddleware := middlewares.ErrorResponder(c.log)
-	authHandler := auth_handlers.New(
-		c.config.Auth,
-		c.auth,
-		c.rolesMap,
-		c.repositories.Users,
-		c.roleResourcesPermissionsMap,
-	)
+	authHandler := auth_handlers.New(auth_handlers.Config{Auth: cfg.Auth})
+	onboardingHandler := onboarding_handlers.New(onboarding_handlers.Config{})
+	invitationHandler := invitations_handlers.New(invitations_handlers.Config{})
 
-	/* Auth Routes - Register, Login */
-	c.app.Route(apiV1, func(r chi.Router) {
+	cfg.App.Route(apiV1, func(r chi.Router) {
 		r.Post("/auth/register", errorMiddleware(authHandler.Register))
 		r.Post("/auth/login", errorMiddleware(authHandler.Login))
+
+	})
+
+	cfg.App.Route(apiV1, func(r chi.Router) {
+		r.Post("/onboard/organization", errorMiddleware(onboardingHandler.SaveOrganizationDetails))
+		r.Post("/onboard/team", errorMiddleware(onboardingHandler.SaveTeamDetails))
+		r.Post("/onboard/invite", errorMiddleware(invitationHandler.InviteMembers))
 	})
 }

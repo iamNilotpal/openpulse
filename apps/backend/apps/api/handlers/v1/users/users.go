@@ -27,5 +27,5 @@ func (h *handler) QueryById(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return web.Success(w, http.StatusOK, user)
+	return web.Success(w, http.StatusOK, "", user)
 }

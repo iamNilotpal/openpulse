@@ -13,14 +13,19 @@ import (
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	permissions_store "github.com/iamNilotpal/openpulse/business/repositories/permissions/stores/postgres"
+	"github.com/iamNilotpal/openpulse/business/repositories/resources"
+	resources_store "github.com/iamNilotpal/openpulse/business/repositories/resources/store/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
 	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/postgres"
+	"github.com/iamNilotpal/openpulse/business/repositories/teams"
+	teams_store "github.com/iamNilotpal/openpulse/business/repositories/teams/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/sys/cache"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
+	"github.com/iamNilotpal/openpulse/business/web/email"
 	"github.com/iamNilotpal/openpulse/foundation/logger"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -74,23 +79,31 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// Initialize repositories
+	teamsStore := teams_store.NewPostgresStore(db)
+	teamsRepo := teams.NewRepository(teamsStore)
+
 	usersStore := users_store.NewPostgresStore(db)
-	usersRepository := users.NewPostgresRepository(usersStore)
+	usersRepo := users.NewPostgresRepository(usersStore)
 
 	rolesStore := roles_store.NewPostgresStore(db)
-	rolesRepository := roles.NewPostgresRepository(rolesStore)
+	rolesRepo := roles.NewPostgresRepository(rolesStore)
+
+	resourceStore := resources_store.NewPostgresStore(db)
+	resourceRepo := resources.NewPostgresRepository(resourceStore)
 
 	permissionsStore := permissions_store.NewPostgresStore(db)
-	permissionsRepository := permissions.NewPostgresRepository(permissionsStore)
+	permissionsRepo := permissions.NewPostgresRepository(permissionsStore)
 
 	repositories := repositories.Repositories{
-		Users:       usersRepository,
-		Roles:       rolesRepository,
-		Permissions: permissionsRepository,
+		Teams:       teamsRepo,
+		Users:       usersRepo,
+		Roles:       rolesRepo,
+		Resources:   resourceRepo,
+		Permissions: permissionsRepo,
 	}
 
 	// Get roles with permissions
-	permissions, err := rolesRepository.GetRolesResourcesPermissions(context.Background())
+	permissions, err := rolesRepo.GetRolesResourcesPermissions(context.Background())
 	if err != nil {
 		return err
 	}
@@ -99,7 +112,10 @@ func run(log *zap.SugaredLogger) error {
 	rolesMap, resPermissionsMap, rolePermissionsMap := buildRBACMaps(permissions)
 
 	// Initialize authentication support
-	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepository})
+	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepo})
+
+	// Initialize Email service support
+	emailService := email.New(email.Config{Cfg: cfg.Email, Logger: log})
 
 	// Shutdown Signals
 	shutdown := make(chan os.Signal, 1)
@@ -110,17 +126,19 @@ func run(log *zap.SugaredLogger) error {
 		handlers.HandlerConfig{
 			DB:                          db,
 			Log:                         log,
-			Config:                      cfg,
+			APIConfig:                   cfg,
 			Auth:                        auth,
 			Cache:                       redis,
 			Shutdown:                    shutdown,
 			RolesMap:                    rolesMap,
+			EmailService:                emailService,
 			Repositories:                &repositories,
 			ResourcePermissionsMap:      resPermissionsMap,
 			RoleResourcesPermissionsMap: rolePermissionsMap,
 		},
 	)
 
+	serverErrors := make(chan error, 1)
 	api := http.Server{
 		Handler:      mux,
 		Addr:         cfg.Web.APIHost,
@@ -129,8 +147,6 @@ func run(log *zap.SugaredLogger) error {
 		WriteTimeout: cfg.Web.WriteTimeout,
 		ErrorLog:     zap.NewStdLog(log.Desugar()),
 	}
-
-	serverErrors := make(chan error, 1)
 
 	go func() {
 		log.Infow("Server Listening", "address", api.Addr)
