@@ -89,13 +89,19 @@ list:
 # Migration Support
 
 create-migration:
-	@migrate create -ext sql -dir $(MIGRATIONS_PATH) -seq $(filter-out $@,$(MAKECMDGOALS))
+	@echo "🚀🚀🚀 Creating Migration Files... 🚀🚀🚀"
+	@migrate create -ext sql -dir $(DB_MIGRATIONS_PATH) -seq $(filter-out $@,$(MAKECMDGOALS))
+	@echo "🚀🚀🚀 Migration Files Created... 🚀🚀🚀"
 
 migrate-up:
-	@migrate -database $(DATABASE_URL) -path $(MIGRATIONS_PATH) up
+	@echo "🚀🚀🚀 Starting Migration... 🚀🚀🚀"
+	@migrate -database $(DATABASE_URL) -path $(DB_MIGRATIONS_PATH) up
+	@echo "🚀🚀🚀 Migration Completed 🚀🚀🚀"
 
 migrate-down:
-	@migrate -database $(DATABASE_URL) -path $(MIGRATIONS_PATH) down
+	@echo "🚀🚀🚀 Downgrading Migration... 🚀🚀🚀"
+	@migrate -database $(DATABASE_URL) -path $(DB_MIGRATIONS_PATH) down
+	@echo "🚀🚀🚀 Migration Downgraded 🚀🚀🚀"
 
 # ==============================================================================
 # Run application locally
