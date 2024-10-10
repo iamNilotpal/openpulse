@@ -24,7 +24,7 @@ func Authenticate(
 					web.Error(
 						w,
 						authErr.Status,
-						web.CreateAPIError(authErr.Error(), errors.FromErrorCode(authErr.Code), nil),
+						web.NewAPIError(authErr.Error(), errors.FromErrorCode(authErr.Code), nil),
 					)
 					return
 				}
@@ -32,7 +32,7 @@ func Authenticate(
 				web.Error(
 					w,
 					http.StatusInternalServerError,
-					web.CreateAPIError(
+					web.NewAPIError(
 						http.StatusText(http.StatusInternalServerError),
 						errors.FromErrorCode(errors.InternalServerError),
 						nil,
@@ -46,7 +46,7 @@ func Authenticate(
 				web.Error(
 					w,
 					http.StatusUnauthorized,
-					web.CreateAPIError(
+					web.NewAPIError(
 						http.StatusText(http.StatusUnauthorized),
 						errors.FromErrorCode(errors.Unauthorized),
 						nil,
@@ -60,7 +60,7 @@ func Authenticate(
 				web.Error(
 					w,
 					http.StatusUnauthorized,
-					web.CreateAPIError(
+					web.NewAPIError(
 						http.StatusText(http.StatusUnauthorized),
 						errors.FromErrorCode(errors.Unauthorized),
 						nil,
@@ -71,7 +71,7 @@ func Authenticate(
 
 			role := user.Role
 			resources := user.Resources
-			userResourcesMap := make(auth.UserResourcePermissionsMap)
+			userResourcesMap := make(auth.UserAccessControlMap)
 
 			for _, resource := range resources {
 				val, ok := userResourcesMap[resource.Resource.Resource]

@@ -35,14 +35,14 @@ func GetRole(ctx context.Context) UserRoleConfig {
 	return v
 }
 
-func SetResourcesMap(ctx context.Context, resPermissions UserResourcePermissionsMap) context.Context {
+func SetResourcesMap(ctx context.Context, resPermissions UserAccessControlMap) context.Context {
 	return context.WithValue(ctx, resourcesKey, resPermissions)
 }
 
-func GetResourcesMap(ctx context.Context) UserResourcePermissionsMap {
-	v, ok := ctx.Value(resourcesKey).(UserResourcePermissionsMap)
+func GetResourcesMap(ctx context.Context) UserAccessControlMap {
+	v, ok := ctx.Value(resourcesKey).(UserAccessControlMap)
 	if !ok {
-		return UserResourcePermissionsMap{}
+		return UserAccessControlMap{}
 	}
 
 	return v

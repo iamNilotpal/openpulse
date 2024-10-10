@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"net/url"
 	"time"
 
@@ -41,7 +43,7 @@ func Open(cfg config.DB) (*sqlx.DB, error) {
 // StatusCheck returns nil if it can successfully talk to the database. It
 // returns a non-nil error otherwise.
 func StatusCheck(ctx context.Context, db *sqlx.DB) error {
-	// If the user doesn't give us a deadline set 2 second.
+	// If the user doesn't give us a deadline set 10 seconds.
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, time.Second*10)
@@ -87,4 +89,25 @@ func BuildQueryParams[T any](data []T, format func(index int, isLast bool, val T
 	}
 
 	return params
+}
+
+func WithTx(
+	context context.Context, db *sqlx.DB, opts *sql.TxOptions, fn func(tx *sqlx.Tx) error,
+) error {
+	tx, err := db.BeginTxx(context, opts)
+	if err != nil {
+		return err
+	}
+
+	err = fn(tx)
+	if err == nil {
+		return tx.Commit()
+	}
+
+	rollbackErr := tx.Rollback()
+	if rollbackErr != nil {
+		return errors.Join(err, rollbackErr)
+	}
+
+	return err
 }

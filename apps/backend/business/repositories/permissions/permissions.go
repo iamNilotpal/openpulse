@@ -11,20 +11,20 @@ type Repository interface {
 	QueryById(context context.Context, id int) (Permission, error)
 }
 
-type PostgresRepository struct {
+type postgresRepository struct {
 	s permissions_store.Store
 }
 
-func NewPostgresRepository(store permissions_store.Store) *PostgresRepository {
-	return &PostgresRepository{s: store}
+func NewPostgresRepository(store permissions_store.Store) *postgresRepository {
+	return &postgresRepository{s: store}
 }
 
-func (r *PostgresRepository) Create(context context.Context, permission NewPermission) (int, error) {
+func (r *postgresRepository) Create(context context.Context, permission NewPermission) (int, error) {
 	id, err := r.s.Create(context, NewDBPermission(permission))
 	return id, err
 }
 
-func (r *PostgresRepository) QueryById(context context.Context, id int) (Permission, error) {
+func (r *postgresRepository) QueryById(context context.Context, id int) (Permission, error) {
 	permission, err := r.s.QueryById(context, id)
 	if err != nil {
 		return Permission{}, nil

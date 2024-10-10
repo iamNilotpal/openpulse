@@ -10,31 +10,36 @@ import (
 	"github.com/lib/pq"
 )
 
+type Config struct {
+	Roles roles.Repository
+}
+
 type handler struct {
 	roles roles.Repository
 }
 
-func New(rolesRepo roles.Repository) *handler {
-	return &handler{roles: rolesRepo}
+func New(cfg Config) *handler {
+	return &handler{roles: cfg.Roles}
 }
 
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
-	var role NewAppRole
-	if err := web.Decode(r, &role); err != nil {
+	var payload NewRole
+	if err := web.Decode(r, &payload); err != nil {
 		return err
 	}
 
-	ro, err := roles.ParseRoleString(role.Role)
+	appRole, err := roles.ParseRoleString(payload.Role)
 	if err != nil {
 		return err
 	}
 
 	id, err := h.roles.Create(
-		r.Context(), roles.NewRole{
-			Role:         ro,
+		r.Context(),
+		roles.NewRole{
 			IsSystemRole: true,
-			Name:         role.Name,
-			Description:  role.Description,
+			Role:         appRole,
+			Name:         payload.Name,
+			Description:  payload.Description,
 		},
 	)
 

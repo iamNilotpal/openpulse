@@ -28,7 +28,7 @@ type HandlerConfig struct {
 	APIConfig                   *config.OpenpulseAPIConfig
 	RolesMap                    auth.RoleConfigMap
 	ResourcePermissionsMap      auth.ResourcePermissionsMap
-	RoleResourcesPermissionsMap auth.RoleResourcesPermissionsMap
+	RoleResourcesPermissionsMap auth.RoleAccessControlMap
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
@@ -56,17 +56,19 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 		middleware.Recoverer,
 	)
 
-	v1.SetupRoutes(v1.Config{
-		App:                         app,
-		Log:                         cfg.Log,
-		Auth:                        cfg.Auth,
-		APIConfig:                   cfg.APIConfig,
-		EmailService:                cfg.EmailService,
-		Repositories:                cfg.Repositories,
-		RolesMap:                    cfg.RolesMap,
-		ResourcePermissionsMap:      cfg.ResourcePermissionsMap,
-		RoleResourcesPermissionsMap: cfg.RoleResourcesPermissionsMap,
-	})
+	v1.SetupRoutes(
+		v1.Config{
+			App:                         app,
+			Log:                         cfg.Log,
+			Auth:                        cfg.Auth,
+			APIConfig:                   cfg.APIConfig,
+			EmailService:                cfg.EmailService,
+			Repositories:                cfg.Repositories,
+			RolesMap:                    cfg.RolesMap,
+			ResourcePermissionsMap:      cfg.ResourcePermissionsMap,
+			RoleResourcesPermissionsMap: cfg.RoleResourcesPermissionsMap,
+		},
+	)
 
 	return app
 }

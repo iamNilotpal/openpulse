@@ -10,12 +10,12 @@ import (
 type AppRole string
 
 const (
-	RoleOrgAdminString         AppRole = "org_admin"
-	RoleTeamAdminString        AppRole = "team_admin"
-	RoleTeamBillingAdminString AppRole = "team_billing_admin"
-	RoleTeamLeadString         AppRole = "team_lead"
-	RoleTeamResponderString    AppRole = "team_responder"
-	RoleTeamMemberString       AppRole = "team_member"
+	RoleOrgAdmin         AppRole = "org_admin"
+	RoleTeamAdmin        AppRole = "team_admin"
+	RoleTeamBillingAdmin AppRole = "team_billing_admin"
+	RoleTeamLead         AppRole = "team_lead"
+	RoleTeamResponder    AppRole = "team_responder"
+	RoleTeamMember       AppRole = "team_member"
 )
 
 const (
@@ -28,30 +28,30 @@ const (
 )
 
 var roles = []AppRole{
-	RoleOrgAdminString,
-	RoleTeamLeadString,
-	RoleTeamAdminString,
-	RoleTeamMemberString,
-	RoleTeamResponderString,
-	RoleTeamBillingAdminString,
+	RoleOrgAdmin,
+	RoleTeamLead,
+	RoleTeamAdmin,
+	RoleTeamMember,
+	RoleTeamResponder,
+	RoleTeamBillingAdmin,
 }
 
 var roleMapping = map[AppRole]int{
-	RoleOrgAdminString:         RoleOrgAdminInt,
-	RoleTeamAdminString:        RoleTeamAdminInt,
-	RoleTeamBillingAdminString: RoleTeamBillingAdminInt,
-	RoleTeamLeadString:         RoleTeamLeadInt,
-	RoleTeamResponderString:    RoleTeamResponderInt,
-	RoleTeamMemberString:       RoleTeamMemberInt,
+	RoleOrgAdmin:         RoleOrgAdminInt,
+	RoleTeamAdmin:        RoleTeamAdminInt,
+	RoleTeamBillingAdmin: RoleTeamBillingAdminInt,
+	RoleTeamLead:         RoleTeamLeadInt,
+	RoleTeamResponder:    RoleTeamResponderInt,
+	RoleTeamMember:       RoleTeamMemberInt,
 }
 
 var roleMappingReverse = map[int]AppRole{
-	RoleOrgAdminInt:         RoleOrgAdminString,
-	RoleTeamAdminInt:        RoleTeamAdminString,
-	RoleTeamBillingAdminInt: RoleTeamBillingAdminString,
-	RoleTeamLeadInt:         RoleTeamLeadString,
-	RoleTeamResponderInt:    RoleTeamResponderString,
-	RoleTeamMemberInt:       RoleTeamMemberString,
+	RoleOrgAdminInt:         RoleOrgAdmin,
+	RoleTeamAdminInt:        RoleTeamAdmin,
+	RoleTeamBillingAdminInt: RoleTeamBillingAdmin,
+	RoleTeamLeadInt:         RoleTeamLead,
+	RoleTeamResponderInt:    RoleTeamResponder,
+	RoleTeamMemberInt:       RoleTeamMember,
 }
 
 func ParseRoleString(s string) (AppRole, error) {

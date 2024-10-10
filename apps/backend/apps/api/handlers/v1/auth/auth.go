@@ -22,7 +22,7 @@ type Config struct {
 	AuthCfg                     *config.Auth
 	UsersRepo                   users.Repository
 	RolesMap                    auth.RoleConfigMap
-	RoleResourcesPermissionsMap auth.RoleResourcesPermissionsMap
+	RoleResourcesPermissionsMap auth.RoleAccessControlMap
 }
 
 type handler struct {
@@ -31,7 +31,7 @@ type handler struct {
 	emailService                *email.Email
 	usersRepo                   users.Repository
 	rolesMap                    auth.RoleConfigMap
-	RoleResourcesPermissionsMap auth.RoleResourcesPermissionsMap
+	RoleResourcesPermissionsMap auth.RoleAccessControlMap
 }
 
 func New(cfg Config) *handler {
@@ -51,7 +51,7 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	adminRole := h.rolesMap[roles.RoleTeamAdminString]
+	adminRole := h.rolesMap[roles.RoleTeamAdmin]
 	userId, err := h.usersRepo.Create(
 		r.Context(),
 		users.NewUser{
@@ -93,19 +93,23 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *handler) VerifyEmail(w http.ResponseWriter, r *http.Request) error {
-	var payload VerifyEmailPayload
-	if err := web.Decode(r, &payload); err != nil {
-		return err
+	token := web.GetParam(r, "invitationToken")
+	if token == "" {
+		return errors.NewRequestError(
+			"Invalid invitation token.", http.StatusBadRequest, errors.BadRequest,
+		)
 	}
 
-	claims, err := h.emailService.VerifyToken(payload.Token)
+	claims, err := h.emailService.VerifyToken(token)
 	if err != nil {
 		return err
 	}
 
 	userId, err := strconv.Atoi(claims.Subject)
 	if err != nil {
-		return err
+		return errors.NewRequestError(
+			"Invalid token signature.", http.StatusBadRequest, errors.InvalidTokenSignature,
+		)
 	}
 
 	return web.Success(w, http.StatusOK, "", userId)
