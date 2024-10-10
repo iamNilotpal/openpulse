@@ -8,6 +8,7 @@ import (
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
+	"github.com/iamNilotpal/openpulse/business/web/email"
 	"github.com/iamNilotpal/openpulse/business/web/middlewares"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"go.uber.org/zap"
@@ -18,6 +19,7 @@ const apiV1 = "/api/v1"
 type Config struct {
 	App                         *web.App
 	Auth                        *auth.Auth
+	EmailService                *email.Email
 	Log                         *zap.SugaredLogger
 	Repositories                *repositories.Repositories
 	APIConfig                   *config.OpenpulseAPIConfig
@@ -28,8 +30,16 @@ type Config struct {
 
 func SetupRoutes(cfg Config) {
 	errorMiddleware := middlewares.ErrorResponder(cfg.Log)
-
-	authHandler := auth_handlers.New(auth_handlers.Config{Auth: cfg.Auth})
+	authHandler := auth_handlers.New(
+		auth_handlers.Config{
+			Auth:                        cfg.Auth,
+			RolesMap:                    cfg.RolesMap,
+			EmailService:                cfg.EmailService,
+			AuthCfg:                     &cfg.APIConfig.Auth,
+			UsersRepo:                   cfg.Repositories.Users,
+			RoleResourcesPermissionsMap: cfg.RoleResourcesPermissionsMap,
+		},
+	)
 	onboardingHandler := onboarding_handlers.New(onboarding_handlers.Config{})
 	invitationHandler := invitations_handlers.New(invitations_handlers.Config{})
 

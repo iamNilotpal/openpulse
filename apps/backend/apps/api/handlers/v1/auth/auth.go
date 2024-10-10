@@ -64,9 +64,12 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) error {
 	)
 
 	if err != nil {
-		if ok := database.CheckPQError(err, func(err *pq.Error) bool {
-			return err.Column == "email" && err.Code == pgerrcode.UniqueViolation
-		}); ok {
+		if ok := database.CheckPQError(
+			err,
+			func(err *pq.Error) bool {
+				return err.Column == "email" && err.Code == pgerrcode.UniqueViolation
+			},
+		); ok {
 			return errors.NewRequestError(
 				"User with same email already exists.",
 				http.StatusBadRequest,
