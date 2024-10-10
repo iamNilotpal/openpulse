@@ -22,7 +22,7 @@ func (a *AuthError) Error() string {
 
 func IsAuthError(err error) bool {
 	var a *AuthError
-	return stdErrors.Is(err, a)
+	return stdErrors.As(err, &a)
 }
 
 func ExtractAuthError(err error) *AuthError {
