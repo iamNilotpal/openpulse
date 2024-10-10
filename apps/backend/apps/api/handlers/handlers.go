@@ -61,6 +61,7 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 		Log:                         cfg.Log,
 		Auth:                        cfg.Auth,
 		APIConfig:                   cfg.APIConfig,
+		EmailService:                cfg.EmailService,
 		Repositories:                cfg.Repositories,
 		RolesMap:                    cfg.RolesMap,
 		ResourcePermissionsMap:      cfg.ResourcePermissionsMap,
