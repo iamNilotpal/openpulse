@@ -1,7 +1,12 @@
 package middlewares
 
 import (
+	"encoding/json"
+	stdErrors "errors"
+	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/iamNilotpal/openpulse/business/sys/validate"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
@@ -16,8 +21,37 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 
 			var statusCode int
 			var errResp web.APIError
+			var syntaxError *json.SyntaxError
 
 			switch {
+			case stdErrors.As(err, &syntaxError):
+				statusCode = 400
+				errResp = web.CreateAPIError(
+					fmt.Sprintf("Request body contains badly-formed JSON (at position %d).", syntaxError.Offset),
+					errors.FromErrorCode(errors.InvalidInput),
+					nil,
+				)
+
+			case stdErrors.Is(err, io.ErrUnexpectedEOF):
+				statusCode = 400
+				errResp = web.CreateAPIError(
+					"Request body contains badly-formed JSON.",
+					errors.FromErrorCode(errors.InvalidInput),
+					nil,
+				)
+
+			case strings.HasPrefix(err.Error(), "json: unknown field "):
+				statusCode = 400
+				fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+				msg := fmt.Sprintf("Request body contains unknown field %s.", fieldName)
+				errResp = web.CreateAPIError(msg, errors.FromErrorCode(errors.UnknownField), nil)
+
+			case stdErrors.Is(err, io.EOF):
+				statusCode = 400
+				errResp = web.CreateAPIError(
+					"Request body must not be empty.", errors.FromErrorCode(errors.MissingRequiredFields), nil,
+				)
+
 			case validate.IsFieldErrors(err):
 				fieldErrors := validate.GetFieldErrors(err)
 

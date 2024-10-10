@@ -10,8 +10,10 @@ const (
 	InternalServerError ErrorCode = "INTERNAL_ERROR"
 	ServiceUnavailable  ErrorCode = "SERVICE_UNAVAILABLE"
 
-	InvalidInput         ErrorCode = "INVALID_INPUT"
-	MissingRequiredField ErrorCode = "MISSING_REQUIRED_FIELD"
+	InvalidInput          ErrorCode = "INVALID_INPUT"
+	UnknownField          ErrorCode = "UNKNOWN_FIELD"
+	MissingRequiredField  ErrorCode = "MISSING_REQUIRED_FIELD"
+	MissingRequiredFields ErrorCode = "MISSING_REQUIRED_FIELDS"
 
 	Forbidden             ErrorCode = "FORBIDDEN"
 	Unauthorized          ErrorCode = "UNAUTHORIZED"

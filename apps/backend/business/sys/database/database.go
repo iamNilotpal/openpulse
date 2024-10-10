@@ -44,7 +44,7 @@ func StatusCheck(ctx context.Context, db *sqlx.DB) error {
 	// If the user doesn't give us a deadline set 2 second.
 	if _, ok := ctx.Deadline(); !ok {
 		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, time.Second*2)
+		ctx, cancel = context.WithTimeout(ctx, time.Second*10)
 		defer cancel()
 	}
 

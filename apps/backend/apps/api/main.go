@@ -21,7 +21,6 @@ import (
 	teams_store "github.com/iamNilotpal/openpulse/business/repositories/teams/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/postgres"
-	"github.com/iamNilotpal/openpulse/business/sys/cache"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
@@ -67,16 +66,16 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// Initialize Cache
-	redis, err := cache.Open(cfg.Cache)
-	if err != nil {
-		log.Infow("CACHE DATABASE CONNECTION ERROR", "error", err)
-		return err
-	}
+	// redis, err := cache.Open(cfg.Cache)
+	// if err != nil {
+	// 	log.Infow("CACHE DATABASE CONNECTION ERROR", "error", err)
+	// 	return err
+	// }
 
-	if err = cache.StatusCheck(context.Background(), redis); err != nil {
-		log.Infow("CACHE Status Check Error", "error", err)
-		return err
-	}
+	// if err = cache.StatusCheck(context.Background(), redis); err != nil {
+	// 	log.Infow("CACHE Status Check Error", "error", err)
+	// 	return err
+	// }
 
 	// Initialize repositories
 	teamsStore := teams_store.NewPostgresStore(db)
@@ -124,11 +123,11 @@ func run(log *zap.SugaredLogger) error {
 	// Initialize API support
 	mux := handlers.NewHandler(
 		handlers.HandlerConfig{
-			DB:                          db,
-			Log:                         log,
-			APIConfig:                   cfg,
-			Auth:                        auth,
-			Cache:                       redis,
+			DB:        db,
+			Log:       log,
+			APIConfig: cfg,
+			Auth:      auth,
+			// Cache:                       redis,
 			Shutdown:                    shutdown,
 			RolesMap:                    rolesMap,
 			EmailService:                emailService,
