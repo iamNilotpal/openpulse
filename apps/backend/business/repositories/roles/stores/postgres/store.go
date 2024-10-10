@@ -23,21 +23,20 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 
 func (s *postgresStore) Create(context context.Context, nr NewRole) (int, error) {
 	query := `
-		INSERT INTO ROLES (name, description, is_system_role, role)
-		VALUES ($1, $2, $3, $4, $5) RETURNING id;
+		INSERT INTO
+			roles (name, description, is_system_role, role)
+		VALUES
+			($1, $2, $3, $4) RETURNING id;
 	`
 
-	result, err := s.db.ExecContext(context, query, nr.Name, nr.Description, nr.IsSystemRole, nr.Role)
-	if err != nil {
+	var id int
+	if err := s.db.QueryRowContext(
+		context, query, nr.Name, nr.Description, nr.IsSystemRole, nr.Role,
+	).Scan(&id); err != nil {
 		return 0, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return int(id), nil
+	return id, nil
 }
 
 func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {

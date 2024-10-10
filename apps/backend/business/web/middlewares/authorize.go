@@ -25,7 +25,7 @@ func Authorize(options Options) func(http.Handler) http.Handler {
 				web.Error(
 					w,
 					http.StatusForbidden,
-					web.CreateAPIError(
+					web.NewAPIError(
 						http.StatusText(http.StatusForbidden),
 						errors.FromErrorCode(errors.Forbidden),
 						nil,
@@ -45,7 +45,7 @@ func Authorize(options Options) func(http.Handler) http.Handler {
 				web.Error(
 					w,
 					http.StatusForbidden,
-					web.CreateAPIError(
+					web.NewAPIError(
 						http.StatusText(http.StatusForbidden),
 						errors.FromErrorCode(errors.Forbidden),
 						nil,

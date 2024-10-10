@@ -44,9 +44,9 @@ type UpdateRole struct {
 func ToNewDBRole(r NewRole) roles_store.NewRole {
 	return roles_store.NewRole{
 		Name:         r.Name,
-		Role:         ParseRole(r.Role),
 		Description:  r.Description,
 		IsSystemRole: r.IsSystemRole,
+		Role:         ParseRole(r.Role),
 	}
 }
 

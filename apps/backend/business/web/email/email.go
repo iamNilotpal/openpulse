@@ -43,7 +43,7 @@ func (e *Email) GenerateVerificationToken(c Claims) (string, error) {
 
 	if err != nil {
 		return "", errors.NewRequestError(
-			"Internal Server Error", http.StatusInternalServerError, errors.InternalServerError,
+			"Internal Server Error.", http.StatusInternalServerError, errors.InternalServerError,
 		)
 	}
 
@@ -61,7 +61,7 @@ func (e *Email) VerifyToken(token string) (Claims, error) {
 		func(t *jwt.Token) (interface{}, error) {
 			if t.Method != e.method {
 				return "", errors.NewRequestError(
-					"Invalid token signature", http.StatusUnauthorized, errors.InvalidTokenSignature,
+					"Invalid token signature.", http.StatusUnauthorized, errors.InvalidTokenSignature,
 				)
 			}
 			return e.cfg.Secret, nil
@@ -71,12 +71,12 @@ func (e *Email) VerifyToken(token string) (Claims, error) {
 	if err != nil {
 		if stdErrors.Is(err, jwt.ErrTokenExpired) {
 			return Claims{}, errors.NewRequestError(
-				"Session expired.", http.StatusBadRequest, errors.TokenExpired,
+				"Invitation expired.", http.StatusBadRequest, errors.TokenExpired,
 			)
 		}
 
 		return Claims{}, errors.NewRequestError(
-			"Invalid token", http.StatusBadRequest, errors.InvalidTokenSignature,
+			"Invalid token.", http.StatusBadRequest, errors.InvalidTokenSignature,
 		)
 	}
 

@@ -21,21 +21,19 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 
 func (s *postgresStore) Create(context context.Context, np NewPermission) (int, error) {
 	query := `
-		INSERT INTO permissions (name, description, action)
-		VALUES ($1, $2, $3);
+		INSERT INTO
+			permissions (name, description, action)
+		VALUES
+			($1, $2, $3) RETURNING id;
 	`
-
-	result, err := s.db.ExecContext(context, query, np.Name, np.Description, np.Action)
-	if err != nil {
+	var id int
+	if err := s.db.QueryRowContext(
+		context, query, np.Name, np.Description, np.Action,
+	).Scan(&id); err != nil {
 		return 0, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return int(id), nil
+	return id, nil
 }
 
 func (s *postgresStore) QueryById(context context.Context, id int) (Permission, error) {

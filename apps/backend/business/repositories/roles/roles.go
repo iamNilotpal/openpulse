@@ -13,20 +13,20 @@ type Repository interface {
 	GetRolesAccessControl(context context.Context) ([]RoleAccessControl, error)
 }
 
-type PostgresRepository struct {
+type postgresRepository struct {
 	store roles_store.Store
 }
 
-func NewPostgresRepository(s roles_store.Store) *PostgresRepository {
-	return &PostgresRepository{store: s}
+func NewPostgresRepository(s roles_store.Store) *postgresRepository {
+	return &postgresRepository{store: s}
 }
 
-func (r *PostgresRepository) Create(context context.Context, nr NewRole) (int, error) {
+func (r *postgresRepository) Create(context context.Context, nr NewRole) (int, error) {
 	id, err := r.store.Create(context, ToNewDBRole(nr))
 	return id, err
 }
 
-func (r *PostgresRepository) GetAll(context context.Context) ([]Role, error) {
+func (r *postgresRepository) GetAll(context context.Context) ([]Role, error) {
 	dbRoles, err := r.store.GetAll(context)
 	if err != nil {
 		return []Role{}, err
@@ -40,7 +40,7 @@ func (r *PostgresRepository) GetAll(context context.Context) ([]Role, error) {
 	return roles, nil
 }
 
-func (r *PostgresRepository) QueryById(context context.Context, id int) (Role, error) {
+func (r *postgresRepository) QueryById(context context.Context, id int) (Role, error) {
 	dbRole, err := r.store.QueryById(context, id)
 	if err != nil {
 		return Role{}, err
@@ -49,7 +49,7 @@ func (r *PostgresRepository) QueryById(context context.Context, id int) (Role, e
 	return FromDBRole(dbRole), nil
 }
 
-func (r *PostgresRepository) GetRolesAccessControl(context context.Context) (
+func (r *postgresRepository) GetRolesAccessControl(context context.Context) (
 	[]RoleAccessControl, error,
 ) {
 	dbRolesWithPermissions, err := r.store.GetRolesAccessControl(context)

@@ -12,19 +12,19 @@ type Repository interface {
 	QueryAllResourcesWithPermissions(context context.Context) ([]ResourceWithPermission, error)
 }
 
-type PostgresRepository struct {
+type postgresRepository struct {
 	store resources_store.Store
 }
 
-func NewPostgresRepository(store resources_store.Store) *PostgresRepository {
-	return &PostgresRepository{store: store}
+func NewPostgresRepository(store resources_store.Store) *postgresRepository {
+	return &postgresRepository{store: store}
 }
 
-func (r *PostgresRepository) Create(context context.Context, nr NewResource) (int, error) {
+func (r *postgresRepository) Create(context context.Context, nr NewResource) (int, error) {
 	return r.store.Create(context, ToNewDBResource(nr))
 }
 
-func (r *PostgresRepository) QueryById(context context.Context, id int) (Resource, error) {
+func (r *postgresRepository) QueryById(context context.Context, id int) (Resource, error) {
 	dbResource, err := r.store.QueryById(context, id)
 	if err != nil {
 		return Resource{}, err
@@ -33,7 +33,7 @@ func (r *PostgresRepository) QueryById(context context.Context, id int) (Resourc
 	return FromDBResource(dbResource), nil
 }
 
-func (r *PostgresRepository) QueryAllResourcesWithPermissions(context context.Context) (
+func (r *postgresRepository) QueryAllResourcesWithPermissions(context context.Context) (
 	[]ResourceWithPermission, error,
 ) {
 	dbResourcesWithPermissions, err := r.store.QueryAllResourcesWithPermissions(context)

@@ -5,6 +5,7 @@ import (
 	auth_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/auth"
 	invitations_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/invitations"
 	onboarding_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/onboarding"
+	roles_handler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/roles"
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
@@ -25,7 +26,7 @@ type Config struct {
 	APIConfig                   *config.OpenpulseAPIConfig
 	RolesMap                    auth.RoleConfigMap
 	ResourcePermissionsMap      auth.ResourcePermissionsMap
-	RoleResourcesPermissionsMap auth.RoleResourcesPermissionsMap
+	RoleResourcesPermissionsMap auth.RoleAccessControlMap
 }
 
 func SetupRoutes(cfg Config) {
@@ -42,8 +43,11 @@ func SetupRoutes(cfg Config) {
 	)
 	onboardingHandler := onboarding_handlers.New(onboarding_handlers.Config{})
 	invitationHandler := invitations_handlers.New(invitations_handlers.Config{})
+	rolesHandler := roles_handler.New(roles_handler.Config{Roles: cfg.Repositories.Roles})
 
 	cfg.App.Route(apiV1, func(r chi.Router) {
+		r.Post("/roles", errorMiddleware(rolesHandler.Create))
+
 		r.Post("/auth/register", errorMiddleware(authHandler.Register))
 		r.Post("/auth/login", errorMiddleware(authHandler.Login))
 
