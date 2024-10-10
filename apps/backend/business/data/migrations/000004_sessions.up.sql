@@ -11,7 +11,9 @@ CREATE TABLE
     revoked_at TIMESTAMP,
     expires_at BIGINT NOT NULL,
     created_at TIMESTAMP not NULL DEFAULT CURRENT_TIMESTAMP,
-    last_activity_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX (user_id),
-    INDEX (is_active)
+    last_activity_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+CREATE INDEX "idx_user_sessions_user_id" ON user_sessions (user_id);
+
+CREATE INDEX "idx_user_sessions_is_active" ON user_sessions (is_active)

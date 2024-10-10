@@ -9,6 +9,7 @@ CREATE TABLE
     verified_at TIMESTAMP,
     expires_at BIGINT NOT NULL,
     is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX (user_id, expires_at, is_revoked)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+CREATE INDEX "idx_email_verifications_user" ON email_verifications (user_id, expires_at, is_revoked)
