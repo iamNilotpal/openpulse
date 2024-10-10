@@ -22,9 +22,7 @@ CREATE TABLE
     creator_id BIGINT NOT NULL REFERENCES users (id),
     org_id BIGINT NOT NULL REFERENCES organizations (id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    INDEX (creator_id),
-    INDEX (org_id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
 CREATE TABLE
@@ -42,9 +40,7 @@ CREATE TABLE
       role_id,
       resource_id,
       permission_id
-    ),
-    INDEX (team_id),
-    INDEX (user_id)
+    )
   );
 
 ALTER TABLE users
@@ -62,6 +58,15 @@ CREATE TABLE
     expires_in BIGINT NOT NULL,
     status SMALLINT DEFAULT 0 NOT NULL, -- pending, accepted, expired
     invited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    accepted_at TIMESTAMP,
-    INDEX (expires_in)
+    accepted_at TIMESTAMP
   );
+
+CREATE INDEX "idx_teams_creator_id" ON teams (creator_id);
+
+CREATE INDEX "idx_teams_org_id" ON teams (org_id);
+
+CREATE INDEX "idx_team_users_team_id" ON team_users (team_id);
+
+CREATE INDEX "idx_team_users_user_id" ON team_users (user_id);
+
+CREATE INDEX "idx_team_invitations_expires_in" ON team_invitations (expires_in);
