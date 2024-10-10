@@ -15,7 +15,6 @@ type NewUser struct {
 	LastName     string
 	Email        string
 	PasswordHash []byte
-	AvatarUrl    string
 }
 
 type User struct {
@@ -65,7 +64,6 @@ func ToNewDBUser(p NewUser) users_store.NewUser {
 		FirstName:    p.FirstName,
 		LastName:     p.LastName,
 		PasswordHash: p.PasswordHash,
-		AvatarUrl:    p.AvatarUrl,
 	}
 }
 
