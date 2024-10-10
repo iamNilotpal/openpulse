@@ -6,9 +6,9 @@ This document outlines the Role-Based Access Control (RBAC) model implemented wi
 
 Roles define the access levels and permissions granted to users. Each role is designed to ensure that users can only perform actions necessary for their specific responsibilities within the organization.
 
-### 1. **Org Admin**
+### 1. **Organization Admin**
 
-The **Org Admin** role is the top-level administrator with full access and control over all aspects of the organization. They can manage everything across teams and organization-level settings.
+The **Organization Admin** role is the top-level administrator with full access and control over all aspects of the organization. They can manage everything across teams and organization-level settings.
 
 - **Permissions**: Full access to create, view, update, delete, and manage all organizational resources.
 - **Resources**: The Org Admin can control billing, dashboards, global API tokens, heartbeats, incidents, integrations, monitors, on-call calendars, escalation policies, sources, status pages, team members, and teams, as well as overall organizational settings.
@@ -88,10 +88,6 @@ The **Member** role is designed for general team members who have a limited scop
 - Participate in team tasks, working on assigned resources such as dashboards and sources.
 - Assist in maintaining team visibility through dashboards and reporting tools.
 - Follow team-specific workflows and updates.
-
----
-
-Certainly! Here's a more detailed explanation of **Permission Actions** and **Resources** without the SQL.
 
 ---
 
