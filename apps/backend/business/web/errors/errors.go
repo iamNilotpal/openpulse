@@ -27,7 +27,7 @@ func (re *RequestError) Error() string {
 // IsRequestError checks if an error of type RequestError exists.
 func IsRequestError(err error) bool {
 	var re *RequestError
-	return errors.Is(err, re)
+	return errors.As(err, &re)
 }
 
 // GetRequestError returns a copy of the RequestError pointer.

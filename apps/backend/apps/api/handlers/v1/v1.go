@@ -37,9 +37,6 @@ func SetupRoutes(cfg Config) {
 		r.Post("/auth/register", errorMiddleware(authHandler.Register))
 		r.Post("/auth/login", errorMiddleware(authHandler.Login))
 
-	})
-
-	cfg.App.Route(apiV1, func(r chi.Router) {
 		r.Post("/onboard/organization", errorMiddleware(onboardingHandler.SaveOrganizationDetails))
 		r.Post("/onboard/team", errorMiddleware(onboardingHandler.SaveTeamDetails))
 		r.Post("/onboard/invite", errorMiddleware(invitationHandler.InviteMembers))
