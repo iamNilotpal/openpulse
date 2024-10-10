@@ -24,24 +24,25 @@ type User struct {
 	LastName      string
 	Email         string
 	AvatarUrl     string
-	AccountStatus string
+	AccountStatus AccountStatus
 	Resources     []ResourcePermission
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
 
 type Role struct {
-	Id          int
-	Name        string
-	Description string
-	Role        roles.AppRole
+	Id           int
+	IsSystemRole bool
+	Name         string
+	Description  string
+	Role         roles.AppRole
 }
 
 type Resource struct {
 	Id          int
 	Name        string
 	Description string
-	Resource    resources.ResourceType
+	Resource    resources.AppResource
 }
 
 type Permission struct {
@@ -69,10 +70,11 @@ func ToNewDBUser(p NewUser) users_store.NewUser {
 
 func FromDBRole(r users_store.Role) Role {
 	return Role{
-		Id:          r.Id,
-		Name:        r.Name,
-		Description: r.Description,
-		Role:        roles.ToAppRole(r.Role),
+		Id:           r.Id,
+		Name:         r.Name,
+		Description:  r.Description,
+		IsSystemRole: r.IsSystemRole,
+		Role:         roles.ParseRoleInt(r.Role),
 	}
 }
 
@@ -81,7 +83,7 @@ func FromDBResource(r users_store.Resource) Resource {
 		Id:          r.Id,
 		Name:        r.Name,
 		Description: r.Description,
-		Resource:    resources.ToResourceType(r.Resource),
+		Resource:    resources.ParseAppResourceInt(r.Resource),
 	}
 }
 
@@ -91,7 +93,7 @@ func FromDBPermission(p users_store.Permission) Permission {
 		Name:        p.Name,
 		Enabled:     p.Enabled,
 		Description: p.Description,
-		Action:      permissions.ToPermissionAction(p.Action),
+		Action:      permissions.ParseActionInt(p.Action),
 	}
 }
 
@@ -117,7 +119,7 @@ func FromDBUser(u users_store.User) User {
 		LastName:      u.LastName,
 		FirstName:     u.FirstName,
 		AvatarUrl:     u.AvatarUrl,
-		AccountStatus: u.AccountStatus,
+		AccountStatus: ParseStatusInt(u.AccountStatus),
 		Resources:     resources,
 		Role:          FromDBRole(u.Role),
 		CreatedAt:     createdAt,

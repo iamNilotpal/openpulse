@@ -22,73 +22,26 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 func (p *postgresStore) Create(context context.Context, payload NewUser) (int, error) {
 	query := `
 		INSERT INTO
-		users(first_name, last_name, email, password_hash, role_id)
-		VALUES ($1, $2, $3, $4, $5) RETURNING id;
+			users(first_name, last_name, email, password_hash, role_id)
+		VALUES
+			($1, $2, $3, $4, $5) RETURNING id;
 	`
 
-	result, err := p.db.ExecContext(
-		context, query,
-		payload.FirstName, payload.LastName, payload.Email, payload.PasswordHash, payload.RoleId,
-	)
-	if err != nil {
+	var id int
+	if err := p.db.QueryRowContext(
+		context,
+		query,
+		payload.FirstName,
+		payload.LastName,
+		payload.Email,
+		payload.PasswordHash,
+		payload.RoleId,
+	).Scan(&id); err != nil {
 		return 0, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return int(id), nil
+	return id, nil
 }
-
-// func (p *postgresStore) Create(
-// 	context context.Context, payload NewUser, permissions []AccessControl,
-// ) (int, error) {
-// 	query := `
-// 		INSERT INTO
-// 		users(first_name, last_name, email, password_hash, role_id)
-// 		VALUES ($1, $2, $3, $4, $5) RETURNING id;
-// 	`
-
-// 	result, err := p.db.ExecContext(
-// 		context, query,
-// 		payload.FirstName, payload.LastName, payload.Email, payload.PasswordHash, payload.RoleId,
-// 	)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	id, err := result.LastInsertId()
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	var args []any
-// 	query = "INSERT INTO users_permissions (user_id, permission_id, enabled, updated_by) VALUES "
-
-// 	params := database.MultipleQueryParams(
-// 		permissions,
-// 		func(index int, isLast bool, v AccessControl) string {
-// 			args = append(args, id, v.Permission.Id, true, id)
-// 			return "(?, ?, ?, ?)"
-// 		},
-// 	)
-
-// 	query += strings.Join(params, ", ")
-
-// 	println()
-// 	println("Insert Into User Permissions Query", query)
-// 	println()
-
-// 	_, err = p.db.ExecContext(context, query, args...)
-
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	return int(id), nil
-// }
 
 func (p *postgresStore) QueryById(context context.Context, id int) (User, error) {
 	query := `
@@ -102,6 +55,9 @@ func (p *postgresStore) QueryById(context context.Context, id int) (User, error)
 			us.account_status as accountStatus,
 			us.created_at as createdAt,
 			us.updated_at as updatedAt,
+			t.id as teamId,
+			t.name as teamName,
+			t.logo_url as teamLogo,
 			ro.id AS roleId,
 			ro.name AS roleName,
 			ro.description AS roleDescription,
@@ -113,6 +69,7 @@ func (p *postgresStore) QueryById(context context.Context, id int) (User, error)
 			up.updated_at as userPreferenceUpdatedAt
 		FROM
 			users us
+			JOIN teams t ON t.id = us.team_id
 			JOIN roles ro ON ro.id = us.role_id
 			JOIN users_preferences up ON up.user_id = us.id
 		WHERE
@@ -130,6 +87,9 @@ func (p *postgresStore) QueryById(context context.Context, id int) (User, error)
 		&user.AccountStatus,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Team.Id,
+		&user.Team.Name,
+		&user.Team.LogoURL,
 		&user.Role.Id,
 		&user.Role.Name,
 		&user.Role.Description,
@@ -153,16 +113,16 @@ func (p *postgresStore) QueryById(context context.Context, id int) (User, error)
 			pes.name AS permissionName,
 			pes.description AS permissionDescription,
 			pes.action AS action,
-			uac.enabled as permissionEnabled
+			tu.enabled as permissionEnabled
 		FROM
-			users_access_controls uac
-			JOIN resources res ON res.id = uac.resource_id
-			JOIN permissions pes ON pes.id = uac.permission_id
+			team_users tu
+			JOIN resources res ON res.id = tu.resource_id
+			JOIN permissions pes ON pes.id = tu.permission_id
 		WHERE
-			uac.user_id = $1;
+			tu.team_id = $1 AND tu.user_id = $2;
 	`
 
-	rows, err := p.db.QueryContext(context, query, id)
+	rows, err := p.db.QueryContext(context, query, user.Team.Id, user.Role.Id)
 	if err != nil {
 		return User{}, err
 	}
@@ -196,3 +156,16 @@ func (p *postgresStore) QueryById(context context.Context, id int) (User, error)
 	user.Resources = resources
 	return user, nil
 }
+
+// 	var args []any
+// 	query = "INSERT INTO users_permissions (user_id, permission_id, enabled, updated_by) VALUES "
+
+// 	params := database.MultipleQueryParams(
+// 		permissions,
+// 		func(index int, isLast bool, v AccessControl) string {
+// 			args = append(args, id, v.Permission.Id, true, id)
+// 			return "(?, ?, ?, ?)"
+// 		},
+// 	)
+
+// 	query += strings.Join(params, ", ")

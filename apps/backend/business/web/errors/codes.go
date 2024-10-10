@@ -7,6 +7,7 @@ const (
 	NotFound       ErrorCode = "RESOURCE_NOT_FOUND"
 	AlreadyExists  ErrorCode = "RESOURCE_ALREADY_EXISTS"
 
+	BadRequest          ErrorCode = "BAD_REQUEST"
 	InternalServerError ErrorCode = "INTERNAL_ERROR"
 	ServiceUnavailable  ErrorCode = "SERVICE_UNAVAILABLE"
 

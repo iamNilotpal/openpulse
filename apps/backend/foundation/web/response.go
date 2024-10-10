@@ -6,11 +6,11 @@ import (
 )
 
 type apiResponse struct {
-	Success    bool     `json:"success"`
-	Message    string   `json:"message,omitempty"`
-	StatusCode int      `json:"statusCode"`
-	Data       any      `json:"data,omitempty"`
-	Error      APIError `json:"error,omitempty"`
+	Success    bool   `json:"success"`
+	Message    string `json:"message,omitempty"`
+	StatusCode int    `json:"statusCode"`
+	Data       any    `json:"data,omitempty"`
+	Error      any    `json:"error,omitempty"`
 }
 
 type APIError struct {
@@ -19,16 +19,16 @@ type APIError struct {
 	Fields    any    `json:"fields,omitempty"`
 }
 
-func CreateAPIError(msg, code string, fields any) APIError {
-	return APIError{Message: msg, ErrorCode: code, Fields: fields}
+func NewAPIError(msg, code string, fields any) *APIError {
+	return &APIError{Message: msg, ErrorCode: code, Fields: fields}
 }
 
 func Success(w http.ResponseWriter, code int, msg string, data any) error {
-	response := apiResponse{Success: true, Data: data, StatusCode: code, Message: msg}
+	response := apiResponse{Success: true, Data: data, StatusCode: code, Message: msg, Error: nil}
 	return respond(w, code, response)
 }
 
-func Error(w http.ResponseWriter, code int, err APIError) error {
+func Error(w http.ResponseWriter, code int, err *APIError) error {
 	response := apiResponse{Success: false, StatusCode: code, Error: err, Message: err.Message}
 	return respond(w, response.StatusCode, response)
 }

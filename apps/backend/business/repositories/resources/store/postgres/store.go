@@ -22,21 +22,20 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 
 func (s *postgresStore) Create(context context.Context, nr NewResource) (int, error) {
 	query := `
-		INSERT INTO resources (display_name, description, resource, created_by)
-		VALUES ($1, $2, $3, $4);
+		INSERT INTO
+			resources (display_name, description, resource)
+		VALUES
+			($1, $2, $3) RETURNING id;
 	`
 
-	result, err := s.db.ExecContext(context, query, nr.Name, nr.Description, nr.Resource, nr.CreatorId)
-	if err != nil {
+	var id int
+	if err := s.db.QueryRowContext(
+		context, query, nr.Name, nr.Description, nr.Resource,
+	).Scan(&id); err != nil {
 		return 0, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return int(id), nil
+	return id, nil
 }
 
 func (s *postgresStore) QueryById(context context.Context, id int) (Resource, error) {
@@ -46,20 +45,10 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Resource, er
 			r.display_name AS resourceName,
 			r.description AS resourceDescription,
 			r.resource AS resource,
-			rcb.id AS resourceAuthorId,
-			rcb.email AS resourceAuthorEmail,
-			rcb.first_name AS resourceAuthorFirstName,
-			rcb.last_name AS resourceAuthorLastName,
-			rub.id AS resourceAuthorId,
-			rub.email AS resourceAuthorEmail,
-			rub.first_name AS resourceUpdaterFirstName,
-			rub.last_name AS resourceUpdaterLastName,
 			r.created_at AS resourceCreatedAt,
 			r.updated_at AS resourceUpdatedAt
 		FROM
 			resources r
-			LEFT JOIN users rcb ON rcb.id = r.created_by
-			LEFT JOIN users rub ON rub.id = r.created_by
 		WHERE
 			r.id = $1;
 	`
@@ -70,14 +59,6 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Resource, er
 		&resource.Name,
 		&resource.Description,
 		&resource.Resource,
-		&resource.CreatedBy.Id,
-		&resource.CreatedBy.Email,
-		&resource.CreatedBy.FirstName,
-		&resource.CreatedBy.LastName,
-		&resource.UpdatedBy.Id,
-		&resource.UpdatedBy.Email,
-		&resource.UpdatedBy.FirstName,
-		&resource.UpdatedBy.LastName,
 		&resource.CreatedAt,
 		&resource.UpdatedAt,
 	); err != nil {

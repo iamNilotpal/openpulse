@@ -4,32 +4,45 @@ import (
 	"net/http"
 
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
-	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
 )
 
+type Config struct {
+	Roles roles.Repository
+}
+
 type handler struct {
 	roles roles.Repository
 }
 
-func New(rolesRepo roles.Repository) *handler {
-	return &handler{roles: rolesRepo}
+func New(cfg Config) *handler {
+	return &handler{roles: cfg.Roles}
 }
 
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
-	var role NewAppRole
-	if err := web.Decode(r, &role); err != nil {
+	var payload NewRole
+	if err := web.Decode(r, &payload); err != nil {
 		return err
 	}
 
-	claims := auth.GetClaims(r.Context())
+	appRole, err := roles.ParseRoleString(payload.Role)
+	if err != nil {
+		return err
+	}
 
 	id, err := h.roles.Create(
-		r.Context(), roles.ConstructRole(role.Name, role.Description, claims.UserId, false),
+		r.Context(),
+		roles.NewRole{
+			IsSystemRole: true,
+			Role:         appRole,
+			Name:         payload.Name,
+			Description:  payload.Description,
+		},
 	)
+
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
 			if err.Code == pgerrcode.UniqueViolation {

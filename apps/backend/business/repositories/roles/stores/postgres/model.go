@@ -1,7 +1,6 @@
 package roles_store
 
 import (
-	modified_by "github.com/iamNilotpal/openpulse/business/data/modified-by"
 	permissions_store "github.com/iamNilotpal/openpulse/business/repositories/permissions/stores/postgres"
 	resources_store "github.com/iamNilotpal/openpulse/business/repositories/resources/store/postgres"
 )
@@ -9,26 +8,28 @@ import (
 type Role struct {
 	Id           int
 	IsSystemRole bool
-	Role         string
+	Role         int
 	Name         string
 	Description  string
-	CreatedBy    modified_by.ModifiedBy
-	UpdatedBy    modified_by.ModifiedBy
 	CreatedAt    string
 	UpdatedAt    string
 }
 
+// type RoleResources struct {
+// 	Resource   resources_store.Resource
+// 	Permission permissions_store.Permission
+// }
+
 type NewRole struct {
-	CreatorId    int
 	IsSystemRole bool
-	Role         string
+	Role         int
 	Name         string
 	Description  string
 }
 
 type RoleAccessConfig struct {
 	Id   int
-	Role string
+	Role int
 }
 
 type RoleAccessControl struct {

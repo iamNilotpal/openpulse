@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/iamNilotpal/openpulse/business/repositories/roles"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
@@ -116,11 +115,10 @@ func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims
 func CheckRoleAccessControl(requiredRoles []RoleConfig, userRole UserRoleConfig) bool {
 	for _, rr := range requiredRoles {
 		if rr.Id == userRole.Id &&
-			strings.EqualFold(roles.FromAppRole(rr.Role), roles.FromAppRole(userRole.Role)) {
+			strings.EqualFold(string(rr.Role), string(userRole.Role)) {
 			return true
 		}
 	}
-
 	return false
 }
 

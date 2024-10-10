@@ -101,14 +101,14 @@ func run(log *zap.SugaredLogger) error {
 		Permissions: permissionsRepo,
 	}
 
-	// Get roles with permissions
-	permissions, err := rolesRepo.GetRolesResourcesPermissions(context.Background())
+	// Get roles with rolesAccessControls
+	rolesAccessControls, err := rolesRepo.GetRolesAccessControl(context.Background())
 	if err != nil {
 		return err
 	}
 
 	// Build the Permissions Map
-	rolesMap, resPermissionsMap, rolePermissionsMap := buildRBACMaps(permissions)
+	rolesMap, resourcePermissionsMap, roleAccessControlMap := buildRBACMaps(rolesAccessControls)
 
 	// Initialize authentication support
 	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepo})
@@ -132,8 +132,8 @@ func run(log *zap.SugaredLogger) error {
 			RolesMap:                    rolesMap,
 			EmailService:                emailService,
 			Repositories:                &repositories,
-			ResourcePermissionsMap:      resPermissionsMap,
-			RoleResourcesPermissionsMap: rolePermissionsMap,
+			ResourcePermissionsMap:      resourcePermissionsMap,
+			RoleResourcesPermissionsMap: roleAccessControlMap,
 		},
 	)
 
@@ -174,11 +174,11 @@ func run(log *zap.SugaredLogger) error {
 }
 
 func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
-	auth.RoleConfigMap, auth.ResourcePermissionsMap, auth.RoleResourcesPermissionsMap,
+	auth.RoleConfigMap, auth.ResourcePermissionsMap, auth.RoleAccessControlMap,
 ) {
 	rolesMap := make(auth.RoleConfigMap)
+	roleAccessControlMap := make(auth.RoleAccessControlMap)
 	resourcesPermissionsMap := make(auth.ResourcePermissionsMap)
-	roleResourcesPermissionsMap := make(auth.RoleResourcesPermissionsMap)
 
 	for _, rac := range roleAccessControls {
 		// 1. Assign to roles map.
@@ -187,7 +187,7 @@ func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
 		}
 
 		// 2. Check if any value exists for current role
-		resPermsMap, ok := roleResourcesPermissionsMap[rac.Role.Role]
+		resPermsMap, ok := roleAccessControlMap[rac.Role.Role]
 
 		// 3. If not then assign new value with resource and permissions
 		if !ok {
@@ -195,7 +195,7 @@ func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
 			permissions := []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)}
 
 			resPermsMap[rac.Resource.Resource] = permissions
-			roleResourcesPermissionsMap[rac.Role.Role] = resPermsMap
+			roleAccessControlMap[rac.Role.Role] = resPermsMap
 			resourcesPermissionsMap = resPermsMap
 			continue
 		}
@@ -208,7 +208,7 @@ func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
 			permissions := []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)}
 
 			resPermsMap[rac.Resource.Resource] = permissions
-			roleResourcesPermissionsMap[rac.Role.Role] = resPermsMap
+			roleAccessControlMap[rac.Role.Role] = resPermsMap
 			resourcesPermissionsMap = resPermsMap
 			continue
 		}
@@ -216,9 +216,9 @@ func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
 		// 6. If yes, append new permission to the existing resource.
 		permissions = append(permissions, auth.NewPermissionConfig(rac.Permission))
 		resPermsMap[rac.Resource.Resource] = permissions
-		roleResourcesPermissionsMap[rac.Role.Role] = resPermsMap
+		roleAccessControlMap[rac.Role.Role] = resPermsMap
 		resourcesPermissionsMap = resPermsMap
 	}
 
-	return rolesMap, resourcesPermissionsMap, roleResourcesPermissionsMap
+	return rolesMap, resourcesPermissionsMap, roleAccessControlMap
 }

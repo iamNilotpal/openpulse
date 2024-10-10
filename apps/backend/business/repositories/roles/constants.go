@@ -1,8 +1,16 @@
 package roles
 
+import (
+	"net/http"
+	"slices"
+
+	"github.com/iamNilotpal/openpulse/business/web/errors"
+)
+
 type AppRole string
 
-var (
+const (
+	RoleOrgAdmin         AppRole = "org_admin"
 	RoleTeamAdmin        AppRole = "team_admin"
 	RoleTeamBillingAdmin AppRole = "team_billing_admin"
 	RoleTeamLead         AppRole = "team_lead"
@@ -10,10 +18,53 @@ var (
 	RoleTeamMember       AppRole = "team_member"
 )
 
-func FromAppRole(s AppRole) string {
-	return string(s)
+const (
+	RoleOrgAdminInt int = iota + 1
+	RoleTeamAdminInt
+	RoleTeamBillingAdminInt
+	RoleTeamLeadInt
+	RoleTeamResponderInt
+	RoleTeamMemberInt
+)
+
+var roles = []AppRole{
+	RoleOrgAdmin,
+	RoleTeamLead,
+	RoleTeamAdmin,
+	RoleTeamMember,
+	RoleTeamResponder,
+	RoleTeamBillingAdmin,
 }
 
-func ToAppRole(s string) AppRole {
-	return AppRole(s)
+var roleMapping = map[AppRole]int{
+	RoleOrgAdmin:         RoleOrgAdminInt,
+	RoleTeamAdmin:        RoleTeamAdminInt,
+	RoleTeamBillingAdmin: RoleTeamBillingAdminInt,
+	RoleTeamLead:         RoleTeamLeadInt,
+	RoleTeamResponder:    RoleTeamResponderInt,
+	RoleTeamMember:       RoleTeamMemberInt,
+}
+
+var roleMappingReverse = map[int]AppRole{
+	RoleOrgAdminInt:         RoleOrgAdmin,
+	RoleTeamAdminInt:        RoleTeamAdmin,
+	RoleTeamBillingAdminInt: RoleTeamBillingAdmin,
+	RoleTeamLeadInt:         RoleTeamLead,
+	RoleTeamResponderInt:    RoleTeamResponder,
+	RoleTeamMemberInt:       RoleTeamMember,
+}
+
+func ParseRoleString(s string) (AppRole, error) {
+	if contains := slices.Contains(roles, AppRole(s)); contains {
+		return AppRole(s), nil
+	}
+	return "", errors.NewRequestError("Invalid role type.", http.StatusBadRequest, errors.BadRequest)
+}
+
+func ParseRole(s AppRole) int {
+	return roleMapping[s]
+}
+
+func ParseRoleInt(v int) AppRole {
+	return roleMappingReverse[v]
 }

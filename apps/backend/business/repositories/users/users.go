@@ -11,20 +11,20 @@ type Repository interface {
 	QueryById(context context.Context, id int) (User, error)
 }
 
-type PostgresRepository struct {
+type postgresRepository struct {
 	store users_store.Store
 }
 
-func NewPostgresRepository(store users_store.Store) *PostgresRepository {
-	return &PostgresRepository{store: store}
+func NewPostgresRepository(store users_store.Store) *postgresRepository {
+	return &postgresRepository{store: store}
 }
 
-func (c *PostgresRepository) Create(context context.Context, payload NewUser) (int, error) {
+func (c *postgresRepository) Create(context context.Context, payload NewUser) (int, error) {
 	id, err := c.store.Create(context, ToNewDBUser(payload))
 	return id, err
 }
 
-func (c *PostgresRepository) QueryById(context context.Context, id int) (User, error) {
+func (c *postgresRepository) QueryById(context context.Context, id int) (User, error) {
 	dbUser, err := c.store.QueryById(context, id)
 	if err != nil {
 		return User{}, err

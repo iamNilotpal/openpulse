@@ -16,7 +16,7 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type UserResourcePermissionsMap map[resources.ResourceType][]UserPermissionConfig
+type UserAccessControlMap map[resources.AppResource][]UserPermissionConfig
 
 type UserRoleConfig struct {
 	Id   int
@@ -31,7 +31,7 @@ type UserPermissionConfig struct {
 
 type UserResourceConfig struct {
 	Id       int
-	Resource resources.ResourceType
+	Resource resources.AppResource
 }
 
 type UserAccessControlPolicy struct {
@@ -63,8 +63,8 @@ func NewUserAccessControlPolicy(
 }
 
 type RoleConfigMap map[roles.AppRole]RoleConfig
-type ResourcePermissionsMap map[resources.ResourceType][]PermissionConfig
-type RoleResourcesPermissionsMap map[roles.AppRole]ResourcePermissionsMap
+type ResourcePermissionsMap map[resources.AppResource][]PermissionConfig
+type RoleAccessControlMap map[roles.AppRole]ResourcePermissionsMap
 
 type RoleConfig struct {
 	Id   int
@@ -78,7 +78,7 @@ type PermissionConfig struct {
 
 type ResourceConfig struct {
 	Id       int
-	Resource resources.ResourceType
+	Resource resources.AppResource
 }
 
 type AccessControlPolicy struct {

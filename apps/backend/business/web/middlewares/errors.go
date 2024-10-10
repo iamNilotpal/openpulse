@@ -18,15 +18,18 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 	responder := func(handler handler) http.HandlerFunc {
 		h := func(w http.ResponseWriter, r *http.Request) {
 			err := handler(w, r)
+			if err == nil {
+				return
+			}
 
 			var statusCode int
-			var errResp web.APIError
+			var errResp *web.APIError
 			var syntaxError *json.SyntaxError
 
 			switch {
 			case stdErrors.As(err, &syntaxError):
 				statusCode = 400
-				errResp = web.CreateAPIError(
+				errResp = web.NewAPIError(
 					fmt.Sprintf("Request body contains badly-formed JSON (at position %d).", syntaxError.Offset),
 					errors.FromErrorCode(errors.InvalidInput),
 					nil,
@@ -34,7 +37,7 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 
 			case stdErrors.Is(err, io.ErrUnexpectedEOF):
 				statusCode = 400
-				errResp = web.CreateAPIError(
+				errResp = web.NewAPIError(
 					"Request body contains badly-formed JSON.",
 					errors.FromErrorCode(errors.InvalidInput),
 					nil,
@@ -44,11 +47,11 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 				statusCode = 400
 				fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
 				msg := fmt.Sprintf("Request body contains unknown field %s.", fieldName)
-				errResp = web.CreateAPIError(msg, errors.FromErrorCode(errors.UnknownField), nil)
+				errResp = web.NewAPIError(msg, errors.FromErrorCode(errors.UnknownField), nil)
 
 			case stdErrors.Is(err, io.EOF):
 				statusCode = 400
-				errResp = web.CreateAPIError(
+				errResp = web.NewAPIError(
 					"Request body must not be empty.", errors.FromErrorCode(errors.MissingRequiredFields), nil,
 				)
 
@@ -56,7 +59,7 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 				fieldErrors := validate.GetFieldErrors(err)
 
 				statusCode = http.StatusBadRequest
-				errResp = web.CreateAPIError(
+				errResp = web.NewAPIError(
 					http.StatusText(http.StatusBadRequest),
 					errors.FromErrorCode(errors.InvalidInput),
 					fieldErrors.Fields(),
@@ -66,7 +69,7 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 				reqErr := errors.GetRequestError(err)
 
 				statusCode = reqErr.Status
-				errResp = web.CreateAPIError(
+				errResp = web.NewAPIError(
 					reqErr.Error(),
 					errors.FromErrorCode(reqErr.Code),
 					nil,
@@ -74,7 +77,7 @@ func ErrorResponder(log *zap.SugaredLogger) middleware {
 
 			default:
 				statusCode = http.StatusInternalServerError
-				errResp = web.CreateAPIError(
+				errResp = web.NewAPIError(
 					http.StatusText(http.StatusInternalServerError),
 					errors.FromErrorCode(errors.InternalServerError),
 					nil,
