@@ -46,5 +46,5 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return web.Success(w, http.StatusCreated, map[string]int{"id": id})
+	return web.Success(w, http.StatusCreated, "", map[string]int{"id": id})
 }

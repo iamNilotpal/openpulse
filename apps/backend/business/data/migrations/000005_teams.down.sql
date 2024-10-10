@@ -6,3 +6,5 @@ DROP TABLE IF EXISTS team_users;
 DROP TABLE IF EXISTS teams;
 
 DROP TABLE IF EXISTS organizations;
+
+DROP TABLE IF EXISTS team_invitations;

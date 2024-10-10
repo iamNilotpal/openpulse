@@ -7,7 +7,7 @@ import (
 )
 
 type Store interface {
-	// Create(context context.Context, payload NewUser, permissions []AccessControl) (int, error)
+	Create(context context.Context, payload NewUser) (int, error)
 	QueryById(context context.Context, id int) (User, error)
 }
 
@@ -17,6 +17,29 @@ type postgresStore struct {
 
 func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
+}
+
+func (p *postgresStore) Create(context context.Context, payload NewUser) (int, error) {
+	query := `
+		INSERT INTO
+		users(first_name, last_name, email, password_hash, role_id)
+		VALUES ($1, $2, $3, $4, $5) RETURNING id;
+	`
+
+	result, err := p.db.ExecContext(
+		context, query,
+		payload.FirstName, payload.LastName, payload.Email, payload.PasswordHash, payload.RoleId,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return int(id), nil
 }
 
 // func (p *postgresStore) Create(
