@@ -11,6 +11,7 @@ import (
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/email"
+	"github.com/iamNilotpal/openpulse/foundation/hash"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jmoiron/sqlx"
 	"github.com/redis/go-redis/v9"
@@ -20,6 +21,7 @@ import (
 type HandlerConfig struct {
 	DB                          *sqlx.DB
 	Auth                        *auth.Auth
+	HashService                 hash.Hasher
 	EmailService                *email.Email
 	Cache                       *redis.Client
 	Shutdown                    chan os.Signal
@@ -62,6 +64,7 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 			Log:                         cfg.Log,
 			Auth:                        cfg.Auth,
 			APIConfig:                   cfg.APIConfig,
+			HashService:                 cfg.HashService,
 			EmailService:                cfg.EmailService,
 			Repositories:                cfg.Repositories,
 			RolesMap:                    cfg.RolesMap,

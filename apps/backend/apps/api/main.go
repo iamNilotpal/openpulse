@@ -11,6 +11,10 @@ import (
 
 	"github.com/iamNilotpal/openpulse/apps/api/handlers"
 	"github.com/iamNilotpal/openpulse/business/repositories"
+	"github.com/iamNilotpal/openpulse/business/repositories/emails"
+	emails_store "github.com/iamNilotpal/openpulse/business/repositories/emails/store/postgres"
+	"github.com/iamNilotpal/openpulse/business/repositories/organizations"
+	organizations_store "github.com/iamNilotpal/openpulse/business/repositories/organizations/store/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	permissions_store "github.com/iamNilotpal/openpulse/business/repositories/permissions/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/resources"
@@ -25,6 +29,7 @@ import (
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/email"
+	"github.com/iamNilotpal/openpulse/foundation/hash"
 	"github.com/iamNilotpal/openpulse/foundation/logger"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -78,11 +83,17 @@ func run(log *zap.SugaredLogger) error {
 	// }
 
 	// Initialize repositories
+	usersStore := users_store.NewPostgresStore(db)
+	usersRepo := users.NewPostgresRepository(usersStore)
+
+	emailsStore := emails_store.NewPostgresStore(db)
+	emailsRepo := emails.NewPostgresRepository(emailsStore)
+
 	teamsStore := teams_store.NewPostgresStore(db)
 	teamsRepo := teams.NewRepository(teamsStore)
 
-	usersStore := users_store.NewPostgresStore(db)
-	usersRepo := users.NewPostgresRepository(usersStore)
+	orgsStore := organizations_store.NewPostgresStore(db)
+	orgsRepo := organizations.NewPostgresRepository(orgsStore)
 
 	rolesStore := roles_store.NewPostgresStore(db)
 	rolesRepo := roles.NewPostgresRepository(rolesStore)
@@ -94,11 +105,13 @@ func run(log *zap.SugaredLogger) error {
 	permissionsRepo := permissions.NewPostgresRepository(permissionsStore)
 
 	repositories := repositories.Repositories{
-		Teams:       teamsRepo,
-		Users:       usersRepo,
-		Roles:       rolesRepo,
-		Resources:   resourceRepo,
-		Permissions: permissionsRepo,
+		Organizations: orgsRepo,
+		Teams:         teamsRepo,
+		Users:         usersRepo,
+		Emails:        emailsRepo,
+		Roles:         rolesRepo,
+		Resources:     resourceRepo,
+		Permissions:   permissionsRepo,
 	}
 
 	// Get roles with rolesAccessControls
@@ -116,6 +129,9 @@ func run(log *zap.SugaredLogger) error {
 	// Initialize Email service support
 	emailService := email.New(email.Config{Cfg: cfg.Email, Logger: log})
 
+	// Initialize hasher
+	bcryptHasher := hash.NewBcryptHasher()
+
 	// Shutdown Signals
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
@@ -130,6 +146,7 @@ func run(log *zap.SugaredLogger) error {
 			// Cache:                       redis,
 			Shutdown:                    shutdown,
 			RolesMap:                    rolesMap,
+			HashService:                 bcryptHasher,
 			EmailService:                emailService,
 			Repositories:                &repositories,
 			ResourcePermissionsMap:      resourcePermissionsMap,
