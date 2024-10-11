@@ -1,12 +1,17 @@
 package onboarding_handlers
 
+import "github.com/iamNilotpal/openpulse/business/sys/validate"
+
 type OnboardingOrganizationPayload struct {
-	UserId         int    `json:"userId"`
-	OrgName        string `json:"orgName"`
-	OrgDescription string `json:"orgDescription"`
-	OrgLogoURL     string `json:"orgLogoURL"`
-	Designation    string `json:"designation"`
-	MembersCount   string `json:"membersCount"`
+	Name         string `json:"orgName" validate:"required,min=1"`
+	Description  string `json:"orgDescription" validate:"required,min=50,max=255"`
+	LogoURL      string `json:"orgLogoURL"`
+	Designation  string `json:"designation" validate:"required,min=1"`
+	MembersCount string `json:"membersCount" validate:"required,min=1"`
+}
+
+func (oop OnboardingOrganizationPayload) Validate() error {
+	return validate.Check(oop)
 }
 
 type OnboardingOrganizationResponse struct {
