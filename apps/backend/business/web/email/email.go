@@ -39,8 +39,8 @@ func New(cfg Config) *Email {
 
 func (e *Email) GenerateVerificationToken(c Claims) (string, error) {
 	token := jwt.NewWithClaims(e.method, c)
-	signedToken, err := token.SignedString(e.cfg.Secret)
 
+	signedToken, err := token.SignedString(e.cfg.Secret)
 	if err != nil {
 		return "", errors.NewRequestError(
 			"Internal Server Error.", http.StatusInternalServerError, errors.InternalServerError,
