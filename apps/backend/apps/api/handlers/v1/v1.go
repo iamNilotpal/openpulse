@@ -11,6 +11,7 @@ import (
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/email"
 	"github.com/iamNilotpal/openpulse/business/web/middlewares"
+	"github.com/iamNilotpal/openpulse/foundation/hash"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"go.uber.org/zap"
 )
@@ -21,6 +22,7 @@ type Config struct {
 	App                         *web.App
 	Auth                        *auth.Auth
 	EmailService                *email.Email
+	HashService                 hash.Hasher
 	Log                         *zap.SugaredLogger
 	Repositories                *repositories.Repositories
 	APIConfig                   *config.OpenpulseAPIConfig
@@ -35,24 +37,34 @@ func SetupRoutes(cfg Config) {
 		auth_handlers.Config{
 			Auth:                        cfg.Auth,
 			RolesMap:                    cfg.RolesMap,
+			HashService:                 cfg.HashService,
 			EmailService:                cfg.EmailService,
 			AuthCfg:                     &cfg.APIConfig.Auth,
 			UsersRepo:                   cfg.Repositories.Users,
+			EmailsRepo:                  cfg.Repositories.Emails,
 			RoleResourcesPermissionsMap: cfg.RoleResourcesPermissionsMap,
 		},
 	)
-	onboardingHandler := onboarding_handlers.New(onboarding_handlers.Config{})
+	onboardingHandler := onboarding_handlers.New(
+		onboarding_handlers.Config{
+			OrgRepo: cfg.Repositories.Organizations,
+		},
+	)
 	invitationHandler := invitations_handlers.New(invitations_handlers.Config{})
 	rolesHandler := roles_handler.New(roles_handler.Config{Roles: cfg.Repositories.Roles})
 
 	cfg.App.Route(apiV1, func(r chi.Router) {
 		r.Post("/roles", errorMiddleware(rolesHandler.Create))
 
-		r.Post("/auth/register", errorMiddleware(authHandler.Register))
-		r.Post("/auth/login", errorMiddleware(authHandler.Login))
+		r.Post("/auth/register", errorMiddleware(authHandler.SignUp))
+		r.Post("/auth/login", errorMiddleware(authHandler.SignIn))
 
-		r.Post("/onboard/organization", errorMiddleware(onboardingHandler.SaveOrganizationDetails))
-		r.Post("/onboard/team", errorMiddleware(onboardingHandler.SaveTeamDetails))
-		r.Post("/onboard/invite", errorMiddleware(invitationHandler.InviteMembers))
+		r.Route("/onboard", func(r chi.Router) {
+			r.Use(middlewares.Authenticate(cfg.Auth, cfg.Repositories.Users))
+
+			r.Post("/organization", errorMiddleware(onboardingHandler.CreateOrganization))
+			r.Post("/team", errorMiddleware(onboardingHandler.CreateTeam))
+			r.Post("/invite", errorMiddleware(invitationHandler.InviteMembers))
+		})
 	})
 }
