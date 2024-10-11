@@ -156,16 +156,3 @@ func (p *postgresStore) QueryById(context context.Context, id int) (User, error)
 	user.Resources = resources
 	return user, nil
 }
-
-// 	var args []any
-// 	query = "INSERT INTO users_permissions (user_id, permission_id, enabled, updated_by) VALUES "
-
-// 	params := database.MultipleQueryParams(
-// 		permissions,
-// 		func(index int, isLast bool, v AccessControl) string {
-// 			args = append(args, id, v.Permission.Id, true, id)
-// 			return "(?, ?, ?, ?)"
-// 		},
-// 	)
-
-// 	query += strings.Join(params, ", ")

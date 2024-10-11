@@ -12,6 +12,7 @@
     "clsx",
     "Contentful",
     "godotenv",
+    "Hasher",
     "Infof",
     "Infow",
     "jackc",

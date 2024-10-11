@@ -2,6 +2,7 @@ package teams_store
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -27,7 +28,7 @@ func (s *postgresStore) Create(context context.Context, team NewTeam) (int, erro
 	if err := database.WithTx(
 		context,
 		s.db,
-		nil,
+		&sql.TxOptions{},
 		func(tx *sqlx.Tx) error {
 			query := `
 				INSERT INTO
@@ -36,8 +37,7 @@ func (s *postgresStore) Create(context context.Context, team NewTeam) (int, erro
 					($1, $2, $3, $4, $5, $6) RETURNING id;
 			`
 
-			if err := tx.QueryRowContext(
-				context,
+			if err := tx.QueryRowContext(context,
 				query,
 				team.Name,
 				team.Description,
@@ -46,6 +46,16 @@ func (s *postgresStore) Create(context context.Context, team NewTeam) (int, erro
 				team.CreatorId,
 				team.OrgId,
 			).Scan(&id); err != nil {
+				return err
+			}
+
+			query = `
+				UPDATE users
+					SET users.team_id = $1
+				WHERE
+					users.id = $2;
+			`
+			if _, err := tx.ExecContext(context, query, id, team.CreatorId); err != nil {
 				return err
 			}
 
@@ -64,8 +74,15 @@ func (s *postgresStore) Create(context context.Context, team NewTeam) (int, erro
 				},
 			)
 
+			fmt.Printf("\nARGS : %+v\n", args)
+			fmt.Printf("\nPARAMS : %+v\n", params)
+
 			query += strings.Join(params, ", ")
-			fmt.Printf("\nQUERY : %s", query)
+			fmt.Printf("\nBefore Rebind QUERY : %s\n", query)
+
+			query = tx.Rebind(query)
+			fmt.Printf("\nAfter Rebind QUERY : %s\n", query)
+
 			if _, err := tx.ExecContext(context, query, args...); err != nil {
 				return err
 			}
@@ -98,7 +115,11 @@ func (s *postgresStore) AddTeamMember(
 	)
 
 	query += strings.Join(params, ", ")
-	fmt.Printf("\nQUERY : %s\n", query)
+	fmt.Printf("\nBefore Rebind QUERY : %s\n", query)
+
+	query = s.db.Rebind(query)
+	fmt.Printf("\nAfter Rebind QUERY : %s\n", query)
+
 	if _, err := s.db.ExecContext(context, query, args...); err != nil {
 		return err
 	}
@@ -108,16 +129,5 @@ func (s *postgresStore) AddTeamMember(
 
 func (s *postgresStore) QueryById(context context.Context, id int) (Team, error) {
 	var team Team
-	// query := `
-	// 	SELECT id, name, description, total_members, admin_id, created_at, updated_at
-	// 	FROM teams
-	// 	WHERE id = $1;
-	// `
-	// if err := s.db.QueryRowContext(context, query, id).Scan(
-	// 	&team.Id, &team.Name, &team.Description, &team.AdminId, &team.CreatedAt, &team.UpdatedAt,
-	// ); err != nil {
-	// 	return Team{}, err
-	// }
-
 	return team, nil
 }

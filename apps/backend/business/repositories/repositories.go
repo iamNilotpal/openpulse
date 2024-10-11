@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"github.com/iamNilotpal/openpulse/business/repositories/emails"
+	"github.com/iamNilotpal/openpulse/business/repositories/organizations"
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/repositories/resources"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
@@ -9,9 +11,11 @@ import (
 )
 
 type Repositories struct {
-	Teams       teams.Repository
-	Users       users.Repository
-	Roles       roles.Repository
-	Resources   resources.Repository
-	Permissions permissions.Repository
+	Users         users.Repository
+	Emails        emails.Repository
+	Organizations organizations.Repository
+	Teams         teams.Repository
+	Roles         roles.Repository
+	Resources     resources.Repository
+	Permissions   permissions.Repository
 }

@@ -3,6 +3,8 @@ package errors
 type ErrorCode string
 
 const (
+	FlowIncomplete ErrorCode = "INCOMPLETE_FLOW"
+
 	DuplicateValue ErrorCode = "DUPLICATE_VALUE"
 	NotFound       ErrorCode = "RESOURCE_NOT_FOUND"
 	AlreadyExists  ErrorCode = "RESOURCE_ALREADY_EXISTS"
@@ -19,7 +21,7 @@ const (
 	Forbidden             ErrorCode = "FORBIDDEN"
 	Unauthorized          ErrorCode = "UNAUTHORIZED"
 	TokenExpired          ErrorCode = "TOKEN_EXPIRED"
-	InvalidAuthHeader     ErrorCode = "INVALID_TOKEN_HEADER"
+	InvalidAuthHeader     ErrorCode = "INVALID_AUTH_HEADER"
 	InvalidTokenSignature ErrorCode = "INVALID_TOKEN_SIGNATURE"
 )
 
