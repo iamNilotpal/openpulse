@@ -10,6 +10,7 @@ import (
 
 var (
 	ErrVerificationDataNotFound = errors.New("data not found")
+	ErrVerificationLimitExceed  = errors.New("verification limit exceeded")
 )
 
 type Repository interface {
@@ -37,6 +38,9 @@ func (r *postgresRepository) ValidateVerificationDetails(
 	if err := r.store.ValidateVerificationDetails(context, token, userId, expiresAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrVerificationDataNotFound
+		}
+		if errors.Is(err, emails_store.ErrVerificationLimitExceed) {
+			return ErrVerificationLimitExceed
 		}
 		return err
 	}

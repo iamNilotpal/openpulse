@@ -2,13 +2,20 @@ package users_store
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"strings"
 
+	teams_store "github.com/iamNilotpal/openpulse/business/repositories/teams/stores/postgres"
+	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/jmoiron/sqlx"
 )
 
 type Store interface {
-	Create(context context.Context, payload NewUser) (int, error)
 	QueryById(context context.Context, id int) (User, error)
+	Create(context context.Context, cmd NewUser) (int, error)
+	CreateTeam(context context.Context, team NewTeam) (int, error)
+	CreateOrganization(context context.Context, cmd NewOrganization) (int, error)
 }
 
 type postgresStore struct {
@@ -19,7 +26,7 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
 }
 
-func (p *postgresStore) Create(context context.Context, payload NewUser) (int, error) {
+func (s *postgresStore) Create(context context.Context, cmd NewUser) (int, error) {
 	query := `
 		INSERT INTO
 			users(first_name, last_name, email, password_hash, role_id)
@@ -28,19 +35,127 @@ func (p *postgresStore) Create(context context.Context, payload NewUser) (int, e
 	`
 
 	var id int
-	if err := p.db.QueryRowContext(
+	if err := s.db.QueryRowContext(
 		context,
 		query,
-		payload.FirstName,
-		payload.LastName,
-		payload.Email,
-		payload.PasswordHash,
-		payload.RoleId,
+		cmd.FirstName,
+		cmd.LastName,
+		cmd.Email,
+		cmd.PasswordHash,
+		cmd.RoleId,
 	).Scan(&id); err != nil {
 		return 0, err
 	}
 
 	return id, nil
+}
+
+func (s *postgresStore) CreateOrganization(ctx context.Context, cmd NewOrganization) (int, error) {
+	var id int
+	err := database.WithTx(
+		ctx,
+		s.db,
+		&sql.TxOptions{},
+		func(tx *sqlx.Tx) error {
+			query := `
+				INSERT INTO
+					organizations (
+						name,
+						description,
+						logo_url,
+						total_employees,
+						admin_id
+					)
+				VALUES
+					($1, $2, $3, $4, $5) RETURNING id;
+			`
+
+			var id int
+			if err := tx.QueryRowContext(
+				ctx, query, cmd.Name, cmd.Description, cmd.LogoURL, cmd.TotalEmployees, cmd.AdminId,
+			).Scan(&id); err != nil {
+				return err
+			}
+
+			query = `
+				UPDATE users
+				SET designation = $1
+				WHERE id = $2;
+			`
+
+			_, err := tx.ExecContext(ctx, query, cmd.Designation, cmd.AdminId)
+			return err
+		},
+	)
+
+	return id, err
+}
+
+func (s *postgresStore) CreateTeam(ctx context.Context, team NewTeam) (int, error) {
+	var id int
+	err := database.WithTx(
+		ctx,
+		s.db,
+		&sql.TxOptions{},
+		func(tx *sqlx.Tx) error {
+			query := `
+				INSERT INTO
+					roles (name, description, total_members, invitation_code, creator_id, org_id)
+				VALUES
+					($1, $2, $3, $4, $5, $6) RETURNING id;
+			`
+
+			if err := tx.QueryRowContext(ctx,
+				query,
+				team.Name,
+				team.Description,
+				1,
+				team.InvitationCode,
+				team.CreatorId,
+				team.OrgId,
+			).Scan(&id); err != nil {
+				return err
+			}
+
+			query = `
+				UPDATE users
+					SET users.team_id = $1
+				WHERE
+					users.id = $2;
+			`
+			if _, err := tx.ExecContext(ctx, query, id, team.CreatorId); err != nil {
+				return err
+			}
+
+			var args []any
+			query = `
+				INSERT INTO
+					team_users (team_id, user_id, role_id, resource_id, permission_id)
+				VALUES
+			`
+
+			params := database.BuildQueryParams(
+				team.UserRBAC,
+				func(index int, isLast bool, v teams_store.UserRBAC) string {
+					args = append(args, id, v.UserId, v.RoleId, v.ResourceId, v.PermissionId)
+					return "(?, ?, ?, ?, ?)"
+				},
+			)
+
+			fmt.Printf("\nARGS : %+v\n", args)
+			fmt.Printf("\nPARAMS : %+v\n", params)
+
+			query += strings.Join(params, ", ")
+			fmt.Printf("\nBefore Rebind QUERY : %s\n", query)
+
+			query = tx.Rebind(query)
+			fmt.Printf("\nAfter Rebind QUERY : %s\n", query)
+
+			_, err := tx.ExecContext(ctx, query, args...)
+			return err
+		},
+	)
+	return id, err
 }
 
 func (p *postgresStore) QueryById(context context.Context, id int) (User, error) {

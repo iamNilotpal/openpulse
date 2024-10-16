@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/iamNilotpal/openpulse/business/repositories/emails"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
@@ -24,28 +25,28 @@ type Config struct {
 	Auth                        *auth.Auth
 	EmailService                *email.Email
 	HashService                 hash.Hasher
-	AuthCfg                     *config.Auth
 	UsersRepo                   users.Repository
 	EmailsRepo                  emails.Repository
 	RolesMap                    auth.RoleConfigMap
 	RoleResourcesPermissionsMap auth.RoleAccessControlMap
+	Config                      *config.OpenpulseAPIConfig
 }
 
 type handler struct {
 	auth                        *auth.Auth
-	authCfg                     *config.Auth
 	emailService                *email.Email
 	hashService                 hash.Hasher
 	usersRepo                   users.Repository
 	emailsRepo                  emails.Repository
 	rolesMap                    auth.RoleConfigMap
 	RoleResourcesPermissionsMap auth.RoleAccessControlMap
+	config                      *config.OpenpulseAPIConfig
 }
 
 func New(cfg Config) *handler {
 	return &handler{
 		auth:                        cfg.Auth,
-		authCfg:                     cfg.AuthCfg,
+		config:                      cfg.Config,
 		rolesMap:                    cfg.RolesMap,
 		usersRepo:                   cfg.UsersRepo,
 		emailsRepo:                  cfg.EmailsRepo,
@@ -56,13 +57,13 @@ func New(cfg Config) *handler {
 }
 
 func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
-	var payload SignUpPayload
-	if err := web.Decode(r, &payload); err != nil {
+	var input SignUpInput
+	if err := web.Decode(r, &input); err != nil {
 		return err
 	}
 
 	orgAdmin := h.rolesMap[roles.RoleOrgAdmin]
-	passwordHash, err := h.hashService.Hash([]byte(payload.Password))
+	passwordHash, err := h.hashService.Hash([]byte(input.Password))
 
 	if err != nil {
 		return errors.NewRequestError(
@@ -76,13 +77,12 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		r.Context(),
 		users.NewUser{
 			RoleId:       orgAdmin.Id,
-			Email:        payload.Email,
-			LastName:     payload.LastName,
-			FirstName:    payload.FirstName,
-			PasswordHash: []byte(passwordHash),
+			PasswordHash: passwordHash,
+			Email:        input.Email,
+			LastName:     input.LastName,
+			FirstName:    input.FirstName,
 		},
 	)
-
 	if err != nil {
 		if ok := database.CheckPQError(
 			err,
@@ -99,7 +99,17 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	token, err := h.emailService.GenerateVerificationToken(email.Claims{})
+	token, err := h.emailService.GenerateVerificationToken(email.Claims{
+		Email: input.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    h.config.Auth.Issuer,
+			Subject:   strconv.Itoa(userId),
+			Audience:  jwt.ClaimStrings{h.config.Auth.Audience},
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(h.config.Email.TokenExpTime)),
+		},
+	})
 	if err != nil {
 		return web.Error(
 			w,
@@ -107,7 +117,12 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 			web.NewAPIError(
 				"Error while sending verification mail.",
 				errors.FromErrorCode(errors.FlowIncomplete),
-				map[string]bool{"registration": true, "verificationMail": false},
+				RegisterUserResponse{
+					State: RegistrationState{
+						EmailSentState:    AUTH_STATE_VERIFICATION_MAIL_NOT_SENT,
+						RegistrationState: AUTH_STATE_USER_REGISTRATION_INCOMPLETE,
+					},
+				},
 			),
 		)
 	}
@@ -119,7 +134,12 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 			web.NewAPIError(
 				"Error while sending verification mail.",
 				errors.FromErrorCode(errors.FlowIncomplete),
-				map[string]bool{"registration": true, "verificationMail": false},
+				RegisterUserResponse{
+					State: RegistrationState{
+						EmailSentState:    AUTH_STATE_VERIFICATION_MAIL_NOT_SENT,
+						RegistrationState: AUTH_STATE_USER_REGISTRATION_COMPLETE,
+					},
+				},
 			),
 		)
 	}
@@ -130,7 +150,7 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 			MaxAttempts:       5,
 			VerificationToken: token,
 			UserId:            userId,
-			Email:             payload.Email,
+			Email:             input.Email,
 			ExpiresAt:         time.Now().Add(time.Minute * 30),
 		},
 	); err != nil {
@@ -140,7 +160,12 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 			web.NewAPIError(
 				http.StatusText(http.StatusInternalServerError),
 				errors.FromErrorCode(errors.FlowIncomplete),
-				map[string]bool{"registration": true, "verificationMail": false},
+				RegisterUserResponse{
+					State: RegistrationState{
+						EmailSentState:    AUTH_STATE_VERIFICATION_MAIL_NOT_SENT,
+						RegistrationState: AUTH_STATE_USER_REGISTRATION_COMPLETE,
+					},
+				},
 			),
 		)
 	}
@@ -149,12 +174,18 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		w,
 		http.StatusCreated,
 		"Account registered successfully.",
-		RegisterUserResponse{UserId: userId},
+		RegisterUserResponse{
+			UserId: userId,
+			State: RegistrationState{
+				EmailSentState:    AUTH_STATE_VERIFICATION_MAIL_SENT,
+				RegistrationState: AUTH_STATE_USER_REGISTRATION_COMPLETE,
+			},
+		},
 	)
 }
 
 func (h *handler) SignIn(w http.ResponseWriter, r *http.Request) error {
-	var payload SignInPayload
+	var payload SignInInput
 	if err := web.Decode(r, &payload); err != nil {
 		return err
 	}
@@ -186,11 +217,10 @@ func (h *handler) VerifyEmail(w http.ResponseWriter, r *http.Request) error {
 		r.Context(), token, userId, int(claims.ExpiresAt.UnixNano()),
 	); err != nil {
 		if stdErrors.Is(err, emails.ErrVerificationDataNotFound) {
-			return errors.NewRequestError(
-				"Verification data not found.",
-				http.StatusNotFound,
-				errors.NotFound,
-			)
+			return errors.NewRequestError("Invitation expired.", http.StatusNotFound, errors.NotFound)
+		}
+		if stdErrors.Is(err, emails.ErrVerificationLimitExceed) {
+			return errors.NewRequestError("Invitation expired.", http.StatusNotFound, errors.NotFound)
 		}
 		return err
 	}

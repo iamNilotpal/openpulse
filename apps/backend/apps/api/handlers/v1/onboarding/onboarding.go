@@ -3,39 +3,44 @@ package onboarding_handlers
 import (
 	"net/http"
 
-	"github.com/iamNilotpal/openpulse/business/repositories/organizations"
+	"github.com/iamNilotpal/openpulse/business/repositories/users"
+	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
+	nanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type Config struct {
-	OrgRepo organizations.Repository
+	UsersRepo users.Repository
+	Config    *config.OpenpulseAPIConfig
 }
 
 type handler struct {
-	orgRepo organizations.Repository
+	usersRepo users.Repository
+	config    *config.OpenpulseAPIConfig
 }
 
 func New(cfg Config) *handler {
-	return &handler{orgRepo: cfg.OrgRepo}
+	return &handler{config: cfg.Config, usersRepo: cfg.UsersRepo}
 }
 
 func (h *handler) CreateOrganization(w http.ResponseWriter, r *http.Request) error {
-	var payload OnboardingOrganizationPayload
+	var payload CreateOrganizationInput
 	if err := web.Decode(r, &payload); err != nil {
 		return err
 	}
 
 	claims := auth.GetClaims(r.Context())
-	orgId, err := h.orgRepo.Create(r.Context(), organizations.NewOrganization{
-		Name:           payload.Name,
+	orgId, err := h.usersRepo.CreateOrganization(r.Context(), users.NewOrganization{
 		AdminId:        claims.UserId,
+		Name:           payload.Name,
 		Description:    payload.Description,
 		LogoURL:        payload.LogoURL,
+		Designation:    payload.Designation,
 		TotalEmployees: payload.MembersCount,
 	})
 
@@ -64,13 +69,35 @@ func (h *handler) CreateOrganization(w http.ResponseWriter, r *http.Request) err
 		w,
 		http.StatusCreated,
 		"Organization created successfully.",
-		OnboardingOrganizationResponse{OrgId: orgId},
+		CreateOrganizationResponse{OrgId: orgId},
 	)
 }
 
 func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
-	var payload OnboardingTeamPayload
-	if err := web.Decode(r, &payload); err != nil {
+	var input CreateTeamInput
+	if err := web.Decode(r, &input); err != nil {
+		return err
+	}
+
+	claims := auth.GetClaims(r.Context())
+	code, err := nanoid.New()
+	if err != nil {
+		return err
+	}
+
+	teamId, err := h.usersRepo.CreateTeam(
+		r.Context(),
+		users.NewTeam{
+			InvitationCode: code,
+			OrgId:          input.OrgId,
+			CreatorId:      claims.UserId,
+			CreatorRoleId:  claims.RoleId,
+			Name:           input.TeamName,
+			Description:    input.TeamDescription,
+			UserRBAC:       []users.UserRBAC{},
+		},
+	)
+	if err != nil {
 		return err
 	}
 
@@ -78,6 +105,6 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 		w,
 		http.StatusCreated,
 		"Details saved successfully.",
-		OnboardingOrganizationResponse{OrgId: 0},
+		CreateTeamResponse{TeamId: teamId},
 	)
 }
