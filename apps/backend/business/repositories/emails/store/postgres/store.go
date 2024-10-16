@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	ErrorVerifyLimitExceed = errors.New("verification limit exceeded")
+	ErrVerificationLimitExceed = errors.New("verification limit exceeded")
 )
 
 type Store interface {
@@ -93,27 +93,21 @@ func (s *postgresStore) ValidateVerificationDetails(
 						id = $1;
 				`
 				tx.ExecContext(ctx, query, id)
-				return ErrorVerifyLimitExceed
+				return ErrVerificationLimitExceed
 			}
 
 			query = `
 				UPDATE email_verifications
-					SET attempt_count = attempt_count + 1, verified_at = $1, is_revoked = TRUE
+				SET
+					attempt_count = attempt_count + 1,
+					verified_at = $1,
+					is_revoked = TRUE,
+					is_verified = TRUE
 				WHERE
 					id = $2;
 			`
-			if _, err := tx.ExecContext(ctx, query, time.Now(), id); err != nil {
-				return err
-			}
 
-			query = `
-				UPDATE users
-					SET is_verified = TRUE
-				WHERE
-					id = $1;
-			`
-			_, err := tx.ExecContext(ctx, query, userId)
-
+			_, err := tx.ExecContext(ctx, query, time.Now(), id)
 			return err
 		},
 	)

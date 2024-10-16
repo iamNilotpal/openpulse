@@ -1,13 +1,5 @@
 package organizations_store
 
-type NewOrganization struct {
-	AdminId        int
-	Name           string
-	Description    string
-	LogoURL        string
-	TotalEmployees string
-}
-
 type Organization struct {
 	Id             int
 	Name           string

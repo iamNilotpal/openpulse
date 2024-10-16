@@ -2,8 +2,6 @@ package organizations
 
 import (
 	"time"
-
-	organizations_store "github.com/iamNilotpal/openpulse/business/repositories/organizations/store/postgres"
 )
 
 type NewOrganization struct {
@@ -30,14 +28,4 @@ type OrgAdmin struct {
 	FirstName string
 	LastName  string
 	Email     string
-}
-
-func ToNewDBOrg(org NewOrganization) organizations_store.NewOrganization {
-	return organizations_store.NewOrganization{
-		Name:           org.Name,
-		LogoURL:        org.LogoURL,
-		AdminId:        org.AdminId,
-		Description:    org.Description,
-		TotalEmployees: org.TotalEmployees,
-	}
 }

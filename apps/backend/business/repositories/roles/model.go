@@ -5,7 +5,6 @@ import (
 
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/repositories/resources"
-	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/postgres"
 )
 
 type Role struct {
@@ -39,40 +38,4 @@ type NewRole struct {
 type UpdateRole struct {
 	Name        string
 	Description string
-}
-
-func ToNewDBRole(r NewRole) roles_store.NewRole {
-	return roles_store.NewRole{
-		Name:         r.Name,
-		Description:  r.Description,
-		IsSystemRole: r.IsSystemRole,
-		Role:         ParseRole(r.Role),
-	}
-}
-
-func FromDBRole(r roles_store.Role) Role {
-	createdAt, _ := time.Parse(time.UnixDate, r.CreatedAt)
-	updatedAt, _ := time.Parse(time.UnixDate, r.UpdatedAt)
-
-	return Role{
-		Id:           r.Id,
-		Name:         r.Name,
-		CreatedAt:    createdAt,
-		UpdatedAt:    updatedAt,
-		Description:  r.Description,
-		IsSystemRole: r.IsSystemRole,
-		Role:         ParseRoleInt(r.Role),
-	}
-}
-
-func FromDBRoleAccessConfig(r roles_store.RoleAccessConfig) RoleAccessConfig {
-	return RoleAccessConfig{Id: r.Id, Role: ParseRoleInt(r.Role)}
-}
-
-func FromDBRoleAccessControl(r roles_store.RoleAccessControl) RoleAccessControl {
-	return RoleAccessControl{
-		Role:       FromDBRoleAccessConfig(r.Role),
-		Resource:   resources.FromDBResourceAccessDetails(r.Resource),
-		Permission: permissions.FromDBPermissionAccessDetails(r.Permission),
-	}
 }

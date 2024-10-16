@@ -7,8 +7,10 @@ import (
 )
 
 type Repository interface {
-	Create(context context.Context, payload NewUser) (int, error)
 	QueryById(context context.Context, id int) (User, error)
+	Create(context context.Context, payload NewUser) (int, error)
+	CreateTeam(context context.Context, cmd NewTeam) (int, error)
+	CreateOrganization(context context.Context, cmd NewOrganization) (int, error)
 }
 
 type postgresRepository struct {
@@ -19,13 +21,23 @@ func NewPostgresRepository(store users_store.Store) *postgresRepository {
 	return &postgresRepository{store: store}
 }
 
-func (c *postgresRepository) Create(context context.Context, payload NewUser) (int, error) {
-	id, err := c.store.Create(context, ToNewDBUser(payload))
+func (r *postgresRepository) Create(context context.Context, payload NewUser) (int, error) {
+	id, err := r.store.Create(context, ToNewDBUser(payload))
 	return id, err
 }
 
-func (c *postgresRepository) QueryById(context context.Context, id int) (User, error) {
-	dbUser, err := c.store.QueryById(context, id)
+func (r *postgresRepository) CreateOrganization(
+	context context.Context, cmd NewOrganization,
+) (int, error) {
+	return r.store.CreateOrganization(context, ToNewDBOrganization(cmd))
+}
+
+func (r *postgresRepository) CreateTeam(context context.Context, cmd NewTeam) (int, error) {
+	return r.store.CreateTeam(context, ToNewDBTeam(cmd))
+}
+
+func (r *postgresRepository) QueryById(context context.Context, id int) (User, error) {
+	dbUser, err := r.store.QueryById(context, id)
 	if err != nil {
 		return User{}, err
 	}

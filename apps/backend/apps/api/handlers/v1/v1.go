@@ -37,9 +37,9 @@ func SetupRoutes(cfg Config) {
 		auth_handlers.Config{
 			Auth:                        cfg.Auth,
 			RolesMap:                    cfg.RolesMap,
+			Config:                      cfg.APIConfig,
 			HashService:                 cfg.HashService,
 			EmailService:                cfg.EmailService,
-			AuthCfg:                     &cfg.APIConfig.Auth,
 			UsersRepo:                   cfg.Repositories.Users,
 			EmailsRepo:                  cfg.Repositories.Emails,
 			RoleResourcesPermissionsMap: cfg.RoleResourcesPermissionsMap,
@@ -47,7 +47,8 @@ func SetupRoutes(cfg Config) {
 	)
 	onboardingHandler := onboarding_handlers.New(
 		onboarding_handlers.Config{
-			OrgRepo: cfg.Repositories.Organizations,
+			Config:    cfg.APIConfig,
+			UsersRepo: cfg.Repositories.Users,
 		},
 	)
 	invitationHandler := invitations_handlers.New(invitations_handlers.Config{})
