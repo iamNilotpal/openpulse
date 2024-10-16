@@ -1,5 +1,7 @@
 package users_store
 
+import teams_store "github.com/iamNilotpal/openpulse/business/repositories/teams/stores/postgres"
+
 type NewUser struct {
 	RoleId       int
 	FirstName    string
@@ -63,4 +65,23 @@ type Permission struct {
 type ResourcePermission struct {
 	Resource   Resource
 	Permission Permission
+}
+
+type NewOrganization struct {
+	AdminId        int
+	Name           string
+	Description    string
+	LogoURL        string
+	TotalEmployees string
+	Designation    string
+}
+
+type NewTeam struct {
+	CreatorId      int
+	CreatorRoleId  int
+	OrgId          int
+	Name           string
+	Description    string
+	InvitationCode string
+	UserRBAC       []teams_store.UserRBAC
 }

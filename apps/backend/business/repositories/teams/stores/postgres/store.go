@@ -2,7 +2,6 @@ package teams_store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -11,7 +10,6 @@ import (
 )
 
 type Store interface {
-	Create(context context.Context, team NewTeam) (int, error)
 	QueryById(context context.Context, id int) (Team, error)
 }
 
@@ -21,79 +19,6 @@ type postgresStore struct {
 
 func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
-}
-
-func (s *postgresStore) Create(context context.Context, team NewTeam) (int, error) {
-	var id int
-	if err := database.WithTx(
-		context,
-		s.db,
-		&sql.TxOptions{},
-		func(tx *sqlx.Tx) error {
-			query := `
-				INSERT INTO
-					roles (name, description, total_members, invitation_code, creator_id, org_id)
-				VALUES
-					($1, $2, $3, $4, $5, $6) RETURNING id;
-			`
-
-			if err := tx.QueryRowContext(context,
-				query,
-				team.Name,
-				team.Description,
-				1,
-				team.InvitationCode,
-				team.CreatorId,
-				team.OrgId,
-			).Scan(&id); err != nil {
-				return err
-			}
-
-			query = `
-				UPDATE users
-					SET users.team_id = $1
-				WHERE
-					users.id = $2;
-			`
-			if _, err := tx.ExecContext(context, query, id, team.CreatorId); err != nil {
-				return err
-			}
-
-			var args []any
-			query = `
-				INSERT INTO
-					team_users (team_id, user_id, role_id, resource_id, permission_id)
-				VALUES
-			`
-
-			params := database.BuildQueryParams(
-				team.UserRBAC,
-				func(index int, isLast bool, v UserRBAC) string {
-					args = append(args, id, v.UserId, v.RoleId, v.ResourceId, v.PermissionId)
-					return "(?, ?, ?, ?, ?)"
-				},
-			)
-
-			fmt.Printf("\nARGS : %+v\n", args)
-			fmt.Printf("\nPARAMS : %+v\n", params)
-
-			query += strings.Join(params, ", ")
-			fmt.Printf("\nBefore Rebind QUERY : %s\n", query)
-
-			query = tx.Rebind(query)
-			fmt.Printf("\nAfter Rebind QUERY : %s\n", query)
-
-			if _, err := tx.ExecContext(context, query, args...); err != nil {
-				return err
-			}
-
-			return nil
-		},
-	); err != nil {
-		return 0, err
-	}
-
-	return id, nil
 }
 
 func (s *postgresStore) AddTeamMember(

@@ -6,7 +6,6 @@ import (
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/repositories/resources"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
-	users_store "github.com/iamNilotpal/openpulse/business/repositories/users/stores/postgres"
 )
 
 type NewUser struct {
@@ -58,71 +57,28 @@ type ResourcePermission struct {
 	Permission Permission
 }
 
-func ToNewDBUser(p NewUser) users_store.NewUser {
-	return users_store.NewUser{
-		Email:        p.Email,
-		RoleId:       p.RoleId,
-		FirstName:    p.FirstName,
-		LastName:     p.LastName,
-		PasswordHash: p.PasswordHash,
-	}
+type NewOrganization struct {
+	AdminId        int
+	Name           string
+	Description    string
+	LogoURL        string
+	TotalEmployees string
+	Designation    string
 }
 
-func FromDBRole(r users_store.Role) Role {
-	return Role{
-		Id:           r.Id,
-		Name:         r.Name,
-		Description:  r.Description,
-		IsSystemRole: r.IsSystemRole,
-		Role:         roles.ParseRoleInt(r.Role),
-	}
+type NewTeam struct {
+	CreatorId      int
+	CreatorRoleId  int
+	OrgId          int
+	Name           string
+	Description    string
+	InvitationCode string
+	UserRBAC       []UserRBAC
 }
 
-func FromDBResource(r users_store.Resource) Resource {
-	return Resource{
-		Id:          r.Id,
-		Name:        r.Name,
-		Description: r.Description,
-		Resource:    resources.ParseAppResourceInt(r.Resource),
-	}
-}
-
-func FromDBPermission(p users_store.Permission) Permission {
-	return Permission{
-		Id:          p.Id,
-		Name:        p.Name,
-		Enabled:     p.Enabled,
-		Description: p.Description,
-		Action:      permissions.ParseActionInt(p.Action),
-	}
-}
-
-func FromDBResourceWithPermission(r users_store.ResourcePermission) ResourcePermission {
-	return ResourcePermission{
-		Resource:   FromDBResource(r.Resource),
-		Permission: FromDBPermission(r.Permission),
-	}
-}
-
-func FromDBUser(u users_store.User) User {
-	createdAt, _ := time.Parse(time.UnixDate, u.CreatedAt)
-	updatedAt, _ := time.Parse(time.UnixDate, u.UpdatedAt)
-
-	resources := make([]ResourcePermission, 0, len(u.Resources))
-	for i, r := range u.Resources {
-		resources[i] = FromDBResourceWithPermission(r)
-	}
-
-	return User{
-		ID:            u.Id,
-		Email:         u.Email,
-		LastName:      u.LastName,
-		FirstName:     u.FirstName,
-		AvatarUrl:     u.AvatarUrl,
-		AccountStatus: ParseStatusInt(u.AccountStatus),
-		Resources:     resources,
-		Role:          FromDBRole(u.Role),
-		CreatedAt:     createdAt,
-		UpdatedAt:     updatedAt,
-	}
+type UserRBAC struct {
+	RoleId       int
+	UserId       int
+	ResourceId   int
+	PermissionId int
 }

@@ -12,16 +12,6 @@ type Team struct {
 	UpdatedAt      string
 }
 
-type NewTeam struct {
-	CreatorId      int
-	CreatorRoleId  int
-	OrgId          int
-	Name           string
-	Description    string
-	InvitationCode string
-	UserRBAC       []UserRBAC
-}
-
 type UserRBAC struct {
 	RoleId       int
 	UserId       int
