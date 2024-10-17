@@ -72,10 +72,10 @@ func StatusCheck(ctx context.Context, db *sqlx.DB) error {
 	return db.QueryRowContext(ctx, q).Scan(&tmp)
 }
 
-func CheckPQError(err error, f func(*pq.Error) bool) bool {
+func CheckPQError(err error, f func(*pq.Error) error) error {
 	e, ok := err.(*pq.Error)
 	if !ok {
-		return false
+		return nil
 	}
 
 	return f(e)
