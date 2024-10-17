@@ -15,17 +15,17 @@ import (
 )
 
 type Config struct {
-	UsersRepo users.Repository
-	Config    *config.OpenpulseAPIConfig
+	Users  users.Repository
+	Config *config.OpenpulseAPIConfig
 }
 
 type handler struct {
-	usersRepo users.Repository
-	config    *config.OpenpulseAPIConfig
+	users  users.Repository
+	config *config.OpenpulseAPIConfig
 }
 
 func New(cfg Config) *handler {
-	return &handler{config: cfg.Config, usersRepo: cfg.UsersRepo}
+	return &handler{config: cfg.Config, users: cfg.Users}
 }
 
 func (h *handler) CreateOrganization(w http.ResponseWriter, r *http.Request) error {
@@ -34,30 +34,35 @@ func (h *handler) CreateOrganization(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	claims := auth.GetClaims(r.Context())
-	orgId, err := h.usersRepo.CreateOrganization(r.Context(), users.NewOrganization{
-		AdminId:        claims.UserId,
-		Name:           payload.Name,
-		Description:    payload.Description,
-		LogoURL:        payload.LogoURL,
-		Designation:    payload.Designation,
-		TotalEmployees: payload.MembersCount,
-	})
+	user := auth.GetUser(r.Context())
+	orgId, err := h.users.CreateOrganization(
+		r.Context(),
+		users.NewOrganization{
+			AdminId:        user.Id,
+			Name:           payload.Name,
+			Description:    payload.Description,
+			LogoURL:        payload.LogoURL,
+			Designation:    payload.Designation,
+			TotalEmployees: payload.MembersCount,
+		},
+	)
 
 	if err != nil {
-		if ok := database.CheckPQError(
+		if err := database.CheckPQError(
 			err,
-			func(err *pq.Error) bool {
-				return err.Column == "admin_id" && err.Code == pgerrcode.UniqueViolation
+			func(err *pq.Error) error {
+				if err.Column == "admin_id" && err.Code == pgerrcode.UniqueViolation {
+					return errors.NewRequestError(
+						"One user can create only one organization.",
+						http.StatusBadRequest,
+						errors.DuplicateValue,
+					)
+				}
+				return nil
 			},
-		); ok {
-			return errors.NewRequestError(
-				"One user can create only one organization.",
-				http.StatusBadRequest,
-				errors.DuplicateValue,
-			)
+		); err != nil {
+			return err
 		}
-
 		return errors.NewRequestError(
 			"Error while creating organization.",
 			http.StatusInternalServerError,
@@ -79,19 +84,19 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	claims := auth.GetClaims(r.Context())
+	user := auth.GetUser(r.Context())
 	code, err := nanoid.New()
 	if err != nil {
 		return err
 	}
 
-	teamId, err := h.usersRepo.CreateTeam(
+	teamId, err := h.users.CreateTeam(
 		r.Context(),
 		users.NewTeam{
 			InvitationCode: code,
+			CreatorId:      user.Id,
 			OrgId:          input.OrgId,
-			CreatorId:      claims.UserId,
-			CreatorRoleId:  claims.RoleId,
+			CreatorRoleId:  user.Role.Id,
 			Name:           input.TeamName,
 			Description:    input.TeamDescription,
 			UserRBAC:       []users.UserRBAC{},
