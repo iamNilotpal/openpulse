@@ -17,16 +17,27 @@ type NewUser struct {
 }
 
 type User struct {
-	ID            int
 	Role          Role
+	Id            int
 	FirstName     string
 	LastName      string
 	Email         string
+	Phone         string
+	Password      string
 	AvatarUrl     string
+	Designation   string
+	IsVerified    bool
 	AccountStatus AccountStatus
+	Team          Team
 	Resources     []ResourcePermission
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+}
+
+type Team struct {
+	Id      int
+	Name    string
+	LogoURL string
 }
 
 type Role struct {

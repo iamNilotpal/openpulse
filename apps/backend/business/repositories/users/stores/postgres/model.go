@@ -16,8 +16,11 @@ type User struct {
 	LastName      string
 	Email         string
 	Phone         string
+	Password      string
 	AvatarUrl     string
 	AccountStatus int
+	Designation   string
+	IsVerified    bool
 	Role          Role
 	Team          Team
 	Preference    Preference
