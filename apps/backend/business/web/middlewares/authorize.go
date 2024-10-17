@@ -17,11 +17,11 @@ type Options struct {
 func Authorize(options Options) func(http.Handler) http.Handler {
 	a := func(handler http.Handler) http.Handler {
 		m := func(w http.ResponseWriter, r *http.Request) {
-			userRole := auth.GetRole(r.Context())
+			user := auth.GetUser(r.Context())
 			userResources := auth.GetResourcesMap(r.Context())
 
 			if len(userResources) == 0 ||
-				!auth.CheckRoleAccessControl(options.RequiredRoles, userRole) {
+				!auth.CheckRoleAccessControl(options.RequiredRoles, auth.NewUserRoleConfig(user.Role)) {
 				web.Error(
 					w,
 					http.StatusForbidden,
