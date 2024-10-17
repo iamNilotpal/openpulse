@@ -69,7 +69,6 @@ func Authenticate(
 				return
 			}
 
-			role := user.Role
 			resources := user.Resources
 			userResourcesMap := make(auth.UserAccessControlMap)
 
@@ -79,7 +78,6 @@ func Authenticate(
 					permissions := []auth.UserPermissionConfig{
 						auth.NewUserPermissionConfig(resource.Permission),
 					}
-
 					userResourcesMap[resource.Resource.Resource] = permissions
 					continue
 				}
@@ -88,15 +86,12 @@ func Authenticate(
 				userResourcesMap[resource.Resource.Resource] = permissions
 			}
 
-			r = r.WithContext(auth.SetClaims(r.Context(), claims))
-			r = r.WithContext(auth.SetRole(r.Context(), auth.NewUserRoleConfig(role)))
+			r = r.WithContext(auth.SetUser(r.Context(), user))
 			r = r.WithContext(auth.SetResourcesMap(r.Context(), userResourcesMap))
 
 			handler.ServeHTTP(w, r)
 		}
-
 		return http.HandlerFunc(m)
 	}
-
 	return a
 }

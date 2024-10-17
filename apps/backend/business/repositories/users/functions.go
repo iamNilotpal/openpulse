@@ -56,24 +56,26 @@ func FromDBResourceWithPermission(cmd users_store.ResourcePermission) ResourcePe
 	}
 }
 
-func FromDBUser(u users_store.User) User {
-	createdAt, _ := time.Parse(time.UnixDate, u.CreatedAt)
-	updatedAt, _ := time.Parse(time.UnixDate, u.UpdatedAt)
+func FromDBUser(cmd users_store.User) User {
+	createdAt, _ := time.Parse(time.UnixDate, cmd.CreatedAt)
+	updatedAt, _ := time.Parse(time.UnixDate, cmd.UpdatedAt)
 
-	resources := make([]ResourcePermission, 0, len(u.Resources))
-	for i, r := range u.Resources {
+	resources := make([]ResourcePermission, 0, len(cmd.Resources))
+	for i, r := range cmd.Resources {
 		resources[i] = FromDBResourceWithPermission(r)
 	}
 
 	return User{
-		ID:            u.Id,
-		Email:         u.Email,
-		LastName:      u.LastName,
-		FirstName:     u.FirstName,
-		AvatarUrl:     u.AvatarUrl,
-		AccountStatus: ParseStatusInt(u.AccountStatus),
+		Id:            cmd.Id,
+		Email:         cmd.Email,
+		LastName:      cmd.LastName,
+		FirstName:     cmd.FirstName,
+		AvatarUrl:     cmd.AvatarUrl,
+		Password:      cmd.Password,
+		AccountStatus: ParseStatusInt(cmd.AccountStatus),
 		Resources:     resources,
-		Role:          FromDBRole(u.Role),
+		Team:          Team{Id: cmd.Team.Id, Name: cmd.Team.Name, LogoURL: cmd.Team.LogoURL},
+		Role:          FromDBRole(cmd.Role),
 		CreatedAt:     createdAt,
 		UpdatedAt:     updatedAt,
 	}

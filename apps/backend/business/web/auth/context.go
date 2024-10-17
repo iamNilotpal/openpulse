@@ -2,36 +2,24 @@ package auth
 
 import (
 	"context"
+
+	"github.com/iamNilotpal/openpulse/business/repositories/users"
 )
 
 type ctxKey int
 
-const roleKey ctxKey = 1
-const claimKey ctxKey = 2
-const resourcesKey ctxKey = 3
+const userKey ctxKey = 1
+const resourcesKey ctxKey = 2
 
-func SetClaims(ctx context.Context, claims Claims) context.Context {
-	return context.WithValue(ctx, claimKey, claims)
+func SetUser(ctx context.Context, user users.User) context.Context {
+	return context.WithValue(ctx, userKey, user)
 }
 
-func GetClaims(ctx context.Context) Claims {
-	v, ok := ctx.Value(claimKey).(Claims)
+func GetUser(ctx context.Context) users.User {
+	v, ok := ctx.Value(userKey).(users.User)
 	if !ok {
-		return Claims{}
+		return users.User{}
 	}
-	return v
-}
-
-func SetRole(ctx context.Context, role UserRoleConfig) context.Context {
-	return context.WithValue(ctx, roleKey, role)
-}
-
-func GetRole(ctx context.Context) UserRoleConfig {
-	v, ok := ctx.Value(roleKey).(UserRoleConfig)
-	if !ok {
-		return UserRoleConfig{}
-	}
-
 	return v
 }
 

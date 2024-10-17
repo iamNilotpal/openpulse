@@ -21,6 +21,8 @@ import (
 	resources_store "github.com/iamNilotpal/openpulse/business/repositories/resources/store/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
 	roles_store "github.com/iamNilotpal/openpulse/business/repositories/roles/stores/postgres"
+	"github.com/iamNilotpal/openpulse/business/repositories/sessions"
+	sessions_store "github.com/iamNilotpal/openpulse/business/repositories/sessions/store/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/teams"
 	teams_store "github.com/iamNilotpal/openpulse/business/repositories/teams/stores/postgres"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
@@ -104,6 +106,9 @@ func run(log *zap.SugaredLogger) error {
 	permissionsStore := permissions_store.NewPostgresStore(db)
 	permissionsRepo := permissions.NewPostgresRepository(permissionsStore)
 
+	sessionsStore := sessions_store.NewPostgresRepository(db)
+	sessionsRepo := sessions.NewPostgresRepository(sessionsStore)
+
 	repositories := repositories.Repositories{
 		Organizations: orgsRepo,
 		Teams:         teamsRepo,
@@ -112,6 +117,7 @@ func run(log *zap.SugaredLogger) error {
 		Roles:         rolesRepo,
 		Resources:     resourceRepo,
 		Permissions:   permissionsRepo,
+		Sessions:      sessionsRepo,
 	}
 
 	// Get roles with rolesAccessControls

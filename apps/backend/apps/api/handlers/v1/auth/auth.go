@@ -1,6 +1,7 @@
 package auth_handlers
 
 import (
+	"database/sql"
 	stdErrors "errors"
 	"net/http"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/iamNilotpal/openpulse/business/repositories/emails"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
+	"github.com/iamNilotpal/openpulse/business/repositories/sessions"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
@@ -25,8 +27,9 @@ type Config struct {
 	Auth                        *auth.Auth
 	EmailService                *email.Email
 	HashService                 hash.Hasher
-	UsersRepo                   users.Repository
-	EmailsRepo                  emails.Repository
+	Users                       users.Repository
+	Emails                      emails.Repository
+	Sessions                    sessions.Repository
 	RolesMap                    auth.RoleConfigMap
 	RoleResourcesPermissionsMap auth.RoleAccessControlMap
 	Config                      *config.OpenpulseAPIConfig
@@ -36,8 +39,9 @@ type handler struct {
 	auth                        *auth.Auth
 	emailService                *email.Email
 	hashService                 hash.Hasher
-	usersRepo                   users.Repository
-	emailsRepo                  emails.Repository
+	users                       users.Repository
+	sessions                    sessions.Repository
+	emails                      emails.Repository
 	rolesMap                    auth.RoleConfigMap
 	RoleResourcesPermissionsMap auth.RoleAccessControlMap
 	config                      *config.OpenpulseAPIConfig
@@ -47,9 +51,10 @@ func New(cfg Config) *handler {
 	return &handler{
 		auth:                        cfg.Auth,
 		config:                      cfg.Config,
+		sessions:                    cfg.Sessions,
 		rolesMap:                    cfg.RolesMap,
-		usersRepo:                   cfg.UsersRepo,
-		emailsRepo:                  cfg.EmailsRepo,
+		users:                       cfg.Users,
+		emails:                      cfg.Emails,
 		hashService:                 cfg.HashService,
 		emailService:                cfg.EmailService,
 		RoleResourcesPermissionsMap: cfg.RoleResourcesPermissionsMap,
@@ -62,9 +67,7 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	orgAdmin := h.rolesMap[roles.RoleOrgAdmin]
 	passwordHash, err := h.hashService.Hash([]byte(input.Password))
-
 	if err != nil {
 		return errors.NewRequestError(
 			http.StatusText(http.StatusInternalServerError),
@@ -73,28 +76,31 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		)
 	}
 
-	userId, err := h.usersRepo.Create(
+	userId, err := h.users.Create(
 		r.Context(),
 		users.NewUser{
-			RoleId:       orgAdmin.Id,
-			PasswordHash: passwordHash,
-			Email:        input.Email,
-			LastName:     input.LastName,
 			FirstName:    input.FirstName,
+			LastName:     input.LastName,
+			Email:        input.Email,
+			PasswordHash: passwordHash,
+			RoleId:       h.rolesMap[roles.RoleOrgAdmin].Id,
 		},
 	)
 	if err != nil {
-		if ok := database.CheckPQError(
+		if err := database.CheckPQError(
 			err,
-			func(err *pq.Error) bool {
-				return err.Column == "email" && err.Code == pgerrcode.UniqueViolation
+			func(err *pq.Error) error {
+				if err.Column == "email" && err.Code == pgerrcode.UniqueViolation {
+					return errors.NewRequestError(
+						"User with same email already exists.",
+						http.StatusBadRequest,
+						errors.DuplicateValue,
+					)
+				}
+				return nil
 			},
-		); ok {
-			return errors.NewRequestError(
-				"User with same email already exists.",
-				http.StatusBadRequest,
-				errors.DuplicateValue,
-			)
+		); err != nil {
+			return err
 		}
 		return err
 	}
@@ -144,7 +150,7 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		)
 	}
 
-	if err = h.emailsRepo.SaveEmailVerificationDetails(
+	if err = h.emails.SaveEmailVerificationDetails(
 		r.Context(),
 		emails.EmailVerificationDetails{
 			MaxAttempts:       5,
@@ -185,12 +191,89 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *handler) SignIn(w http.ResponseWriter, r *http.Request) error {
-	var payload SignInInput
-	if err := web.Decode(r, &payload); err != nil {
+	var input SignInInput
+	if err := web.Decode(r, &input); err != nil {
 		return err
 	}
 
-	return nil
+	user, err := h.users.QueryByEmail(r.Context(), input.Email)
+	if err != nil {
+		if stdErrors.Is(err, sql.ErrNoRows) {
+			return errors.NewRequestError(
+				"Invalid email or password.", http.StatusUnauthorized, errors.Unauthorized,
+			)
+		}
+		return err
+	}
+
+	if !h.hashService.Compare([]byte(user.Password), []byte(input.Password)) {
+		return errors.NewRequestError(
+			"Invalid email or password.", http.StatusUnauthorized, errors.Unauthorized,
+		)
+	}
+
+	if !user.IsVerified {
+		return errors.NewRequestError(
+			"Please verify your email to sign in.", http.StatusUnauthorized, errors.UserNotVerified,
+		)
+	}
+
+	aToken, err := h.auth.GenerateAccessToken(
+		auth.Claims{
+			RoleId: user.Role.Id,
+			TeamId: user.Team.Id,
+			RegisteredClaims: jwt.RegisteredClaims{
+				Issuer:    h.config.Auth.Issuer,
+				Subject:   strconv.Itoa(user.Id),
+				Audience:  jwt.ClaimStrings{h.config.Auth.Audience},
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(h.config.Auth.AccessTokenExpTime)),
+				NotBefore: jwt.NewNumericDate(time.Now()),
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+			},
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	rToken, err := h.auth.GenerateRefreshToken(
+		jwt.RegisteredClaims{
+			Issuer:    h.config.Auth.Issuer,
+			Subject:   strconv.Itoa(user.Id),
+			Audience:  jwt.ClaimStrings{h.config.Auth.Audience},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(h.config.Auth.AccessTokenExpTime)),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	sessionId, err := h.sessions.Create(
+		r.Context(),
+		sessions.NewSession{
+			Token:     rToken,
+			UserId:    user.Id,
+			UserAgent: r.UserAgent(),
+			IpAddress: r.RemoteAddr,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	return web.Success(
+		w,
+		http.StatusOK,
+		"Logged in successfully.",
+		SignInResponse{
+			AccessToken:  aToken,
+			RefreshToken: rToken,
+			UserId:       user.Id,
+			SessionId:    sessionId,
+		},
+	)
 }
 
 func (h *handler) VerifyEmail(w http.ResponseWriter, r *http.Request) error {
@@ -213,7 +296,7 @@ func (h *handler) VerifyEmail(w http.ResponseWriter, r *http.Request) error {
 		)
 	}
 
-	if err = h.emailsRepo.ValidateVerificationDetails(
+	if err = h.emails.ValidateVerificationDetails(
 		r.Context(), token, userId, int(claims.ExpiresAt.UnixNano()),
 	); err != nil {
 		if stdErrors.Is(err, emails.ErrVerificationDataNotFound) {
