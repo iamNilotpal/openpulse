@@ -1,31 +1,41 @@
 package users_handler
 
 import (
+	"database/sql"
+	stdErrors "errors"
 	"net/http"
 	"strconv"
 
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
+	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 )
 
-type handler struct {
-	usersRepo users.Repository
+type Config struct {
+	Users users.Repository
 }
 
-func New(usersRepo users.Repository) *handler {
-	return &handler{usersRepo: usersRepo}
+type handler struct {
+	users users.Repository
+}
+
+func New(cfg Config) *handler {
+	return &handler{users: cfg.Users}
 }
 
 func (h *handler) QueryById(w http.ResponseWriter, r *http.Request) error {
 	userId, err := strconv.Atoi(web.GetParam(r, "id"))
 	if err != nil {
-		return err
+		return errors.NewRequestError("Invalid user id.", http.StatusUnprocessableEntity, errors.BadRequest)
 	}
 
-	user, err := h.usersRepo.QueryById(r.Context(), userId)
+	user, err := h.users.QueryById(r.Context(), userId)
 	if err != nil {
+		if stdErrors.Is(err, sql.ErrNoRows) {
+			return errors.NewRequestError("User not found.", http.StatusNotFound, errors.NotFound)
+		}
 		return err
 	}
 
-	return web.Success(w, http.StatusOK, "", user)
+	return web.Success(w, http.StatusOK, "OK", user)
 }

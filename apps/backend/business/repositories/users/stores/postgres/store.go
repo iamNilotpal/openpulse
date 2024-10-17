@@ -13,6 +13,8 @@ import (
 
 type Store interface {
 	QueryById(context context.Context, id int) (User, error)
+	QueryByEmail(context context.Context, email string) (User, error)
+	IsVerifiedUser(context context.Context, email string) (bool, error)
 	Create(context context.Context, cmd NewUser) (int, error)
 	CreateTeam(context context.Context, team NewTeam) (int, error)
 	CreateOrganization(context context.Context, cmd NewOrganization) (int, error)
@@ -159,15 +161,43 @@ func (s *postgresStore) CreateTeam(ctx context.Context, team NewTeam) (int, erro
 }
 
 func (p *postgresStore) QueryById(context context.Context, id int) (User, error) {
+	return p.queryByIdOrEmail(context, id, "", "id")
+}
+
+func (p *postgresStore) QueryByEmail(context context.Context, email string) (User, error) {
+	return p.queryByIdOrEmail(context, 0, email, "email")
+}
+
+func (s *postgresStore) IsVerifiedUser(context context.Context, email string) (bool, error) {
+	var isVerified bool
+	query := `
+		SELECT is_verified
+		FROM users
+		WHERE email = $1;
+	`
+
+	if err := s.db.QueryRowContext(context, query, email).Scan(&isVerified); err != nil {
+		return false, err
+	}
+
+	return isVerified, nil
+}
+
+func (p *postgresStore) queryByIdOrEmail(
+	context context.Context, id int, email, queryType string,
+) (User, error) {
 	query := `
 		SELECT
 			us.id AS userId,
 			us.email AS email,
 			us.first_name AS firstName,
 			us.last_name AS lastName,
+			convert_from(us.password, "UTF8") as password,
 			us.phone_number as phoneNumber,
 			us.avatar_url as avatarUrl,
 			us.account_status as accountStatus,
+			us.designation as designation,
+			us.is_verified as isVerified,
 			us.created_at as createdAt,
 			us.updated_at as updatedAt,
 			t.id as teamId,
@@ -191,31 +221,73 @@ func (p *postgresStore) QueryById(context context.Context, id int) (User, error)
 			us.id = $1;
 	`
 
+	if queryType == "email" {
+		query += `us.id = $1;`
+	} else if queryType == "id" {
+		query += `us.email = $1;`
+	}
+
 	var user User
-	if err := p.db.QueryRowContext(context, query, id).Scan(
-		&user.Id,
-		&user.Email,
-		&user.FirstName,
-		&user.LastName,
-		&user.Phone,
-		&user.AvatarUrl,
-		&user.AccountStatus,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-		&user.Team.Id,
-		&user.Team.Name,
-		&user.Team.LogoURL,
-		&user.Role.Id,
-		&user.Role.Name,
-		&user.Role.Description,
-		&user.Role.Role,
-		&user.Role.IsSystemRole,
-		&user.Preference.Id,
-		&user.Preference.Appearance,
-		&user.Preference.CreatedAt,
-		&user.Preference.UpdatedAt,
-	); err != nil {
-		return User{}, err
+	if queryType == "email" {
+		if err := p.db.QueryRowContext(context, query, email).Scan(
+			&user.Id,
+			&user.Email,
+			&user.FirstName,
+			&user.LastName,
+			&user.Password,
+			&user.Phone,
+			&user.AvatarUrl,
+			&user.AccountStatus,
+			&user.Designation,
+			&user.IsVerified,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+			&user.Team.Id,
+			&user.Team.Name,
+			&user.Team.LogoURL,
+			&user.Role.Id,
+			&user.Role.Name,
+			&user.Role.Description,
+			&user.Role.Role,
+			&user.Role.IsSystemRole,
+			&user.Preference.Id,
+			&user.Preference.Appearance,
+			&user.Preference.CreatedAt,
+			&user.Preference.UpdatedAt,
+		); err != nil {
+			return User{}, err
+		}
+	}
+
+	if queryType == "id" {
+		if err := p.db.QueryRowContext(context, query, id).Scan(
+			&user.Id,
+			&user.Email,
+			&user.FirstName,
+			&user.LastName,
+			&user.Password,
+			&user.Phone,
+			&user.AvatarUrl,
+			&user.AccountStatus,
+			&user.Designation,
+			&user.IsVerified,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+			&user.Team.Id,
+			&user.Team.Name,
+			&user.Team.LogoURL,
+			&user.Role.Id,
+			&user.Role.Name,
+			&user.Role.Description,
+			&user.Role.Role,
+			&user.Role.IsSystemRole,
+			&user.Preference.Id,
+			&user.Preference.Appearance,
+			&user.Preference.CreatedAt,
+			&user.Preference.UpdatedAt,
+		); err != nil {
+			return User{}, err
+		}
 	}
 
 	query = `
@@ -237,7 +309,7 @@ func (p *postgresStore) QueryById(context context.Context, id int) (User, error)
 			tu.team_id = $1 AND tu.user_id = $2;
 	`
 
-	rows, err := p.db.QueryContext(context, query, user.Team.Id, user.Role.Id)
+	rows, err := p.db.QueryContext(context, query, user.Team.Id, user.Id)
 	if err != nil {
 		return User{}, err
 	}

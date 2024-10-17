@@ -14,6 +14,12 @@ import (
 	"go.uber.org/zap"
 )
 
+type Claims struct {
+	TeamId int
+	RoleId int
+	jwt.RegisteredClaims
+}
+
 type Config struct {
 	AuthConfig config.Auth
 	UserRepo   users.Repository
@@ -57,7 +63,7 @@ func (a *Auth) GenerateAccessToken(claims Claims) (string, error) {
 	return signedToken, nil
 }
 
-func (a *Auth) GenerateRefreshToken(claims Claims) (string, error) {
+func (a *Auth) GenerateRefreshToken(claims jwt.RegisteredClaims) (string, error) {
 	token := jwt.NewWithClaims(a.method, claims)
 	signedToken, err := token.SignedString(a.cfg.RefreshTokenSecret)
 
@@ -98,6 +104,10 @@ func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims
 	)
 
 	if err != nil {
+		if errors.IsRequestError(err) {
+			return Claims{}, err
+		}
+
 		if stdErrors.Is(err, jwt.ErrTokenExpired) {
 			return Claims{}, NewAuthError(
 				"Session expired.", errors.TokenExpired, http.StatusUnauthorized,

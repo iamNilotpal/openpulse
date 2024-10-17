@@ -6,6 +6,7 @@ import (
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/repositories/resources"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
+	"github.com/iamNilotpal/openpulse/business/repositories/sessions"
 	"github.com/iamNilotpal/openpulse/business/repositories/teams"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 )
@@ -13,6 +14,7 @@ import (
 type Repositories struct {
 	Users         users.Repository
 	Emails        emails.Repository
+	Sessions      sessions.Repository
 	Organizations organizations.Repository
 	Teams         teams.Repository
 	Roles         roles.Repository

@@ -18,16 +18,23 @@ type RegisterUserResponse struct {
 	UserId int               `json:"userId,omitempty"`
 }
 
+type RegistrationState struct {
+	EmailSentState    string `json:"emailSentState"`
+	RegistrationState string `json:"registrationState"`
+}
+
 type SignInInput struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
 }
 
-func (sip SignInInput) Validate() error {
-	return validate.Check(sip)
+type SignInResponse struct {
+	UserId       int    `json:"userId"`
+	SessionId    int    `json:"sessionId"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
-type RegistrationState struct {
-	EmailSentState    string `json:"emailSentState"`
-	RegistrationState string `json:"registrationState"`
+func (sip SignInInput) Validate() error {
+	return validate.Check(sip)
 }
