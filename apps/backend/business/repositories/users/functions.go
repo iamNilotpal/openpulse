@@ -56,6 +56,21 @@ func FromDBResourceWithPermission(cmd users_store.ResourcePermission) ResourcePe
 	}
 }
 
+func FromDBOAuthAccount(cmd users_store.OAuthAccount) OAuthAccount {
+	createdAt, _ := time.Parse(time.UnixDate, cmd.CreatedAt)
+	updatedAt, _ := time.Parse(time.UnixDate, cmd.UpdatedAt)
+
+	return OAuthAccount{
+		Id:         cmd.Id,
+		Scope:      cmd.Scope,
+		Metadata:   cmd.Metadata,
+		Provider:   cmd.Provider,
+		ExternalId: cmd.ExternalId,
+		CreatedAt:  createdAt,
+		UpdatedAt:  updatedAt,
+	}
+}
+
 func FromDBUser(cmd users_store.User) User {
 	createdAt, _ := time.Parse(time.UnixDate, cmd.CreatedAt)
 	updatedAt, _ := time.Parse(time.UnixDate, cmd.UpdatedAt)
@@ -65,19 +80,28 @@ func FromDBUser(cmd users_store.User) User {
 		resources[i] = FromDBResourceWithPermission(r)
 	}
 
+	oauthAccounts := make([]OAuthAccount, 0)
+	for i, ac := range cmd.OAuthAccounts {
+		oauthAccounts[i] = FromDBOAuthAccount(ac)
+	}
+
 	return User{
-		Id:            cmd.Id,
-		Email:         cmd.Email,
-		LastName:      cmd.LastName,
-		FirstName:     cmd.FirstName,
-		AvatarUrl:     cmd.AvatarUrl,
-		Password:      cmd.Password,
-		AccountStatus: ParseStatusInt(cmd.AccountStatus),
-		Resources:     resources,
-		Team:          Team{Id: cmd.Team.Id, Name: cmd.Team.Name, LogoURL: cmd.Team.LogoURL},
-		Role:          FromDBRole(cmd.Role),
-		CreatedAt:     createdAt,
-		UpdatedAt:     updatedAt,
+		Id:              cmd.Id,
+		Email:           cmd.Email,
+		LastName:        cmd.LastName,
+		FirstName:       cmd.FirstName,
+		AvatarUrl:       cmd.AvatarUrl,
+		Password:        cmd.Password,
+		AccountStatus:   ParseStatusInt(cmd.AccountStatus),
+		Resources:       resources,
+		OAuthAccounts:   oauthAccounts,
+		Phone:           cmd.Phone,
+		Designation:     cmd.Designation,
+		IsEmailVerified: cmd.IsEmailVerified,
+		Team:            Team{Id: cmd.Team.Id, Name: cmd.Team.Name, LogoURL: cmd.Team.LogoURL},
+		Role:            FromDBRole(cmd.Role),
+		CreatedAt:       createdAt,
+		UpdatedAt:       updatedAt,
 	}
 }
 

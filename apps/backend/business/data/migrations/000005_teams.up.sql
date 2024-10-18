@@ -25,6 +25,13 @@ CREATE TABLE
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );
 
+ALTER TABLE users
+ADD COLUMN team_id BIGINT REFERENCES teams (id);
+
+CREATE INDEX "idx_teams_creator_id" ON teams (creator_id);
+
+CREATE INDEX "idx_teams_org_id" ON teams (org_id);
+
 CREATE TABLE
   IF NOT EXISTS team_users (
     id BIGSERIAL PRIMARY KEY NOT NULl,
@@ -43,8 +50,9 @@ CREATE TABLE
     )
   );
 
-ALTER TABLE users
-ADD COLUMN team_id BIGINT REFERENCES teams (id);
+CREATE INDEX "idx_team_users_team_id" ON team_users (team_id);
+
+CREATE INDEX "idx_team_users_user_id" ON team_users (user_id);
 
 CREATE TABLE
   IF NOT EXISTS team_invitations (
@@ -60,13 +68,5 @@ CREATE TABLE
     invited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     accepted_at TIMESTAMP
   );
-
-CREATE INDEX "idx_teams_creator_id" ON teams (creator_id);
-
-CREATE INDEX "idx_teams_org_id" ON teams (org_id);
-
-CREATE INDEX "idx_team_users_team_id" ON team_users (team_id);
-
-CREATE INDEX "idx_team_users_user_id" ON team_users (user_id);
 
 CREATE INDEX "idx_team_invitations_expires_in" ON team_invitations (expires_in);

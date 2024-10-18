@@ -17,21 +17,22 @@ type NewUser struct {
 }
 
 type User struct {
-	Role          Role
-	Id            int
-	FirstName     string
-	LastName      string
-	Email         string
-	Phone         string
-	Password      string
-	AvatarUrl     string
-	Designation   string
-	IsVerified    bool
-	AccountStatus AccountStatus
-	Team          Team
-	Resources     []ResourcePermission
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	Id              int
+	FirstName       string
+	LastName        string
+	Email           string
+	Phone           string
+	Password        string
+	AvatarUrl       string
+	Designation     string
+	IsEmailVerified bool
+	Role            Role
+	AccountStatus   AccountStatus
+	OAuthAccounts   []OAuthAccount
+	Team            Team
+	Resources       []ResourcePermission
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type Team struct {
@@ -66,6 +67,16 @@ type Permission struct {
 type ResourcePermission struct {
 	Resource   Resource
 	Permission Permission
+}
+
+type OAuthAccount struct {
+	Id         int
+	Provider   string
+	ExternalId string
+	Scope      string
+	Metadata   string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 type NewOrganization struct {

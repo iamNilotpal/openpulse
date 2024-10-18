@@ -9,6 +9,8 @@ CREATE TABLE
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+CREATE INDEX "idx_roles_role" ON roles (role);
+
 CREATE TABLE
   IF NOT EXISTS resources (
     id SMALLSERIAL PRIMARY KEY NOT NULL,
@@ -19,6 +21,8 @@ CREATE TABLE
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 
+CREATE INDEX "idx_resources_resource" ON resources (resource);
+
 CREATE TABLE
   IF NOT EXISTS roles_resources (
     id SMALLSERIAL PRIMARY KEY NOT NULL,
@@ -26,6 +30,8 @@ CREATE TABLE
     resource_id SMALLINT NOT NULL REFERENCES resources (id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE (role_id, resource_id)
   );
+
+CREATE INDEX "idx_roles_resources_role_id" ON roles_resources (role_id);
 
 CREATE TABLE
   IF NOT EXISTS permissions (
@@ -44,11 +50,5 @@ CREATE TABLE
     permission_id SMALLINT NOT NULL REFERENCES permissions (id) ON DELETE CASCADE,
     UNIQUE (resource_id, permission_id)
   );
-
-CREATE INDEX "idx_roles_role" ON roles (role);
-
-CREATE INDEX "idx_resources_resource" ON resources (resource);
-
-CREATE INDEX "idx_roles_resources_role_id" ON roles_resources (role_id);
 
 CREATE INDEX "idx_resource_permissions_resource_id" ON resource_permissions (resource_id);

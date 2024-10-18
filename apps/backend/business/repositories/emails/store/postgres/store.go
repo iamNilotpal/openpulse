@@ -102,7 +102,7 @@ func (s *postgresStore) ValidateVerificationDetails(
 					attempt_count = attempt_count + 1,
 					verified_at = $1,
 					is_revoked = TRUE,
-					is_verified = TRUE
+					is_email_verified = TRUE
 				WHERE
 					id = $2;
 			`
