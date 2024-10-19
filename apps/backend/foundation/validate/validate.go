@@ -53,6 +53,5 @@ func Check(val any) error {
 
 		return fields
 	}
-
 	return nil
 }
