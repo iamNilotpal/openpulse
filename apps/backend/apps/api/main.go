@@ -131,13 +131,13 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// Build the Permissions Map
-	rolesMap, resourcePermissionsMap, roleAccessControlMap := buildRBACMaps(rolesAccessControls)
+	rolesMap, resourcePermsMap, rbacMap := buildRBACMaps(rolesAccessControls)
 
 	// Initialize authentication support
 	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepo})
 
 	// Initialize Email service support
-	emailService := email.New(email.Config{Cfg: cfg.Email, Logger: log})
+	emailService := email.New(email.Config{Config: cfg.Email, Logger: log})
 
 	// Initialize hasher
 	bcryptHasher := hash.NewBcryptHasher()
@@ -159,8 +159,8 @@ func run(log *zap.SugaredLogger) error {
 			HashService:                 bcryptHasher,
 			EmailService:                emailService,
 			Repositories:                &repositories,
-			ResourcePermissionsMap:      resourcePermissionsMap,
-			RoleResourcesPermissionsMap: roleAccessControlMap,
+			ResourcePermissionsMap:      resourcePermsMap,
+			RoleResourcesPermissionsMap: rbacMap,
 		},
 	)
 
@@ -201,11 +201,11 @@ func run(log *zap.SugaredLogger) error {
 }
 
 func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
-	auth.RoleConfigMap, auth.ResourcePermissionsMap, auth.RoleAccessControlMap,
+	auth.RoleConfigMap, auth.ResourcePermsMap, auth.RBACMap,
 ) {
 	rolesMap := make(auth.RoleConfigMap)
-	roleAccessControlMap := make(auth.RoleAccessControlMap)
-	resourcesPermissionsMap := make(auth.ResourcePermissionsMap)
+	roleAccessControlMap := make(auth.RBACMap)
+	resourcesPermissionsMap := make(auth.ResourcePermsMap)
 
 	for _, rac := range roleAccessControls {
 		// 1. Assign to roles map.
@@ -214,37 +214,42 @@ func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
 		}
 
 		// 2. Check if any value exists for current role
-		resPermsMap, ok := roleAccessControlMap[rac.Role.Role]
+		storedResourcePermsMap, ok := roleAccessControlMap[rac.Role.Role]
 
 		// 3. If not then assign new value with resource and permissions
 		if !ok {
-			resPermsMap := make(auth.ResourcePermissionsMap)
-			permissions := []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)}
+			resPermsMap := make(auth.ResourcePermsMap)
+			resPermsMap[rac.Resource.Resource] = auth.ResourcePermConfig{
+				Resource:    auth.NewResourceConfig(rac.Resource),
+				Permissions: []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)},
+			}
 
-			resPermsMap[rac.Resource.Resource] = permissions
 			roleAccessControlMap[rac.Role.Role] = resPermsMap
 			resourcesPermissionsMap = resPermsMap
 			continue
 		}
 
 		// 4. Check any value exists for current resource
-		permissions, ok := resPermsMap[rac.Resource.Resource]
+		resourcePermissions, ok := storedResourcePermsMap[rac.Resource.Resource]
 
 		// 5. If not then assign new value with permissions
 		if !ok {
-			permissions := []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)}
-
-			resPermsMap[rac.Resource.Resource] = permissions
-			roleAccessControlMap[rac.Role.Role] = resPermsMap
-			resourcesPermissionsMap = resPermsMap
+			storedResourcePermsMap[rac.Resource.Resource] = auth.ResourcePermConfig{
+				Resource:    auth.NewResourceConfig(rac.Resource),
+				Permissions: []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)},
+			}
+			roleAccessControlMap[rac.Role.Role] = storedResourcePermsMap
+			resourcesPermissionsMap = storedResourcePermsMap
 			continue
 		}
 
 		// 6. If yes, append new permission to the existing resource.
-		permissions = append(permissions, auth.NewPermissionConfig(rac.Permission))
-		resPermsMap[rac.Resource.Resource] = permissions
-		roleAccessControlMap[rac.Role.Role] = resPermsMap
-		resourcesPermissionsMap = resPermsMap
+		resourcePermissions.Permissions = append(
+			resourcePermissions.Permissions, auth.NewPermissionConfig(rac.Permission),
+		)
+		storedResourcePermsMap[rac.Resource.Resource] = resourcePermissions
+		roleAccessControlMap[rac.Role.Role] = storedResourcePermsMap
+		resourcesPermissionsMap = storedResourcePermsMap
 	}
 
 	return rolesMap, resourcesPermissionsMap, roleAccessControlMap

@@ -1,10 +1,27 @@
 package auth
 
 import (
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/iamNilotpal/openpulse/business/repositories/permissions"
 	"github.com/iamNilotpal/openpulse/business/repositories/resources"
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
 )
+
+type AccessTokenClaims struct {
+	TeamId int
+	RoleId int
+	jwt.RegisteredClaims
+}
+
+type RefreshTokenClaims struct {
+	jwt.RegisteredClaims
+}
+
+type OnBoardingClaims struct {
+	jwt.RegisteredClaims
+}
+
+/* ========================================================= */
 
 type UserAccessControlMap map[resources.AppResource][]UserPermissionConfig
 
@@ -33,8 +50,8 @@ type UserAccessControlPolicy struct {
 /* ========================================================= */
 
 type RoleConfigMap map[roles.AppRole]RoleConfig
-type ResourcePermissionsMap map[resources.AppResource][]PermissionConfig
-type RoleAccessControlMap map[roles.AppRole]ResourcePermissionsMap
+type ResourcePermsMap map[resources.AppResource]ResourcePermConfig
+type RBACMap map[roles.AppRole]ResourcePermsMap
 
 type RoleConfig struct {
 	Id   int
@@ -49,6 +66,11 @@ type PermissionConfig struct {
 type ResourceConfig struct {
 	Id       int
 	Resource resources.AppResource
+}
+
+type ResourcePermConfig struct {
+	Resource    ResourceConfig
+	Permissions []PermissionConfig
 }
 
 type AccessControlPolicy struct {

@@ -12,7 +12,7 @@ import (
 	"github.com/lib/pq"
 )
 
-func Open(cfg config.DB) (*sqlx.DB, error) {
+func Open(cfg *config.DB) (*sqlx.DB, error) {
 	sslMode := "require"
 	if cfg.DisableTLS {
 		sslMode = "disable"

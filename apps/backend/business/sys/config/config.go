@@ -8,6 +8,7 @@ import (
 )
 
 type Web struct {
+	ClientAPIHost   string        `validate:"required,url"`
 	APIHost         string        `validate:"required,url"`
 	AllowedOrigins  []string      `validate:"gt=0,dive,len=1,dive,required"`
 	ReadTimeout     time.Duration `validate:"required"`
@@ -142,6 +143,7 @@ func NewAPIConfig() *APIConfig {
 			WriteTimeout:    webWriteTimeout,
 			ShutdownTimeout: webShutdownTimeout,
 			APIHost:         GetEnvString("WEB_API_HOST", "localhost:8000"),
+			ClientAPIHost:   GetEnvString("WEB_CLIENT_HOST", "http://localhost:5172"),
 		},
 		Auth: &Auth{
 			AccessTokenExpTime:  accessTokenExp,

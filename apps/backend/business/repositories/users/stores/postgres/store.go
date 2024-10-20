@@ -13,13 +13,13 @@ import (
 )
 
 type Store interface {
-	QueryById(context context.Context, id int) (User, error)
-	QueryByEmail(context context.Context, email string) (User, error)
-	IsEmailVerifiedUser(context context.Context, email string) (bool, error)
-	Create(context context.Context, cmd NewUser) (int, error)
+	QueryById(ctx context.Context, id int) (User, error)
+	QueryByEmail(ctx context.Context, email string) (User, error)
+	IsEmailVerifiedUser(ctx context.Context, email string) (bool, error)
+	Create(ctx context.Context, cmd NewUser) (int, error)
 	CreateUsingOAuth(ctx context.Context, cmd NewOAuthAccount) (int, error)
-	CreateTeam(context context.Context, team NewTeam) (int, error)
-	CreateOrganization(context context.Context, cmd NewOrganization) (int, error)
+	CreateTeam(ctx context.Context, team NewTeam) (int, error)
+	CreateOrganization(ctx context.Context, cmd NewOrganization) (int, error)
 }
 
 type postgresStore struct {
@@ -64,7 +64,7 @@ func (s *postgresStore) CreateUsingOAuth(ctx context.Context, cmd NewOAuthAccoun
 		func(tx *sqlx.Tx) error {
 			query := `
 				INSERT INTO
-					users(first_name, last_name, email, role_id)
+					users(first_name, last_name, email, phone_number, avatar_url, is_email_verified, role_id)
 				VALUES
 					($1, $2, $3, $4) RETURNING id;
 			`
@@ -74,6 +74,9 @@ func (s *postgresStore) CreateUsingOAuth(ctx context.Context, cmd NewOAuthAccoun
 				cmd.User.FirstName,
 				cmd.User.LastName,
 				cmd.User.Email,
+				cmd.User.Phone,
+				cmd.User.AvatarURL,
+				true,
 				cmd.User.RoleId,
 			).Scan(&userId); err != nil {
 				return err
@@ -155,7 +158,7 @@ func (s *postgresStore) CreateTeam(ctx context.Context, team NewTeam) (int, erro
 		func(tx *sqlx.Tx) error {
 			query := `
 				INSERT INTO
-					roles (name, description, total_members, invitation_code, creator_id, org_id)
+					teams (name, description, total_members, invitation_code, creator_id, org_id)
 				VALUES
 					($1, $2, $3, $4, $5, $6) RETURNING id;
 			`
@@ -174,9 +177,8 @@ func (s *postgresStore) CreateTeam(ctx context.Context, team NewTeam) (int, erro
 
 			query = `
 				UPDATE users
-					SET users.team_id = $1
-				WHERE
-					users.id = $2;
+				SET team_id = $1
+				WHERE id = $2;
 			`
 			if _, err := tx.ExecContext(ctx, query, id, team.CreatorId); err != nil {
 				return err
@@ -271,7 +273,9 @@ func (p *postgresStore) queryByIdOrEmail(
 			JOIN roles ro ON ro.id = us.role_id
 			JOIN users_preferences up ON up.user_id = us.id
 		WHERE
-			us.id = $1;
+			us.id = $1
+			AND account_status = 1
+			AND delete_at IS NULL;
 	`
 
 	if queryType == "email" {

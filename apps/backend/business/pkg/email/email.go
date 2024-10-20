@@ -11,36 +11,36 @@ import (
 )
 
 type Config struct {
-	Cfg    *config.Email
+	Config *config.Email
 	Logger *zap.SugaredLogger
 }
 
 type Email struct {
 	parser *jwt.Parser
-	cfg    *config.Email
+	config *config.Email
 	method jwt.SigningMethod
 	logger *zap.SugaredLogger
 }
 
 func New(cfg Config) *Email {
 	return &Email{
+		config: cfg.Config,
 		logger: cfg.Logger,
-		cfg:    cfg.Cfg,
 		method: jwt.GetSigningMethod(jwt.SigningMethodHS256.Name),
 		parser: jwt.NewParser(
 			jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
-			jwt.WithAudience(cfg.Cfg.Issuer),
-			jwt.WithIssuer(cfg.Cfg.Issuer),
+			jwt.WithAudience(cfg.Config.Issuer),
+			jwt.WithIssuer(cfg.Config.Issuer),
 			jwt.WithExpirationRequired(),
 			jwt.WithIssuedAt(),
 		),
 	}
 }
 
-func (e *Email) NewVerificationToken(c Claims) (string, error) {
+func (e *Email) NewToken(c Claims) (string, error) {
 	token := jwt.NewWithClaims(e.method, c)
 
-	signedToken, err := token.SignedString(e.cfg.Secret)
+	signedToken, err := token.SignedString(e.config.Secret)
 	if err != nil {
 		return "", errors.NewRequestError(
 			"Internal Server Error.", http.StatusInternalServerError, errors.InternalServerError,
@@ -50,7 +50,9 @@ func (e *Email) NewVerificationToken(c Claims) (string, error) {
 	return signedToken, nil
 }
 
-func (e *Email) SendVerificationMail() error { return nil }
+func (e *Email) Send(opts SendOptions) error {
+	return nil
+}
 
 func (e *Email) VerifyToken(token string) (Claims, error) {
 	var claims Claims
@@ -61,7 +63,7 @@ func (e *Email) VerifyToken(token string) (Claims, error) {
 			if t.Method != e.method {
 				return "", stdErrors.New("invalid token")
 			}
-			return e.cfg.Secret, nil
+			return e.config.Secret, nil
 		},
 	)
 

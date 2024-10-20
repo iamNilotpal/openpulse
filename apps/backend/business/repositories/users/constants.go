@@ -5,29 +5,21 @@ type AccountStatus string
 const (
 	AccountActiveInt int = iota + 1
 	AccountDeletedInt
-	AccountSuspendedInt
-	AccountDeactivatedInt
 )
 
 const (
-	AccountActiveString      AccountStatus = "active"
-	AccountDeletedString     AccountStatus = "deleted"
-	AccountSuspendedString   AccountStatus = "suspended"
-	AccountDeactivatedString AccountStatus = "deactivated"
+	AccountActiveString  AccountStatus = "active"
+	AccountDeletedString AccountStatus = "deleted"
 )
 
 var accountStatus = map[int]AccountStatus{
-	AccountActiveInt:      AccountActiveString,
-	AccountDeletedInt:     AccountDeletedString,
-	AccountSuspendedInt:   AccountSuspendedString,
-	AccountDeactivatedInt: AccountDeactivatedString,
+	AccountActiveInt:  AccountActiveString,
+	AccountDeletedInt: AccountDeletedString,
 }
 
 var accountStatusReverse = map[AccountStatus]int{
-	AccountActiveString:      AccountActiveInt,
-	AccountDeletedString:     AccountDeletedInt,
-	AccountSuspendedString:   AccountSuspendedInt,
-	AccountDeactivatedString: AccountDeactivatedInt,
+	AccountActiveString:  AccountActiveInt,
+	AccountDeletedString: AccountDeletedInt,
 }
 
 func ParseStatusString(s AccountStatus) int {
@@ -41,9 +33,9 @@ func ParseStatusInt(v int) AccountStatus {
 type SystemAppearance string
 
 const (
-	AppearanceLight  SystemAppearance = "light"
 	AppearanceDark   SystemAppearance = "dark"
-	AppearanceSystem SystemAppearance = "suspended"
+	AppearanceLight  SystemAppearance = "light"
+	AppearanceSystem SystemAppearance = "system"
 )
 
 func ParseAppearanceString(s string) SystemAppearance {

@@ -69,6 +69,23 @@ type ResourcePermission struct {
 	Permission Permission
 }
 
+type NewOAuthUser struct {
+	RoleId    int
+	FirstName string
+	LastName  string
+	Email     string
+	Phone     string
+	AvatarURL string
+}
+
+type NewOAuthAccount struct {
+	Provider   string
+	ExternalId string
+	Scope      string
+	Metadata   string
+	User       NewOAuthUser
+}
+
 type OAuthAccount struct {
 	Id         int
 	Provider   string
@@ -95,7 +112,7 @@ type NewTeam struct {
 	Name           string
 	Description    string
 	InvitationCode string
-	UserRBAC       []UserRBAC
+	CreatorRBAC    []UserRBAC
 }
 
 type UserRBAC struct {

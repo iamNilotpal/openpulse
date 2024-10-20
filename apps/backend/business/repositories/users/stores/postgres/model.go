@@ -28,6 +28,7 @@ type User struct {
 	Resources       []ResourcePermission
 	CreatedAt       string
 	UpdatedAt       string
+	DeletedAt       string
 }
 
 type Team struct {
@@ -81,12 +82,21 @@ type OAuthAccount struct {
 	UpdatedAt  string
 }
 
+type NewOAuthUser struct {
+	RoleId    int
+	FirstName string
+	LastName  string
+	Email     string
+	Phone     string
+	AvatarURL string
+}
+
 type NewOAuthAccount struct {
-	User       NewUser
 	Provider   string
 	ExternalId string
 	Scope      string
 	Metadata   string
+	User       NewOAuthUser
 }
 
 type NewOrganization struct {
