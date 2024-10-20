@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	stdErrors "errors"
 	"net/http"
 	"slices"
@@ -14,32 +13,29 @@ import (
 	"go.uber.org/zap"
 )
 
-type Claims struct {
-	TeamId int
-	RoleId int
-	jwt.RegisteredClaims
-}
-
 type Config struct {
-	AuthConfig config.Auth
-	UserRepo   users.Repository
-	Logger     *zap.SugaredLogger
+	AuthConfig    *config.Auth
+	UserRepo      users.Repository
+	OnboardingCfg *config.Onboarding
+	Logger        *zap.SugaredLogger
 }
 
 type Auth struct {
-	cfg      config.Auth
-	parser   *jwt.Parser
-	userRepo users.Repository
-	method   jwt.SigningMethod
-	logger   *zap.SugaredLogger
+	parser        *jwt.Parser
+	method        jwt.SigningMethod
+	logger        *zap.SugaredLogger
+	authCfg       *config.Auth
+	onboardingCfg *config.Onboarding
+	userRepo      users.Repository
 }
 
 func New(cfg Config) *Auth {
 	return &Auth{
-		logger:   cfg.Logger,
-		userRepo: cfg.UserRepo,
-		cfg:      cfg.AuthConfig,
-		method:   jwt.GetSigningMethod(jwt.SigningMethodHS256.Name),
+		logger:        cfg.Logger,
+		userRepo:      cfg.UserRepo,
+		authCfg:       cfg.AuthConfig,
+		onboardingCfg: cfg.OnboardingCfg,
+		method:        jwt.GetSigningMethod(jwt.SigningMethodHS256.Name),
 		parser: jwt.NewParser(
 			jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
 			jwt.WithAudience(cfg.AuthConfig.Issuer),
@@ -50,44 +46,43 @@ func New(cfg Config) *Auth {
 	}
 }
 
-func (a *Auth) GenerateAccessToken(claims Claims) (string, error) {
-	token := jwt.NewWithClaims(a.method, claims)
-	signedToken, err := token.SignedString(a.cfg.AccessTokenSecret)
-
+func generateToken(token *jwt.Token, secret string) (string, error) {
+	signedToken, err := token.SignedString(secret)
 	if err != nil {
 		return "", NewAuthError(
 			"Internal Server Error", errors.InternalServerError, http.StatusInternalServerError,
 		)
 	}
-
 	return signedToken, nil
 }
 
-func (a *Auth) GenerateRefreshToken(claims jwt.RegisteredClaims) (string, error) {
+func (a *Auth) NewAccessToken(claims AccessTokenClaims) (string, error) {
 	token := jwt.NewWithClaims(a.method, claims)
-	signedToken, err := token.SignedString(a.cfg.RefreshTokenSecret)
-
-	if err != nil {
-		return "", NewAuthError(
-			"Internal Server Error", errors.InternalServerError, http.StatusInternalServerError,
-		)
-	}
-
-	return signedToken, nil
+	return generateToken(token, a.authCfg.AccessTokenSecret)
 }
 
-func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims, error) {
+func (a *Auth) NewRefreshToken(claims RefreshTokenClaims) (string, error) {
+	token := jwt.NewWithClaims(a.method, claims)
+	return generateToken(token, a.authCfg.RefreshTokenSecret)
+}
+
+func (a *Auth) NewOnboardingToken(claims OnBoardingClaims) (string, error) {
+	token := jwt.NewWithClaims(a.method, claims)
+	return generateToken(token, a.onboardingCfg.Secret)
+}
+
+func (a *Auth) Authenticate(bearerToken string) (AccessTokenClaims, error) {
 	parts := strings.Split(strings.TrimSpace(bearerToken), " ")
 
 	if len(parts) != 2 || parts[1] != "Bearer" {
-		return Claims{}, NewAuthError(
+		return AccessTokenClaims{}, NewAuthError(
 			"Authorization header missing. Expected format 'Bearer <token>'",
 			errors.InvalidAuthHeader,
 			http.StatusUnauthorized,
 		)
 	}
 
-	var claims Claims
+	var claims AccessTokenClaims
 	tokenStr := parts[1]
 
 	_, err := a.parser.ParseWithClaims(
@@ -95,26 +90,58 @@ func (a *Auth) Authenticate(context context.Context, bearerToken string) (Claims
 		&claims,
 		func(t *jwt.Token) (interface{}, error) {
 			if t.Method != a.method {
-				return "", NewAuthError(
-					"Invalid token signature", errors.InvalidTokenSignature, http.StatusUnauthorized,
-				)
+				return "", stdErrors.New("invalid token")
 			}
-			return a.cfg.AccessTokenSecret, nil
+			return a.authCfg.AccessTokenSecret, nil
 		},
 	)
 
 	if err != nil {
-		if errors.IsRequestError(err) {
-			return Claims{}, err
-		}
-
 		if stdErrors.Is(err, jwt.ErrTokenExpired) {
-			return Claims{}, NewAuthError(
+			return AccessTokenClaims{}, NewAuthError(
 				"Session expired.", errors.TokenExpired, http.StatusUnauthorized,
 			)
 		}
+		return AccessTokenClaims{}, NewAuthError(
+			"Invalid token", errors.InvalidTokenSignature, http.StatusUnauthorized,
+		)
+	}
 
-		return Claims{}, NewAuthError(
+	return claims, nil
+}
+
+func (a *Auth) AuthenticateOnboard(bearerToken string) (OnBoardingClaims, error) {
+	parts := strings.Split(strings.TrimSpace(bearerToken), " ")
+
+	if len(parts) != 2 || parts[1] != "Bearer" {
+		return OnBoardingClaims{}, NewAuthError(
+			"Authorization header missing. Expected format 'Bearer <token>'",
+			errors.InvalidAuthHeader,
+			http.StatusUnauthorized,
+		)
+	}
+
+	var claims OnBoardingClaims
+	tokenStr := parts[1]
+
+	_, err := a.parser.ParseWithClaims(
+		tokenStr,
+		&claims,
+		func(t *jwt.Token) (interface{}, error) {
+			if t.Method != a.method {
+				return "", stdErrors.New("invalid token")
+			}
+			return a.onboardingCfg.Secret, nil
+		},
+	)
+
+	if err != nil {
+		if stdErrors.Is(err, jwt.ErrTokenExpired) {
+			return OnBoardingClaims{}, NewAuthError(
+				"Session expired.", errors.TokenExpired, http.StatusUnauthorized,
+			)
+		}
+		return OnBoardingClaims{}, NewAuthError(
 			"Invalid token", errors.InvalidTokenSignature, http.StatusUnauthorized,
 		)
 	}

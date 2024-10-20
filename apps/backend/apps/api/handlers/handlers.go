@@ -29,8 +29,8 @@ type HandlerConfig struct {
 	Repositories                *repositories.Repositories
 	APIConfig                   *config.APIConfig
 	RolesMap                    auth.RoleConfigMap
-	ResourcePermissionsMap      auth.ResourcePermissionsMap
-	RoleResourcesPermissionsMap auth.RoleAccessControlMap
+	ResourcePermissionsMap      auth.ResourcePermsMap
+	RoleResourcesPermissionsMap auth.RBACMap
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
@@ -60,16 +60,16 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 
 	v1.SetupRoutes(
 		v1.Config{
-			App:                         app,
-			Log:                         cfg.Log,
-			Auth:                        cfg.Auth,
-			APIConfig:                   cfg.APIConfig,
-			HashService:                 cfg.HashService,
-			EmailService:                cfg.EmailService,
-			Repositories:                cfg.Repositories,
-			RolesMap:                    cfg.RolesMap,
-			ResourcePermissionsMap:      cfg.ResourcePermissionsMap,
-			RoleResourcesPermissionsMap: cfg.RoleResourcesPermissionsMap,
+			App:          app,
+			Log:          cfg.Log,
+			Auth:         cfg.Auth,
+			APIConfig:    cfg.APIConfig,
+			HashService:  cfg.HashService,
+			EmailService: cfg.EmailService,
+			Repositories: cfg.Repositories,
+			RolesMap:     cfg.RolesMap,
+			ResPermsMap:  cfg.ResourcePermissionsMap,
+			RBACMaps:     cfg.RoleResourcesPermissionsMap,
 		},
 	)
 

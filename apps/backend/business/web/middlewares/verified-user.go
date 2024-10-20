@@ -11,7 +11,6 @@ import (
 func VerifiedUser(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := auth.GetUser(r.Context())
-
 		if !user.IsEmailVerified {
 			web.Error(
 				w,

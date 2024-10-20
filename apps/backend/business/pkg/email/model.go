@@ -6,3 +6,8 @@ type Claims struct {
 	Email string
 	jwt.RegisteredClaims
 }
+
+type SendOptions struct {
+	To   string
+	From string
+}
