@@ -7,10 +7,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	v1 "github.com/iamNilotpal/openpulse/apps/api/handlers/v1"
+	"github.com/iamNilotpal/openpulse/business/pkg/email"
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
-	"github.com/iamNilotpal/openpulse/business/web/email"
 	"github.com/iamNilotpal/openpulse/foundation/hash"
 	"github.com/iamNilotpal/openpulse/foundation/web"
 	"github.com/jmoiron/sqlx"
@@ -27,7 +27,7 @@ type HandlerConfig struct {
 	Shutdown                    chan os.Signal
 	Log                         *zap.SugaredLogger
 	Repositories                *repositories.Repositories
-	APIConfig                   *config.OpenpulseAPIConfig
+	APIConfig                   *config.APIConfig
 	RolesMap                    auth.RoleConfigMap
 	ResourcePermissionsMap      auth.ResourcePermissionsMap
 	RoleResourcesPermissionsMap auth.RoleAccessControlMap

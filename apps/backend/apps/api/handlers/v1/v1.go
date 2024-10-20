@@ -6,10 +6,10 @@ import (
 	invitations_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/invitations"
 	onboarding_handlers "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/onboarding"
 	roles_handler "github.com/iamNilotpal/openpulse/apps/api/handlers/v1/roles"
+	"github.com/iamNilotpal/openpulse/business/pkg/email"
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
-	"github.com/iamNilotpal/openpulse/business/web/email"
 	"github.com/iamNilotpal/openpulse/business/web/middlewares"
 	"github.com/iamNilotpal/openpulse/foundation/hash"
 	"github.com/iamNilotpal/openpulse/foundation/web"
@@ -25,7 +25,7 @@ type Config struct {
 	HashService                 hash.Hasher
 	Log                         *zap.SugaredLogger
 	Repositories                *repositories.Repositories
-	APIConfig                   *config.OpenpulseAPIConfig
+	APIConfig                   *config.APIConfig
 	RolesMap                    auth.RoleConfigMap
 	ResourcePermissionsMap      auth.ResourcePermissionsMap
 	RoleResourcesPermissionsMap auth.RoleAccessControlMap
@@ -57,8 +57,10 @@ func SetupRoutes(cfg Config) {
 	cfg.App.Route(apiV1, func(r chi.Router) {
 		r.Post("/roles", errorMiddleware(rolesHandler.Create))
 
-		r.Post("/auth/register", errorMiddleware(authHandler.SignUp))
-		r.Post("/auth/login", errorMiddleware(authHandler.SignIn))
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/signup", errorMiddleware(authHandler.SignUp))
+			r.Post("/signin", errorMiddleware(authHandler.SignIn))
+		})
 
 		r.Route("/onboard", func(r chi.Router) {
 			r.Use(middlewares.Authenticate(cfg.Auth, cfg.Repositories.Users))

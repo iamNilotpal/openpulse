@@ -11,13 +11,13 @@ import (
 )
 
 type Config struct {
-	Cfg    config.Email
+	Cfg    *config.Email
 	Logger *zap.SugaredLogger
 }
 
 type Email struct {
 	parser *jwt.Parser
-	cfg    config.Email
+	cfg    *config.Email
 	method jwt.SigningMethod
 	logger *zap.SugaredLogger
 }
@@ -37,7 +37,7 @@ func New(cfg Config) *Email {
 	}
 }
 
-func (e *Email) GenerateVerificationToken(c Claims) (string, error) {
+func (e *Email) NewVerificationToken(c Claims) (string, error) {
 	token := jwt.NewWithClaims(e.method, c)
 
 	signedToken, err := token.SignedString(e.cfg.Secret)
@@ -54,15 +54,12 @@ func (e *Email) SendVerificationMail() error { return nil }
 
 func (e *Email) VerifyToken(token string) (Claims, error) {
 	var claims Claims
-
 	_, err := e.parser.ParseWithClaims(
 		token,
 		&claims,
 		func(t *jwt.Token) (interface{}, error) {
 			if t.Method != e.method {
-				return "", errors.NewRequestError(
-					"Invalid token signature.", http.StatusUnauthorized, errors.InvalidTokenSignature,
-				)
+				return "", stdErrors.New("invalid token")
 			}
 			return e.cfg.Secret, nil
 		},
@@ -74,7 +71,6 @@ func (e *Email) VerifyToken(token string) (Claims, error) {
 				"Invitation expired.", http.StatusBadRequest, errors.TokenExpired,
 			)
 		}
-
 		return Claims{}, errors.NewRequestError(
 			"Invalid token.", http.StatusBadRequest, errors.InvalidTokenSignature,
 		)
