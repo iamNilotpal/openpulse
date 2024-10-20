@@ -1,6 +1,6 @@
 package roles_handler
 
-import "github.com/iamNilotpal/openpulse/business/sys/validate"
+import "github.com/iamNilotpal/openpulse/foundation/validate"
 
 type NewRole struct {
 	Role        string `validate:"required,min=1,max=50" json:"role"`
@@ -8,8 +8,8 @@ type NewRole struct {
 	Description string `validate:"required,min=10,max=255" json:"description"`
 }
 
-func (na NewRole) Validate() error {
-	return validate.Check(na)
+func (v NewRole) Validate() error {
+	return validate.Check(v)
 }
 
 type AppRole struct {

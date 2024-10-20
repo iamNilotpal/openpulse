@@ -1,8 +1,12 @@
 package onboarding_handlers
 
 import (
+	"database/sql"
+	stdErrors "errors"
 	"net/http"
 
+	"github.com/iamNilotpal/openpulse/business/repositories/organizations"
+	"github.com/iamNilotpal/openpulse/business/repositories/roles"
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
@@ -15,17 +19,29 @@ import (
 )
 
 type Config struct {
-	Users  users.Repository
-	Config *config.OpenpulseAPIConfig
+	Config        *config.APIConfig
+	Users         users.Repository
+	Organizations organizations.Repository
+	RoleMap       auth.RoleConfigMap
+	RBACMap       auth.RBACMap
 }
 
 type handler struct {
-	users  users.Repository
-	config *config.OpenpulseAPIConfig
+	config        *config.APIConfig
+	users         users.Repository
+	organizations organizations.Repository
+	roleMap       auth.RoleConfigMap
+	rbacMap       auth.RBACMap
 }
 
 func New(cfg Config) *handler {
-	return &handler{config: cfg.Config, users: cfg.Users}
+	return &handler{
+		config:        cfg.Config,
+		roleMap:       cfg.RoleMap,
+		rbacMap:       cfg.RBACMap,
+		users:         cfg.Users,
+		organizations: cfg.Organizations,
+	}
 }
 
 func (h *handler) CreateOrganization(w http.ResponseWriter, r *http.Request) error {
@@ -90,6 +106,36 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
+	org, err := h.organizations.QueryById(r.Context(), input.OrgId)
+	if err != nil {
+		if stdErrors.Is(err, sql.ErrNoRows) {
+			return errors.NewRequestError("Organization not found.", http.StatusNotFound, errors.NotFound)
+		}
+		return err
+	}
+
+	if org.Admin.Id != user.Id {
+		return errors.NewRequestError("Organization not found.", http.StatusForbidden, errors.Forbidden)
+	}
+
+	userRBAC := make([]users.UserRBAC, 0)
+	admin := h.roleMap[roles.RoleOrgAdmin]
+	resources := h.rbacMap[roles.RoleOrgAdmin]
+
+	for _, resPerms := range resources {
+		for _, permission := range resPerms.Permissions {
+			userRBAC = append(
+				userRBAC,
+				users.UserRBAC{
+					UserId:       user.Id,
+					RoleId:       admin.Id,
+					PermissionId: permission.Id,
+					ResourceId:   resPerms.Resource.Id,
+				},
+			)
+		}
+	}
+
 	teamId, err := h.users.CreateTeam(
 		r.Context(),
 		users.NewTeam{
@@ -99,7 +145,7 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 			CreatorRoleId:  user.Role.Id,
 			Name:           input.TeamName,
 			Description:    input.TeamDescription,
-			UserRBAC:       []users.UserRBAC{},
+			CreatorRBAC:    userRBAC,
 		},
 	)
 	if err != nil {
