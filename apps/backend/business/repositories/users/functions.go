@@ -117,9 +117,9 @@ func ToNewDBOrganization(cmd NewOrganization) users_store.NewOrganization {
 }
 
 func ToNewDBTeam(cmd NewTeam) users_store.NewTeam {
-	tu := make([]teams_store.UserRBAC, len(cmd.UserRBAC))
+	tu := make([]teams_store.UserRBAC, len(cmd.CreatorRBAC))
 
-	for i, t := range cmd.UserRBAC {
+	for i, t := range cmd.CreatorRBAC {
 		tu[i] = teams_store.UserRBAC{
 			RoleId:       t.RoleId,
 			UserId:       t.UserId,
@@ -136,5 +136,26 @@ func ToNewDBTeam(cmd NewTeam) users_store.NewTeam {
 		Description:    cmd.Description,
 		CreatorRoleId:  cmd.CreatorRoleId,
 		InvitationCode: cmd.InvitationCode,
+	}
+}
+
+func ToNewDBOauthUser(cmd NewOAuthUser) users_store.NewOAuthUser {
+	return users_store.NewOAuthUser{
+		RoleId:    cmd.RoleId,
+		FirstName: cmd.FirstName,
+		LastName:  cmd.LastName,
+		Email:     cmd.Email,
+		Phone:     cmd.Phone,
+		AvatarURL: cmd.AvatarURL,
+	}
+}
+
+func ToNewDBOauthAccount(cmd NewOAuthAccount) users_store.NewOAuthAccount {
+	return users_store.NewOAuthAccount{
+		Provider:   cmd.Provider,
+		ExternalId: cmd.ExternalId,
+		Scope:      cmd.Scope,
+		Metadata:   cmd.Metadata,
+		User:       ToNewDBOauthUser(cmd.User),
 	}
 }

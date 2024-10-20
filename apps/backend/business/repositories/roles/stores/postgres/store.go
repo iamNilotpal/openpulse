@@ -10,7 +10,7 @@ type Store interface {
 	Create(context context.Context, permission NewRole) (int, error)
 	GetAll(context context.Context) ([]Role, error)
 	QueryById(context context.Context, id int) (Role, error)
-	GetRolesAccessControl(context context.Context) ([]RoleAccessControl, error)
+	GetRolesAccessControl(context context.Context) ([]AccessControl, error)
 }
 
 type postgresStore struct {
@@ -118,7 +118,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Role, error)
 	return role, nil
 }
 
-func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]RoleAccessControl, error) {
+func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]AccessControl, error) {
 	query := `
 		SELECT
 			ro.id AS roleId,
@@ -138,14 +138,14 @@ func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]RoleAc
 
 	rows, err := s.db.QueryContext(context, query)
 	if err != nil {
-		return []RoleAccessControl{}, err
+		return []AccessControl{}, err
 	}
 
 	defer rows.Close()
-	accessControls := make([]RoleAccessControl, 0)
+	accessControls := make([]AccessControl, 0)
 
 	for rows.Next() {
-		var row RoleAccessControl
+		var row AccessControl
 
 		if err := rows.Scan(
 			&row.Role.Id,
@@ -155,14 +155,14 @@ func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]RoleAc
 			&row.Permission.Id,
 			&row.Permission.Action,
 		); err != nil {
-			return []RoleAccessControl{}, err
+			return []AccessControl{}, err
 		}
 
 		accessControls = append(accessControls, row)
 	}
 
 	if err := rows.Err(); err != nil {
-		return []RoleAccessControl{}, err
+		return []AccessControl{}, err
 	}
 
 	return accessControls, nil

@@ -36,7 +36,7 @@ func FromDBRoleAccessConfig(cmd roles_store.RoleAccessConfig) RoleAccessConfig {
 	return RoleAccessConfig{Id: cmd.Id, Role: ParseRoleInt(cmd.Role)}
 }
 
-func FromDBRoleAccessControl(cmd roles_store.RoleAccessControl) RoleAccessControl {
+func FromDBRoleAccessControl(cmd roles_store.AccessControl) RoleAccessControl {
 	return RoleAccessControl{
 		Role:       FromDBRoleAccessConfig(cmd.Role),
 		Resource:   resources.FromDBResourceAccessDetails(cmd.Resource),
