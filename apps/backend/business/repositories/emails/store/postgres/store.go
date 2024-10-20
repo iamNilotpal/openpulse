@@ -16,7 +16,9 @@ var (
 
 type Store interface {
 	SaveEmailVerificationDetails(context context.Context, input EmailVerificationInput) error
-	ValidateVerificationDetails(context context.Context, token string, userId, expiresAt int) error
+	ValidateVerificationDetails(
+		context context.Context, token string, userId, expiresAt, maxAttempts int,
+	) error
 }
 
 type postgresStore struct {
@@ -30,13 +32,9 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 func (s *postgresStore) SaveEmailVerificationDetails(
 	ctx context.Context, input EmailVerificationInput,
 ) error {
-	if input.MaxAttempts == 0 || input.MaxAttempts > 5 {
-		input.MaxAttempts = 5
-	}
-
 	query := `
 		INSERT INTO
-			email_verifications (user_id, verification_token, email, max_attempts, expires_at)
+			email_verifications (user_id, verification_token, email, expires_at)
 		VALUES
 			($1, $2, $3, $4, $5)
 	`
@@ -47,7 +45,6 @@ func (s *postgresStore) SaveEmailVerificationDetails(
 		input.UserId,
 		input.VerificationToken,
 		input.Email,
-		input.MaxAttempts,
 		input.ExpiresAt,
 	); err != nil {
 		return err
@@ -57,30 +54,29 @@ func (s *postgresStore) SaveEmailVerificationDetails(
 }
 
 func (s *postgresStore) ValidateVerificationDetails(
-	ctx context.Context, token string, userId, expiresAt int,
+	ctx context.Context, token string, userId, expiresAt, maxAttempts int,
 ) error {
 	return database.WithTx(
 		ctx,
 		s.db,
 		&sql.TxOptions{Isolation: sql.LevelRepeatableRead},
 		func(tx *sqlx.Tx) error {
-			var id, attempts, maxAttempts int
+			var id, attempts int
 			query := `
 				SELECT
 					ev.id as id,
 					ev.attempt_count as attempt,
-					ev.max_attempts as maxAttempts,
 				FROM
 					email_verifications ev
 				WHERE
 					ev.user_id = $1
-					AND ev.verification_token = $2
 					AND ev.expires_at = $3
-					AND ev.is_revoked = FALSE;
+					AND ev.is_revoked = FALSE
+					AND ev.verification_token = $2;
 			`
 
 			if err := tx.QueryRowContext(ctx, query, userId, token, expiresAt).Scan(
-				&id, &attempts, &maxAttempts,
+				&id, &attempts,
 			); err != nil {
 				return err
 			}
@@ -99,10 +95,10 @@ func (s *postgresStore) ValidateVerificationDetails(
 			query = `
 				UPDATE email_verifications
 				SET
-					attempt_count = attempt_count + 1,
 					verified_at = $1,
 					is_revoked = TRUE,
 					is_email_verified = TRUE
+					attempt_count = attempt_count + 1
 				WHERE
 					id = $2;
 			`
