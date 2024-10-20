@@ -19,7 +19,7 @@ CREATE TABLE
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    total_members SMALLINT NOT NULL,
+    total_members SMALLINT NOT NULL CHECK (total_members > 0),
     logo_url TEXT,
     invitation_code VARCHAR(100) UNIQUE NOT NULL,
     creator_id BIGINT NOT NULL REFERENCES users (id) ON DELETE NO ACTION,
