@@ -1,8 +1,18 @@
 package auth_handlers
 
 const (
-	AUTH_STATE_VERIFICATION_MAIL_SENT       string = "VERIFICATION_MAIL_SENT"
-	AUTH_STATE_VERIFICATION_MAIL_NOT_SENT   string = "VERIFICATION_MAIL_NOT_SENT"
-	AUTH_STATE_USER_REGISTRATION_COMPLETE   string = "USER_REGISTRATION_COMPLETE"
-	AUTH_STATE_USER_REGISTRATION_INCOMPLETE string = "USER_REGISTRATION_INCOMPLETE"
+	verificationMailSent       string = "VERIFICATION_MAIL_SENT"
+	verificationMailNotSent    string = "VERIFICATION_MAIL_NOT_SENT"
+	userRegistrationComplete   string = "USER_REGISTRATION_COMPLETE"
+	userRegistrationIncomplete string = "USER_REGISTRATION_INCOMPLETE"
+)
+
+const (
+	ONBOARDING_CREATE_TEAM         string = "CREATE_TEAM"
+	ONBOARDING_CREATE_ORGANIZATION string = "CREATE_ORGANIZATION"
+)
+
+const (
+	providerGoogle string = "google"
+	providerGithub string = "github"
 )
