@@ -12,6 +12,7 @@ type Repository interface {
 	Create(context context.Context, payload NewUser) (int, error)
 	IsEmailVerifiedUser(context context.Context, email string) (bool, error)
 	CreateTeam(context context.Context, cmd NewTeam) (int, error)
+	CreateUsingOAuth(ctx context.Context, cmd NewOAuthAccount) (int, error)
 	CreateOrganization(context context.Context, cmd NewOrganization) (int, error)
 }
 
@@ -26,6 +27,10 @@ func NewPostgresRepository(store users_store.Store) *postgresRepository {
 func (r *postgresRepository) Create(context context.Context, payload NewUser) (int, error) {
 	id, err := r.store.Create(context, ToNewDBUser(payload))
 	return id, err
+}
+
+func (r *postgresRepository) CreateUsingOAuth(ctx context.Context, cmd NewOAuthAccount) (int, error) {
+	return r.store.CreateUsingOAuth(ctx, ToNewDBOauthAccount(cmd))
 }
 
 func (r *postgresRepository) CreateOrganization(

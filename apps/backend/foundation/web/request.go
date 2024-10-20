@@ -17,6 +17,11 @@ func GetParam(r *http.Request, key string) string {
 	return strings.TrimSpace(value)
 }
 
+func GetQuery(r *http.Request, key string) string {
+	value := r.URL.Query().Get(key)
+	return strings.TrimSpace(value)
+}
+
 // Decode reads the body of an HTTP request looking for a JSON document. The
 // body is decoded into the provided value. If the provided value is a struct then it is checked for
 // validation tags. If the value implements a validate function, it is executed.

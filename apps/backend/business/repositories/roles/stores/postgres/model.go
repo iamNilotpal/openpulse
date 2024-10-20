@@ -7,18 +7,13 @@ import (
 
 type Role struct {
 	Id           int
-	IsSystemRole bool
-	Role         int
 	Name         string
 	Description  string
+	Role         int
+	IsSystemRole bool
 	CreatedAt    string
 	UpdatedAt    string
 }
-
-// type RoleResources struct {
-// 	Resource   resources_store.Resource
-// 	Permission permissions_store.Permission
-// }
 
 type NewRole struct {
 	IsSystemRole bool
@@ -32,7 +27,7 @@ type RoleAccessConfig struct {
 	Role int
 }
 
-type RoleAccessControl struct {
+type AccessControl struct {
 	Role       RoleAccessConfig
 	Resource   resources_store.ResourceAccessConfig
 	Permission permissions_store.PermissionAccessConfig

@@ -35,7 +35,9 @@ func (r *postgresRepository) SaveEmailVerificationDetails(
 func (r *postgresRepository) ValidateVerificationDetails(
 	context context.Context, token string, userId, expiresAt int,
 ) error {
-	if err := r.store.ValidateVerificationDetails(context, token, userId, expiresAt); err != nil {
+	if err := r.store.ValidateVerificationDetails(
+		context, token, userId, expiresAt, MaxEmailVerificationAttempt,
+	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrVerificationDataNotFound
 		}

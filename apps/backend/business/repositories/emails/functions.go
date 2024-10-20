@@ -6,7 +6,6 @@ func NewDBEmailVerificationDetails(v EmailVerificationDetails) emails_store.Emai
 	return emails_store.EmailVerificationInput{
 		Email:             v.Email,
 		UserId:            v.UserId,
-		MaxAttempts:       v.MaxAttempts,
 		VerificationToken: v.VerificationToken,
 		ExpiresAt:         int(v.ExpiresAt.UnixNano()),
 	}
