@@ -3,6 +3,7 @@ package users_store
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,8 +15,9 @@ import (
 type Store interface {
 	QueryById(context context.Context, id int) (User, error)
 	QueryByEmail(context context.Context, email string) (User, error)
-	IsVerifiedUser(context context.Context, email string) (bool, error)
+	IsEmailVerifiedUser(context context.Context, email string) (bool, error)
 	Create(context context.Context, cmd NewUser) (int, error)
+	CreateUsingOAuth(ctx context.Context, cmd NewOAuthAccount) (int, error)
 	CreateTeam(context context.Context, team NewTeam) (int, error)
 	CreateOrganization(context context.Context, cmd NewOrganization) (int, error)
 }
@@ -50,6 +52,57 @@ func (s *postgresStore) Create(context context.Context, cmd NewUser) (int, error
 	}
 
 	return id, nil
+}
+
+func (s *postgresStore) CreateUsingOAuth(ctx context.Context, cmd NewOAuthAccount) (int, error) {
+	var userId int
+
+	if err := database.WithTx(
+		ctx,
+		s.db,
+		&sql.TxOptions{},
+		func(tx *sqlx.Tx) error {
+			query := `
+				INSERT INTO
+					users(first_name, last_name, email, role_id)
+				VALUES
+					($1, $2, $3, $4) RETURNING id;
+			`
+			if err := s.db.QueryRowContext(
+				ctx,
+				query,
+				cmd.User.FirstName,
+				cmd.User.LastName,
+				cmd.User.Email,
+				cmd.User.RoleId,
+			).Scan(&userId); err != nil {
+				return err
+			}
+
+			query = `
+				INSERT INTO
+					oauth_accounts(provider, external_id, scope, metadata, user_id)
+				VALUES ($1, $2, $3, $4, $5)
+			`
+			if _, err := s.db.ExecContext(
+				ctx,
+				query,
+				cmd.Provider,
+				cmd.ExternalId,
+				cmd.Scope,
+				cmd.Metadata,
+				userId,
+			); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	); err != nil {
+		return 0, err
+	}
+
+	return userId, nil
 }
 
 func (s *postgresStore) CreateOrganization(ctx context.Context, cmd NewOrganization) (int, error) {
@@ -168,10 +221,10 @@ func (p *postgresStore) QueryByEmail(context context.Context, email string) (Use
 	return p.queryByIdOrEmail(context, 0, email, "email")
 }
 
-func (s *postgresStore) IsVerifiedUser(context context.Context, email string) (bool, error) {
+func (s *postgresStore) IsEmailVerifiedUser(context context.Context, email string) (bool, error) {
 	var isVerified bool
 	query := `
-		SELECT is_verified
+		SELECT is_email_verified
 		FROM users
 		WHERE email = $1;
 	`
@@ -197,7 +250,7 @@ func (p *postgresStore) queryByIdOrEmail(
 			us.avatar_url as avatarUrl,
 			us.account_status as accountStatus,
 			us.designation as designation,
-			us.is_verified as isVerified,
+			us.is_email_verified as isEmailVerified,
 			us.created_at as createdAt,
 			us.updated_at as updatedAt,
 			t.id as teamId,
@@ -239,7 +292,7 @@ func (p *postgresStore) queryByIdOrEmail(
 			&user.AvatarUrl,
 			&user.AccountStatus,
 			&user.Designation,
-			&user.IsVerified,
+			&user.IsEmailVerified,
 			&user.CreatedAt,
 			&user.UpdatedAt,
 			&user.Team.Id,
@@ -270,7 +323,7 @@ func (p *postgresStore) queryByIdOrEmail(
 			&user.AvatarUrl,
 			&user.AccountStatus,
 			&user.Designation,
-			&user.IsVerified,
+			&user.IsEmailVerified,
 			&user.CreatedAt,
 			&user.UpdatedAt,
 			&user.Team.Id,
@@ -341,5 +394,49 @@ func (p *postgresStore) queryByIdOrEmail(
 	}
 
 	user.Resources = resources
+	query = `
+		SELECT
+			oa.id AS id,
+			oa.provider AS provider,
+			oa.external_id AS externalId,
+			oa.scope AS scope,
+			oa.metadata AS metadata,
+			oa.created_at AS createdAt,
+			oa.updated_at AS updatedAt
+		FROM
+			oauth_accounts oa
+		WHERE
+			oa.user_id = $1;
+	`
+
+	rows, err = p.db.QueryContext(context, query, user.Id)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return User{}, err
+	}
+
+	defer rows.Close()
+	if !errors.Is(err, sql.ErrNoRows) {
+		oauthAccounts := make([]OAuthAccount, 0)
+		for rows.Next() {
+			var ac OAuthAccount
+			if err := rows.Scan(
+				&ac.Id,
+				&ac.Provider,
+				&ac.ExternalId,
+				&ac.Scope,
+				&ac.Metadata,
+				&ac.CreatedAt,
+				&ac.UpdatedAt,
+			); err != nil {
+				return User{}, err
+			}
+			oauthAccounts = append(oauthAccounts, ac)
+		}
+		if err = rows.Err(); err != nil {
+			return User{}, err
+		}
+		user.OAuthAccounts = oauthAccounts
+	}
+
 	return user, nil
 }

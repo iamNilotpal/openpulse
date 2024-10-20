@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/iamNilotpal/openpulse/apps/api/handlers"
+	"github.com/iamNilotpal/openpulse/business/pkg/email"
 	"github.com/iamNilotpal/openpulse/business/repositories"
 	"github.com/iamNilotpal/openpulse/business/repositories/emails"
 	emails_store "github.com/iamNilotpal/openpulse/business/repositories/emails/store/postgres"
@@ -30,7 +31,6 @@ import (
 	"github.com/iamNilotpal/openpulse/business/sys/config"
 	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/business/web/auth"
-	"github.com/iamNilotpal/openpulse/business/web/email"
 	"github.com/iamNilotpal/openpulse/foundation/hash"
 	"github.com/iamNilotpal/openpulse/foundation/logger"
 	"github.com/joho/godotenv"
@@ -56,7 +56,11 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("Startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 
 	// Initialize Config
-	cfg := config.NewOpenpulseConfig()
+	cfg := config.NewAPIConfig()
+	if err := config.Validate(*cfg); err != nil {
+		return err
+	}
+
 	log.Infow("Config", "config", cfg)
 
 	// Initialize Database

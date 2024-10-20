@@ -3,62 +3,74 @@ package config
 import (
 	"strings"
 	"time"
+
+	"github.com/iamNilotpal/openpulse/foundation/validate"
 )
 
 type Web struct {
-	APIHost         string
-	AllowedOrigins  []string
-	ReadTimeout     time.Duration
-	WriteTimeout    time.Duration
-	IdleTimeout     time.Duration
-	ShutdownTimeout time.Duration
+	APIHost         string        `validate:"required,url"`
+	AllowedOrigins  []string      `validate:"gt=0,dive,len=1,dive,required"`
+	ReadTimeout     time.Duration `validate:"required"`
+	WriteTimeout    time.Duration `validate:"required"`
+	IdleTimeout     time.Duration `validate:"required"`
+	ShutdownTimeout time.Duration `validate:"required"`
 }
 
 type Auth struct {
-	Issuer              string
-	AccessTokenSecret   string
-	RefreshTokenSecret  string
-	Audience            string
-	AccessTokenExpTime  time.Duration
-	RefreshTokenExpTime time.Duration
+	Issuer              string        `validate:"required,min=1"`
+	AccessTokenSecret   string        `validate:"required,min=1"`
+	RefreshTokenSecret  string        `validate:"required,min=1"`
+	Audience            string        `validate:"required,min=1"`
+	AccessTokenExpTime  time.Duration `validate:"required"`
+	RefreshTokenExpTime time.Duration `validate:"required"`
 }
 
 type DB struct {
-	MaxIdleConns int
-	MaxOpenConns int
-	DisableTLS   bool
-	Name         string
-	User         string
-	Host         string
-	Password     string
-	Scheme       string
+	MaxIdleConns int    `validate:"required,number"`
+	MaxOpenConns int    `validate:"required,number"`
+	DisableTLS   bool   `validate:"required,boolean"`
+	Name         string `validate:"required,min=1"`
+	User         string `validate:"required,min=1"`
+	Host         string `validate:"required,min=1"`
+	Password     string `validate:"required,min=1"`
+	Scheme       string `validate:"required,min=1"`
 }
 
 type Cache struct {
-	DBName   string
-	Protocol string
-	User     string
-	Host     string
-	Scheme   string
-	Password string
+	DBName   string `validate:"required,min=1"`
+	Protocol string `validate:"required,min=1"`
+	User     string `validate:"required,min=1"`
+	Host     string `validate:"required,min=1"`
+	Scheme   string `validate:"required,min=1"`
+	Password string `validate:"required,min=1"`
 }
 
 type Email struct {
-	Issuer       string
-	Secret       string
-	Audience     string
-	TokenExpTime time.Duration
+	Username     string        `validate:"required,min=1"`
+	Password     string        `validate:"required,min=1"`
+	Issuer       string        `validate:"required,min=1"`
+	Secret       string        `validate:"required,min=1"`
+	Audience     string        `validate:"required,min=1"`
+	EmailExpTime time.Duration `validate:"required"`
 }
 
-type OpenpulseAPIConfig struct {
-	DB    DB
-	Web   Web
-	Auth  Auth
-	Cache Cache
-	Email Email
+type Onboarding struct {
+	Issuer       string        `validate:"required,min=1"`
+	Secret       string        `validate:"required,min=1"`
+	Audience     string        `validate:"required,min=1"`
+	TokenExpTime time.Duration `validate:"required"`
 }
 
-func NewOpenpulseConfig() *OpenpulseAPIConfig {
+type APIConfig struct {
+	DB         *DB         `validate:"required"`
+	Web        *Web        `validate:"required"`
+	Auth       *Auth       `validate:"required"`
+	Cache      *Cache      `validate:"required"`
+	Email      *Email      `validate:"required"`
+	Onboarding *Onboarding `validate:"required"`
+}
+
+func NewAPIConfig() *APIConfig {
 	webReadTimeOut, err := time.ParseDuration(GetEnvString("WEB_READ_TIMEOUT", "10s"))
 	if err != nil {
 		webReadTimeOut = time.Second * 5
@@ -79,12 +91,15 @@ func NewOpenpulseConfig() *OpenpulseAPIConfig {
 		webShutdownTimeout = time.Second * 20
 	}
 
-	accessTokenExp, err := time.ParseDuration(GetEnvString("ACCESS_TOKEN_EXPIRATION_TIME", "3600s"))
+	origins := GetEnvString("ALLOWED_ORIGINS", "http://localhost:3000")
+	allowedOrigins := strings.Split(origins, ",")
+
+	accessTokenExp, err := time.ParseDuration(GetEnvString("AUTH_ACCESS_TOKEN_EXPIRATION_TIME", "3600s"))
 	if err != nil {
 		accessTokenExp = time.Second * 3600
 	}
 
-	refreshTokenExp, err := time.ParseDuration(GetEnvString("REFRESH_TOKEN_EXPIRATION_TIME", "2190h"))
+	refreshTokenExp, err := time.ParseDuration(GetEnvString("AUTH_REFRESH_TOKEN_EXPIRATION_TIME", "2190h"))
 	if err != nil {
 		refreshTokenExp = time.Hour * 2190
 	}
@@ -94,11 +109,15 @@ func NewOpenpulseConfig() *OpenpulseAPIConfig {
 		emailTokenExpTime = time.Second * 1800
 	}
 
-	origins := GetEnvString("ALLOWED_ORIGINS", "http://localhost:3000")
-	allowedOrigins := strings.Split(origins, ",")
+	onboardingTokenExpTime, err := time.ParseDuration(
+		GetEnvString("ONBOARDING_TOKEN_EXPIRATION_TIME", "1800s"),
+	)
+	if err != nil {
+		onboardingTokenExpTime = time.Second * 1800
+	}
 
-	return &OpenpulseAPIConfig{
-		DB: DB{
+	return &APIConfig{
+		DB: &DB{
 			MaxIdleConns: GetEnvInt("DB_MAX_IDLE_CONN", 5),
 			MaxOpenConns: GetEnvInt("DB_MAX_OPEN_CONN", 20),
 			User:         GetEnvString("DB_USER", "postgres"),
@@ -108,39 +127,47 @@ func NewOpenpulseConfig() *OpenpulseAPIConfig {
 			Password:     GetEnvString("DB_PASSWORD", "password"),
 			DisableTLS:   GetEnvString("DB_TLS", "disable") == "disable",
 		},
-		Cache: Cache{
+		Cache: &Cache{
 			DBName:   GetEnvString("CACHE_DB_NAME", "0"),
-			Protocol: GetEnvString("CACHE_PROTOCOL", "3"),
+			Protocol: GetEnvString("CACHE_DB_PROTOCOL", "3"),
 			User:     GetEnvString("CACHE_DB_USER", "redis"),
 			Scheme:   GetEnvString("CACHE_DB_SCHEME", "redis"),
 			Password: GetEnvString("CACHE_DB_PASSWORD", "redis"),
 			Host:     GetEnvString("CACHE_DB_HOST", "localhost:6379"),
 		},
-		Web: Web{
+		Web: &Web{
 			ReadTimeout:     webReadTimeOut,
 			IdleTimeout:     webIdleTimeout,
 			AllowedOrigins:  allowedOrigins,
 			WriteTimeout:    webWriteTimeout,
 			ShutdownTimeout: webShutdownTimeout,
-			APIHost:         GetEnvString("WEB_API_HOST", "localhost:3001"),
+			APIHost:         GetEnvString("WEB_API_HOST", "localhost:8000"),
 		},
-		Auth: Auth{
+		Auth: &Auth{
 			AccessTokenExpTime:  accessTokenExp,
 			RefreshTokenExpTime: refreshTokenExp,
-			Audience:            GetEnvString("AUDIENCE", "localhost:3001"),
-			Issuer:              GetEnvString("AUTH_ISSUER", "open-pulse-backend"),
-			AccessTokenSecret: GetEnvString(
-				"ACCESS_TOKEN_SECRET", "92c3ba3f929dc49a3468c0ff6b7340997c04d522af3a5216f43d71a3b5c97788c64484",
-			),
-			RefreshTokenSecret: GetEnvString(
-				"REFRESH_TOKEN_SECRET", "92c3ba3f929dc49a3468c0ff6b7340997c04d522af3a5216f43d71a3b5c97788c64484",
-			),
+			AccessTokenSecret:   GetEnvString("AUTH_ACCESS_TOKEN_SECRET", ""),
+			RefreshTokenSecret:  GetEnvString("AUTH_REFRESH_TOKEN_SECRET", ""),
+			Issuer:              GetEnvString("AUTH_ISSUER", "https://api.openpulse.dev"),
+			Audience:            GetEnvString("AUTH_AUDIENCE", "https://api.openpulse.dev"),
 		},
-		Email: Email{
-			TokenExpTime: emailTokenExpTime,
-			Issuer:       GetEnvString("EMAIL_ISSUER", ""),
+		Email: &Email{
+			EmailExpTime: emailTokenExpTime,
 			Secret:       GetEnvString("EMAIL_SECRET", ""),
-			Audience:     GetEnvString("EMAIL_AUDIENCE", ""),
+			Username:     GetEnvString("EMAIL_USERNAME", ""),
+			Password:     GetEnvString("EMAIL_PASSWORD", ""),
+			Issuer:       GetEnvString("EMAIL_ISSUER", "https://api.openpulse.dev"),
+			Audience:     GetEnvString("EMAIL_AUDIENCE", "https://api.openpulse.dev"),
+		},
+		Onboarding: &Onboarding{
+			TokenExpTime: onboardingTokenExpTime,
+			Secret:       GetEnvString("ONBOARDING_SECRET", ""),
+			Issuer:       GetEnvString("ONBOARDING_ISSUER", "https://api.openpulse.dev"),
+			Audience:     GetEnvString("ONBOARDING_AUDIENCE", "https://api.openpulse.dev"),
 		},
 	}
+}
+
+func Validate(cfg APIConfig) error {
+	return validate.Check(cfg)
 }

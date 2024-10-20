@@ -3,13 +3,12 @@ package errors
 type ErrorCode string
 
 const (
-	FlowIncomplete ErrorCode = "INCOMPLETE_FLOW"
+	FlowIncomplete  ErrorCode = "INCOMPLETE_FLOW"
+	UserNotVerified ErrorCode = "USER_NOT_VERIFIED"
 
 	DuplicateValue ErrorCode = "DUPLICATE_VALUE"
 	NotFound       ErrorCode = "RESOURCE_NOT_FOUND"
 	AlreadyExists  ErrorCode = "RESOURCE_ALREADY_EXISTS"
-
-	UserNotVerified ErrorCode = "USER_NOT_VERIFIED"
 
 	BadRequest          ErrorCode = "BAD_REQUEST"
 	InternalServerError ErrorCode = "INTERNAL_ERROR"

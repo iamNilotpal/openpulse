@@ -212,7 +212,7 @@ func (h *handler) SignIn(w http.ResponseWriter, r *http.Request) error {
 		)
 	}
 
-	if !user.IsVerified {
+	if !user.IsEmailVerified {
 		return errors.NewRequestError(
 			"Please verify your email to sign in.", http.StatusUnauthorized, errors.UserNotVerified,
 		)

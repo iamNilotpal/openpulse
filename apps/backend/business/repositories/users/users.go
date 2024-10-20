@@ -10,7 +10,7 @@ type Repository interface {
 	QueryById(context context.Context, id int) (User, error)
 	QueryByEmail(context context.Context, email string) (User, error)
 	Create(context context.Context, payload NewUser) (int, error)
-	IsVerifiedUser(context context.Context, email string) (bool, error)
+	IsEmailVerifiedUser(context context.Context, email string) (bool, error)
 	CreateTeam(context context.Context, cmd NewTeam) (int, error)
 	CreateOrganization(context context.Context, cmd NewOrganization) (int, error)
 }
@@ -56,6 +56,6 @@ func (r *postgresRepository) QueryByEmail(context context.Context, email string)
 	return FromDBUser(dbUser), nil
 }
 
-func (r *postgresRepository) IsVerifiedUser(context context.Context, email string) (bool, error) {
-	return r.store.IsVerifiedUser(context, email)
+func (r *postgresRepository) IsEmailVerifiedUser(context context.Context, email string) (bool, error) {
+	return r.store.IsEmailVerifiedUser(context, email)
 }
