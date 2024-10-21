@@ -22,8 +22,10 @@
     "lemonsqueezy",
     "lucide",
     "magicpattern",
+    "magicslide",
     "matoous",
     "openpulse",
+    "Parens",
     "pgerrcode",
     "publint",
     "rpcb",
@@ -31,12 +33,14 @@
     "signup",
     "sqlx",
     "sslmode",
+    "tabler",
     "tanstack",
     "testdata",
     "tmpl",
     "tseslint",
     "Turborepo",
-    "Waitlist"
+    "Waitlist",
+    "xxll"
   ],
   "css.customData": [".vscode/tailwind.json"],
   "eslint.workingDirectories": [
