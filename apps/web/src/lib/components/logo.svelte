@@ -1,26 +1,26 @@
 <script lang="ts">
-	import { cn } from '@/utils';
+  import { cn } from '@/utils';
 
-	type Plain = {
-		type: 'text';
-	};
+  type Plain = {
+    type: 'text';
+  };
 
-	type Link = {
-		type: 'link';
-		href: `/${string}`;
-	};
+  type Link = {
+    type: 'link';
+    href: `/${string}`;
+  };
 
-	type $$Props = (Plain | Link) & { class?: string };
+  type $$Props = (Plain | Link) & { class?: string };
 </script>
 
 {#if $$props.type === 'link'}
-	<a href="/" class="appearance-none">
-		<h1 class={cn('text-white font-semibold text-xl', $$props.class)}>
-			open<span class="text-primary-2 text-3xl">pulse</span>
-		</h1>
-	</a>
+  <a href="/" class="appearance-none">
+    <h1 class={cn('text-xl font-semibold text-white', $$props.class)}>
+      open<span class="text-primary-2 text-3xl">pulse</span>
+    </h1>
+  </a>
 {:else}
-	<h1 class={cn('text-white font-semibold text-xl', $$props.class)}>
-		open<span class="text-primary-2 text-3xl">pulse</span>
-	</h1>
+  <h1 class={cn('text-xl font-semibold text-white', $$props.class)}>
+    open<span class="text-primary-2 text-3xl">pulse</span>
+  </h1>
 {/if}

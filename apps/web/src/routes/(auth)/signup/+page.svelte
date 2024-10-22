@@ -25,11 +25,11 @@
   const { form: formData, enhance } = form;
 </script>
 
-<div class="space-x-3 flex">
-  <Button variant="outline" title="Sign in with Google" class="py-5 px-6 bg-background-500">
+<div class="flex space-x-3">
+  <Button variant="outline" title="Sign in with Google" class="bg-background-500 px-6 py-5">
     <IconBrandGoogleFilled class="h-5 w-5" />
   </Button>
-  <Button variant="outline" title="Sign in with GitHub" class="py-5 px-6 bg-background-500">
+  <Button variant="outline" title="Sign in with GitHub" class="bg-background-500 px-6 py-5">
     <IconBrandGithubFilled class="h-5 w-5" />
   </Button>
 </div>
@@ -86,7 +86,7 @@
       <Form.FieldErrors />
     </Form.Field>
 
-    <Button type="submit" class="mx-auto w-full mt-5 flex items-center gap-1">
+    <Button type="submit" class="mx-auto mt-5 flex w-full items-center gap-1">
       <IconLockFilled class="h-4 w-4" />
       <span>Sign Up</span>
     </Button>
