@@ -20,8 +20,8 @@ type RegisterUserResponse struct {
 }
 
 type RegistrationState struct {
-	EmailSentState    string `json:"emailSentState"`
-	RegistrationState string `json:"registrationState"`
+	EmailSent     string `json:"emailSentState"`
+	CreateAccount string `json:"createAccountState"`
 }
 
 type SignInInput struct {
