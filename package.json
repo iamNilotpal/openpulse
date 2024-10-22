@@ -27,7 +27,7 @@
     }
   },
   "lint-staged": {
-    "src/**/*.{ts,svelte}": [
+    "apps/**/*.{ts,svelte,tsx,js,jsx}": [
       "pnpm lint",
       "pnpm format"
     ]
