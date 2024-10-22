@@ -59,7 +59,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground-200 font-sans font-medium text-caption-2;
+    @apply bg-background font-sans text-caption-2 font-medium text-foreground-200;
   }
 }
 

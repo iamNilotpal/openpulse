@@ -10,8 +10,8 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
   parserOptions: {
-    sourceType: 'module',
     ecmaVersion: 2020,
+    sourceType: 'module',
     extraFileExtensions: ['.svelte']
   },
   env: {
@@ -27,5 +27,12 @@ module.exports = {
         parser: '@typescript-eslint/parser'
       }
     }
-  ]
+  ],
+  rules: {
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      { varsIgnorePattern: '^_|^\\$\\$(Props|Events|Slots)$' }
+    ],
+    'no-empty-pattern': 'off'
+  }
 };

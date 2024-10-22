@@ -6,15 +6,34 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "build": "turbo run build",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.6",
     "turbo": "^2.1.1",
     "prettier": "^3.2.5",
+    "lint-staged": "^15.2.10",
     "prettier-plugin-svelte": "^3.2.2"
   },
   "packageManager": "pnpm@8.15.6",
   "engines": {
     "node": ">=18"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "pnpm lint && pnpm format"
+    }
+  },
+  "lint-staged": {
+    "apps/**/*.{ts,svelte,tsx,js,jsx}": [
+      "pnpm lint",
+      "pnpm format"
+    ],
+    "packages/**/*.{ts,svelte,tsx,js,jsx}": [
+      "pnpm lint",
+      "pnpm format"
+    ]
   }
 }
