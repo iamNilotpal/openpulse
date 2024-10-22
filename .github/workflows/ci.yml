@@ -1,0 +1,29 @@
+name: Lint and Format Code
+
+on:
+  pull_request:
+    paths:
+      - apps/web/**
+      - packages/**
+
+jobs:
+  ci:
+    name: Run Lint and Format scripts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Linter
+        run: pnpm lint
+
+      - name: Run Formatter
+        run: pnpm format
