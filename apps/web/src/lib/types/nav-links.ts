@@ -1,4 +1,4 @@
 export type LandingPageNavLink = {
-	path: string;
-	label: string;
+  path: string;
+  label: string;
 };
