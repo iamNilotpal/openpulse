@@ -1,4 +1,4 @@
-name: Lint and Format Code
+name: Lint Code
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   ci:
-    name: Run Lint and Format scripts
+    name: Run Lint Script
     runs-on: ubuntu-latest
     steps:
       - name: Clone repository
@@ -27,6 +27,3 @@ jobs:
 
       - name: Run Linter
         run: pnpm lint
-
-      - name: Run Formatter
-        run: pnpm format
