@@ -3,10 +3,8 @@ name: Lint and Format Code
 on:
   pull_request:
     paths:
-      - apps/**
+      - apps/web/**
       - packages/**
-    paths-ignore:
-      - apps/backend/**
 
 jobs:
   ci:
