@@ -30,6 +30,10 @@
     "apps/**/*.{ts,svelte,tsx,js,jsx}": [
       "pnpm lint",
       "pnpm format"
+    ],
+    "packages/**/*.{ts,svelte,tsx,js,jsx}": [
+      "pnpm lint",
+      "pnpm format"
     ]
   }
 }
