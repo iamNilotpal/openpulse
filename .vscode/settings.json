@@ -11,6 +11,7 @@
   "cSpell.words": [
     "clsx",
     "Contentful",
+    "formsnap",
     "godotenv",
     "gonanoid",
     "Hasher",
@@ -33,6 +34,7 @@
     "signup",
     "sqlx",
     "sslmode",
+    "superforms",
     "tabler",
     "tanstack",
     "testdata",

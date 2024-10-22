@@ -132,8 +132,8 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 				errors.FromErrorCode(errors.FlowIncomplete),
 				RegisterUserResponse{
 					State: RegistrationState{
-						EmailSentState:    verificationMailNotSent,
-						RegistrationState: userRegistrationIncomplete,
+						EmailSent:     verificationMailNotSent,
+						CreateAccount: accountCreationComplete,
 					},
 				},
 			),
@@ -149,8 +149,8 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 				errors.FromErrorCode(errors.FlowIncomplete),
 				RegisterUserResponse{
 					State: RegistrationState{
-						EmailSentState:    verificationMailNotSent,
-						RegistrationState: userRegistrationComplete,
+						EmailSent:     verificationMailNotSent,
+						CreateAccount: accountCreationComplete,
 					},
 				},
 			),
@@ -174,8 +174,8 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 				errors.FromErrorCode(errors.FlowIncomplete),
 				RegisterUserResponse{
 					State: RegistrationState{
-						EmailSentState:    verificationMailNotSent,
-						RegistrationState: userRegistrationComplete,
+						EmailSent:     verificationMailNotSent,
+						CreateAccount: accountCreationComplete,
 					},
 				},
 			),
@@ -190,8 +190,8 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 			UserId: userId,
 			URL:    h.config.Web.ClientAPIHost + "verify/email" + "/" + token,
 			State: RegistrationState{
-				EmailSentState:    verificationMailSent,
-				RegistrationState: userRegistrationComplete,
+				EmailSent:     verificationMailSent,
+				CreateAccount: accountCreationComplete,
 			},
 		},
 	)

@@ -1,10 +1,10 @@
 package auth_handlers
 
 const (
-	verificationMailSent       string = "VERIFICATION_MAIL_SENT"
-	verificationMailNotSent    string = "VERIFICATION_MAIL_NOT_SENT"
-	userRegistrationComplete   string = "USER_REGISTRATION_COMPLETE"
-	userRegistrationIncomplete string = "USER_REGISTRATION_INCOMPLETE"
+	verificationMailSent      string = "VERIFICATION_MAIL_SENT"
+	verificationMailNotSent   string = "VERIFICATION_MAIL_NOT_SENT"
+	accountCreationComplete   string = "ACCOUNT_CREATION_COMPLETE"
+	accountCreationIncomplete string = "ACCOUNT_CREATION_INCOMPLETE"
 )
 
 const (
