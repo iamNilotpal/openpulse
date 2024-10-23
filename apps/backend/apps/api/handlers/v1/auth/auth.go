@@ -26,43 +26,43 @@ import (
 )
 
 type Config struct {
-	Auth          *auth.Auth
-	EmailService  *email.Email
-	Config        *config.APIConfig
-	HashService   hash.Hasher
-	Users         users.Repository
-	Emails        emails.Repository
-	Sessions      sessions.Repository
-	Organizations organizations.Repository
-	RoleMap       auth.RoleConfigMap
-	RBACMap       auth.RBACMap
+	Auth             *auth.Auth
+	HashService      hash.Hasher
+	EmailService     *email.Email
+	RoleMap          auth.RoleMappings
+	Config           *config.APIConfig
+	Users            users.Repository
+	Emails           emails.Repository
+	Sessions         sessions.Repository
+	Organizations    organizations.Repository
+	AccessControlMap auth.RoleNameToAccessControlMap
 }
 
 type handler struct {
-	auth          *auth.Auth
-	emailService  *email.Email
-	hashService   hash.Hasher
-	config        *config.APIConfig
-	users         users.Repository
-	sessions      sessions.Repository
-	organizations organizations.Repository
-	emails        emails.Repository
-	rolesMap      auth.RoleConfigMap
-	rbacMap       auth.RBACMap
+	auth             *auth.Auth
+	emailService     *email.Email
+	hashService      hash.Hasher
+	config           *config.APIConfig
+	roleMap          auth.RoleMappings
+	users            users.Repository
+	emails           emails.Repository
+	sessions         sessions.Repository
+	organizations    organizations.Repository
+	accessControlMap auth.RoleNameToAccessControlMap
 }
 
 func New(cfg Config) *handler {
 	return &handler{
-		auth:          cfg.Auth,
-		config:        cfg.Config,
-		sessions:      cfg.Sessions,
-		rolesMap:      cfg.RoleMap,
-		users:         cfg.Users,
-		emails:        cfg.Emails,
-		organizations: cfg.Organizations,
-		hashService:   cfg.HashService,
-		emailService:  cfg.EmailService,
-		rbacMap:       cfg.RBACMap,
+		auth:             cfg.Auth,
+		config:           cfg.Config,
+		sessions:         cfg.Sessions,
+		roleMap:          cfg.RoleMap,
+		users:            cfg.Users,
+		emails:           cfg.Emails,
+		organizations:    cfg.Organizations,
+		hashService:      cfg.HashService,
+		emailService:     cfg.EmailService,
+		accessControlMap: cfg.AccessControlMap,
 	}
 }
 
@@ -72,23 +72,13 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	passwordHash, err := h.hashService.Hash([]byte(input.Password))
-	if err != nil {
-		return errors.NewRequestError(
-			http.StatusText(http.StatusInternalServerError),
-			http.StatusInternalServerError,
-			errors.InternalServerError,
-		)
-	}
-
 	userId, err := h.users.Create(
 		r.Context(),
 		users.NewUser{
-			FirstName:    input.FirstName,
-			LastName:     input.LastName,
-			Email:        input.Email,
-			PasswordHash: passwordHash,
-			RoleId:       h.rolesMap[roles.RoleOrgAdmin].Id,
+			Email:     input.Email,
+			FirstName: input.FirstName,
+			LastName:  input.LastName,
+			RoleId:    h.roleMap.ByName[roles.RoleOrgAdmin].Id,
 		},
 	)
 	if err != nil {
@@ -188,7 +178,7 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		"Account registered successfully.",
 		RegisterUserResponse{
 			UserId: userId,
-			URL:    h.config.Web.ClientAPIHost + "verify/email" + "/" + token,
+			URL:    h.config.Web.ClientAPIHost + "/magic?magic_token=" + token,
 			State: RegistrationState{
 				EmailSent:     verificationMailSent,
 				CreateAccount: accountCreationComplete,
@@ -211,12 +201,6 @@ func (h *handler) SignIn(w http.ResponseWriter, r *http.Request) error {
 			)
 		}
 		return err
-	}
-
-	if !h.hashService.Compare([]byte(user.Password), []byte(input.Password)) {
-		return errors.NewRequestError(
-			"Invalid email or password.", http.StatusUnauthorized, errors.Unauthorized,
-		)
 	}
 
 	if !user.IsEmailVerified {
@@ -367,7 +351,7 @@ func (h *handler) OauthSignup(w http.ResponseWriter, r *http.Request) error {
 				LastName:  input.User.LastName,
 				Phone:     input.User.Phone,
 				AvatarURL: input.User.AvatarURL,
-				RoleId:    h.rolesMap[roles.RoleOrgAdmin].Id,
+				RoleId:    h.roleMap.ByName[roles.RoleOrgAdmin].Id,
 			},
 		},
 	)
@@ -392,7 +376,7 @@ func (h *handler) OauthSignup(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *handler) VerifyEmail(w http.ResponseWriter, r *http.Request) error {
-	token := web.GetQuery(r, "token")
+	token := web.GetQuery(r, "magic_token")
 	if token == "" {
 		return errors.NewRequestError("Missing verification token.", http.StatusBadRequest, errors.BadRequest)
 	}

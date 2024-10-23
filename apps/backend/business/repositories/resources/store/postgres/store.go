@@ -7,9 +7,10 @@ import (
 )
 
 type Store interface {
-	Create(context context.Context, nr NewResource) (int, error)
-	QueryById(context context.Context, id int) (Resource, error)
-	QueryAllResourcesWithPermissions(context context.Context) ([]ResourceWithPermission, error)
+	Create(ctx context.Context, nr NewResource) (int, error)
+	QueryAll(ctx context.Context) ([]Resource, error)
+	QueryById(ctx context.Context, id int) (Resource, error)
+	QueryAllResourcesWithPermissions(ctx context.Context) ([]ResourceWithPermission, error)
 }
 
 type postgresStore struct {
@@ -20,7 +21,7 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
 }
 
-func (s *postgresStore) Create(context context.Context, nr NewResource) (int, error) {
+func (s *postgresStore) Create(ctx context.Context, nr NewResource) (int, error) {
 	query := `
 		INSERT INTO
 			resources (display_name, description, resource)
@@ -30,7 +31,7 @@ func (s *postgresStore) Create(context context.Context, nr NewResource) (int, er
 
 	var id int
 	if err := s.db.QueryRowContext(
-		context, query, nr.Name, nr.Description, nr.Resource,
+		ctx, query, nr.Name, nr.Description, nr.Resource,
 	).Scan(&id); err != nil {
 		return 0, err
 	}
@@ -38,7 +39,50 @@ func (s *postgresStore) Create(context context.Context, nr NewResource) (int, er
 	return id, nil
 }
 
-func (s *postgresStore) QueryById(context context.Context, id int) (Resource, error) {
+func (s *postgresStore) QueryAll(ctx context.Context) ([]Resource, error) {
+	query := `
+		SELECT
+			r.id AS resourceId,
+			r.display_name AS resourceName,
+			r.description AS resourceDescription,
+			r.resource AS resource,
+			r.created_at AS resourceCreatedAt,
+			r.updated_at AS resourceUpdatedAt
+		FROM
+			resources r
+		ORDER BY r.id;
+	`
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return []Resource{}, err
+	}
+
+	defer rows.Close()
+	resources := make([]Resource, 0)
+
+	for rows.Next() {
+		var resource Resource
+		if err := rows.Scan(
+			&resource.Id,
+			&resource.Name,
+			&resource.Description,
+			&resource.Resource,
+			&resource.CreatedAt,
+			&resource.UpdatedAt,
+		); err != nil {
+			return []Resource{}, err
+		}
+		resources = append(resources, resource)
+	}
+
+	if err := rows.Err(); err != nil {
+		return []Resource{}, err
+	}
+	return resources, nil
+}
+
+func (s *postgresStore) QueryById(ctx context.Context, id int) (Resource, error) {
 	query := `
 		SELECT
 			r.id AS resourceId,
@@ -54,7 +98,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Resource, er
 	`
 
 	var resource Resource
-	if err := s.db.QueryRowContext(context, query, id).Scan(
+	if err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&resource.Id,
 		&resource.Name,
 		&resource.Description,
@@ -68,7 +112,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Resource, er
 	return resource, nil
 }
 
-func (s *postgresStore) QueryAllResourcesWithPermissions(context context.Context) (
+func (s *postgresStore) QueryAllResourcesWithPermissions(ctx context.Context) (
 	[]ResourceWithPermission, error,
 ) {
 	query := `
@@ -84,7 +128,7 @@ func (s *postgresStore) QueryAllResourcesWithPermissions(context context.Context
 		ORDER BY res.id, pem.id;
 	`
 
-	rows, err := s.db.QueryContext(context, query)
+	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return []ResourceWithPermission{}, nil
 	}
@@ -94,7 +138,6 @@ func (s *postgresStore) QueryAllResourcesWithPermissions(context context.Context
 
 	for rows.Next() {
 		var rp ResourceWithPermission
-
 		if err := rows.Scan(
 			&rp.Resource.Id,
 			&rp.Resource.Resource,
@@ -103,13 +146,11 @@ func (s *postgresStore) QueryAllResourcesWithPermissions(context context.Context
 		); err != nil {
 			return []ResourceWithPermission{}, nil
 		}
-
 		resourceWithPermissions = append(resourceWithPermissions, rp)
 	}
 
 	if err = rows.Err(); err != nil {
 		return []ResourceWithPermission{}, nil
 	}
-
 	return resourceWithPermissions, nil
 }

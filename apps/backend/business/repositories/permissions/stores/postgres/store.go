@@ -7,8 +7,9 @@ import (
 )
 
 type Store interface {
-	QueryById(context context.Context, id int) (Permission, error)
-	Create(context context.Context, permission NewPermission) (int, error)
+	QueryAll(ctx context.Context) ([]Permission, error)
+	QueryById(ctx context.Context, id int) (Permission, error)
+	Create(ctx context.Context, permission NewPermission) (int, error)
 }
 
 type postgresStore struct {
@@ -19,24 +20,20 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
 }
 
-func (s *postgresStore) Create(context context.Context, np NewPermission) (int, error) {
+func (s *postgresStore) Create(ctx context.Context, np NewPermission) (int, error) {
+	var id int
 	query := `
 		INSERT INTO
 			permissions (name, description, action)
 		VALUES
 			($1, $2, $3) RETURNING id;
 	`
-	var id int
-	if err := s.db.QueryRowContext(
-		context, query, np.Name, np.Description, np.Action,
-	).Scan(&id); err != nil {
-		return 0, err
-	}
 
-	return id, nil
+	err := s.db.QueryRowContext(ctx, query, np.Name, np.Description, np.Action).Scan(&id)
+	return id, err
 }
 
-func (s *postgresStore) QueryById(context context.Context, id int) (Permission, error) {
+func (s *postgresStore) QueryById(ctx context.Context, id int) (Permission, error) {
 	var permission Permission
 	query := `
 		SELECT
@@ -52,7 +49,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Permission, 
 			id = $1;
 	`
 
-	if err := s.db.QueryRowContext(context, query, id).Scan(
+	if err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&permission.Id,
 		&permission.Name,
 		&permission.Description,
@@ -64,4 +61,48 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Permission, 
 	}
 
 	return permission, nil
+}
+
+func (s *postgresStore) QueryAll(ctx context.Context) ([]Permission, error) {
+	query := `
+		SELECT
+			p.id AS permissionId,
+			p.name AS permissionName,
+			P.description AS permissionDescription,
+			p.action AS permissionAction,
+			p.created_at as permissionCreatedAt,
+			p.updated_at as permissionUpdatedAt
+		FROM
+			permissions p
+		ORDER BY p.id;
+	`
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return []Permission{}, err
+	}
+
+	defer rows.Close()
+	permissions := make([]Permission, 0)
+
+	for rows.Next() {
+		var permission Permission
+		if err := rows.Scan(
+			&permission.Id,
+			&permission.Name,
+			&permission.Description,
+			&permission.Action,
+			&permission.CreatedAt,
+			&permission.UpdatedAt,
+		); err != nil {
+			return []Permission{}, err
+		}
+		permissions = append(permissions, permission)
+	}
+
+	if err := rows.Err(); err != nil {
+		return []Permission{}, err
+	}
+
+	return permissions, nil
 }

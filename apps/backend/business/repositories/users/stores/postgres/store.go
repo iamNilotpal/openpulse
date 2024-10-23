@@ -33,9 +33,9 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 func (s *postgresStore) Create(context context.Context, cmd NewUser) (int, error) {
 	query := `
 		INSERT INTO
-			users(first_name, last_name, email, password_hash, role_id)
+			users(first_name, last_name, email, role_id)
 		VALUES
-			($1, $2, $3, $4, $5) RETURNING id;
+			($1, $2, $3, $4) RETURNING id;
 	`
 
 	var id int
@@ -45,7 +45,6 @@ func (s *postgresStore) Create(context context.Context, cmd NewUser) (int, error
 		cmd.FirstName,
 		cmd.LastName,
 		cmd.Email,
-		cmd.PasswordHash,
 		cmd.RoleId,
 	).Scan(&id); err != nil {
 		return 0, err
@@ -247,8 +246,8 @@ func (p *postgresStore) queryByIdOrEmail(
 			us.email AS email,
 			us.first_name AS firstName,
 			us.last_name AS lastName,
-			convert_from(us.password, "UTF8") as password,
 			us.phone_number as phoneNumber,
+			us.country_code as countryCode,
 			us.avatar_url as avatarUrl,
 			us.account_status as accountStatus,
 			us.designation as designation,
@@ -291,8 +290,8 @@ func (p *postgresStore) queryByIdOrEmail(
 			&user.Email,
 			&user.FirstName,
 			&user.LastName,
-			&user.Password,
 			&user.Phone,
+			&user.CountryCode,
 			&user.AvatarUrl,
 			&user.AccountStatus,
 			&user.Designation,
@@ -322,8 +321,8 @@ func (p *postgresStore) queryByIdOrEmail(
 			&user.Email,
 			&user.FirstName,
 			&user.LastName,
-			&user.Password,
 			&user.Phone,
+			&user.CountryCode,
 			&user.AvatarUrl,
 			&user.AccountStatus,
 			&user.Designation,

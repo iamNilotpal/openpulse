@@ -14,28 +14,28 @@ import (
 )
 
 type Config struct {
-	AuthConfig    *config.Auth
-	UserRepo      users.Repository
-	OnboardingCfg *config.Onboarding
-	Logger        *zap.SugaredLogger
+	AuthConfig       *config.Auth
+	UserRepo         users.Repository
+	OnboardingConfig *config.Onboarding
+	Logger           *zap.SugaredLogger
 }
 
 type Auth struct {
-	parser        *jwt.Parser
-	method        jwt.SigningMethod
-	logger        *zap.SugaredLogger
-	authCfg       *config.Auth
-	onboardingCfg *config.Onboarding
-	userRepo      users.Repository
+	parser           *jwt.Parser
+	authCfg          *config.Auth
+	method           jwt.SigningMethod
+	logger           *zap.SugaredLogger
+	userRepo         users.Repository
+	onboardingConfig *config.Onboarding
 }
 
 func New(cfg Config) *Auth {
 	return &Auth{
-		logger:        cfg.Logger,
-		userRepo:      cfg.UserRepo,
-		authCfg:       cfg.AuthConfig,
-		onboardingCfg: cfg.OnboardingCfg,
-		method:        jwt.GetSigningMethod(jwt.SigningMethodHS256.Name),
+		logger:           cfg.Logger,
+		userRepo:         cfg.UserRepo,
+		authCfg:          cfg.AuthConfig,
+		onboardingConfig: cfg.OnboardingConfig,
+		method:           jwt.GetSigningMethod(jwt.SigningMethodHS256.Name),
 		parser: jwt.NewParser(
 			jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Name}),
 			jwt.WithAudience(cfg.AuthConfig.Issuer),
@@ -68,7 +68,7 @@ func (a *Auth) NewRefreshToken(claims RefreshTokenClaims) (string, error) {
 
 func (a *Auth) NewOnboardingToken(claims OnBoardingClaims) (string, error) {
 	token := jwt.NewWithClaims(a.method, claims)
-	return generateToken(token, a.onboardingCfg.Secret)
+	return generateToken(token, a.onboardingConfig.Secret)
 }
 
 func (a *Auth) Authenticate(bearerToken string) (AccessTokenClaims, error) {
@@ -131,7 +131,7 @@ func (a *Auth) AuthenticateOnboard(bearerToken string) (OnBoardingClaims, error)
 			if t.Method != a.method {
 				return "", stdErrors.New("invalid token")
 			}
-			return a.onboardingCfg.Secret, nil
+			return a.onboardingConfig.Secret, nil
 		},
 	)
 

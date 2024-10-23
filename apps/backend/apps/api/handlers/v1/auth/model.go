@@ -3,10 +3,9 @@ package auth_handlers
 import "github.com/iamNilotpal/openpulse/foundation/validate"
 
 type SignUpInput struct {
-	FirstName string `json:"firstName" validate:"required,min=1,max=255"`
-	LastName  string `json:"lastName" validate:"required,min=1,max=255"`
 	Email     string `json:"email" validate:"required,email"`
-	Password  string `json:"password" validate:"required,min=8,max=50"`
+	FirstName string `json:"firstName" validate:"required,min=1,max=100"`
+	LastName  string `json:"lastName" validate:"required,min=1,max=100"`
 }
 
 func (v SignUpInput) Validate() error {
@@ -25,8 +24,7 @@ type RegistrationState struct {
 }
 
 type SignInInput struct {
-	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,min=8"`
+	Email string `json:"email" validate:"required,email"`
 }
 
 func (v SignInInput) Validate() error {

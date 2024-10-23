@@ -19,28 +19,28 @@ import (
 )
 
 type Config struct {
-	Config        *config.APIConfig
-	Users         users.Repository
-	Organizations organizations.Repository
-	RoleMap       auth.RoleConfigMap
-	RBACMap       auth.RBACMap
+	Config           *config.APIConfig
+	RoleMap          auth.RoleMappings
+	Users            users.Repository
+	Organizations    organizations.Repository
+	AccessControlMap auth.RoleNameToAccessControlMap
 }
 
 type handler struct {
-	config        *config.APIConfig
-	users         users.Repository
-	organizations organizations.Repository
-	roleMap       auth.RoleConfigMap
-	rbacMap       auth.RBACMap
+	users            users.Repository
+	config           *config.APIConfig
+	roleMap          auth.RoleMappings
+	organizations    organizations.Repository
+	accessControlMap auth.RoleNameToAccessControlMap
 }
 
 func New(cfg Config) *handler {
 	return &handler{
-		config:        cfg.Config,
-		roleMap:       cfg.RoleMap,
-		rbacMap:       cfg.RBACMap,
-		users:         cfg.Users,
-		organizations: cfg.Organizations,
+		config:           cfg.Config,
+		roleMap:          cfg.RoleMap,
+		accessControlMap: cfg.AccessControlMap,
+		users:            cfg.Users,
+		organizations:    cfg.Organizations,
 	}
 }
 
@@ -119,8 +119,8 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	userRBAC := make([]users.UserRBAC, 0)
-	admin := h.roleMap[roles.RoleOrgAdmin]
-	resources := h.rbacMap[roles.RoleOrgAdmin]
+	resources := h.accessControlMap[roles.RoleOrgAdmin]
+	admin := h.roleMap.ByName[roles.RoleOrgAdmin]
 
 	for _, resPerms := range resources {
 		for _, permission := range resPerms.Permissions {

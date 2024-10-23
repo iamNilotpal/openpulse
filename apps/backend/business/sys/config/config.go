@@ -8,67 +8,67 @@ import (
 )
 
 type Web struct {
-	ClientAPIHost   string        `validate:"required,url"`
-	APIHost         string        `validate:"required,url"`
-	AllowedOrigins  []string      `validate:"gt=0,dive,len=1,dive,required"`
-	ReadTimeout     time.Duration `validate:"required"`
-	WriteTimeout    time.Duration `validate:"required"`
-	IdleTimeout     time.Duration `validate:"required"`
-	ShutdownTimeout time.Duration `validate:"required"`
+	ClientAPIHost   string
+	APIHost         string
+	AllowedOrigins  []string
+	ReadTimeout     time.Duration
+	WriteTimeout    time.Duration
+	IdleTimeout     time.Duration
+	ShutdownTimeout time.Duration
 }
 
 type Auth struct {
-	Issuer              string        `validate:"required,min=1"`
-	AccessTokenSecret   string        `validate:"required,min=1"`
-	RefreshTokenSecret  string        `validate:"required,min=1"`
-	Audience            string        `validate:"required,min=1"`
-	AccessTokenExpTime  time.Duration `validate:"required"`
-	RefreshTokenExpTime time.Duration `validate:"required"`
+	Issuer              string
+	AccessTokenSecret   string
+	RefreshTokenSecret  string
+	Audience            string
+	AccessTokenExpTime  time.Duration
+	RefreshTokenExpTime time.Duration
 }
 
 type DB struct {
-	MaxIdleConns int    `validate:"required,number"`
-	MaxOpenConns int    `validate:"required,number"`
-	DisableTLS   bool   `validate:"required,boolean"`
-	Name         string `validate:"required,min=1"`
-	User         string `validate:"required,min=1"`
-	Host         string `validate:"required,min=1"`
-	Password     string `validate:"required,min=1"`
-	Scheme       string `validate:"required,min=1"`
+	MaxIdleConns int
+	MaxOpenConns int
+	DisableTLS   bool
+	Name         string
+	User         string
+	Host         string
+	Password     string
+	Scheme       string
 }
 
 type Cache struct {
-	DBName   string `validate:"required,min=1"`
-	Protocol string `validate:"required,min=1"`
-	User     string `validate:"required,min=1"`
-	Host     string `validate:"required,min=1"`
-	Scheme   string `validate:"required,min=1"`
-	Password string `validate:"required,min=1"`
+	DBName   string
+	Protocol string
+	User     string
+	Host     string
+	Scheme   string
+	Password string
 }
 
 type Email struct {
-	Username     string        `validate:"required,min=1"`
-	Password     string        `validate:"required,min=1"`
-	Issuer       string        `validate:"required,min=1"`
-	Secret       string        `validate:"required,min=1"`
-	Audience     string        `validate:"required,min=1"`
-	EmailExpTime time.Duration `validate:"required"`
+	Username     string
+	Password     string
+	Issuer       string
+	Secret       string
+	Audience     string
+	EmailExpTime time.Duration
 }
 
 type Onboarding struct {
-	Issuer       string        `validate:"required,min=1"`
-	Secret       string        `validate:"required,min=1"`
-	Audience     string        `validate:"required,min=1"`
-	TokenExpTime time.Duration `validate:"required"`
+	Issuer       string
+	Secret       string
+	Audience     string
+	TokenExpTime time.Duration
 }
 
 type APIConfig struct {
-	DB         *DB         `validate:"required"`
-	Web        *Web        `validate:"required"`
-	Auth       *Auth       `validate:"required"`
-	Cache      *Cache      `validate:"required"`
-	Email      *Email      `validate:"required"`
-	Onboarding *Onboarding `validate:"required"`
+	DB         *DB
+	Web        *Web
+	Auth       *Auth
+	Cache      *Cache
+	Email      *Email
+	Onboarding *Onboarding
 }
 
 func NewAPIConfig() *APIConfig {
