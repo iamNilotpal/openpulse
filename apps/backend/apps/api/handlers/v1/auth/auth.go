@@ -26,43 +26,43 @@ import (
 )
 
 type Config struct {
-	Auth          *auth.Auth
-	HashService   hash.Hasher
-	EmailService  *email.Email
-	RoleMap       auth.RoleMappings
-	Config        *config.APIConfig
-	Users         users.Repository
-	Emails        emails.Repository
-	Sessions      sessions.Repository
-	Organizations organizations.Repository
-	RBACMap       auth.RoleNameToAccessControlMap
+	Auth             *auth.Auth
+	HashService      hash.Hasher
+	EmailService     *email.Email
+	RoleMap          auth.RoleMappings
+	Config           *config.APIConfig
+	Users            users.Repository
+	Emails           emails.Repository
+	Sessions         sessions.Repository
+	Organizations    organizations.Repository
+	AccessControlMap auth.RoleNameToAccessControlMap
 }
 
 type handler struct {
-	auth          *auth.Auth
-	emailService  *email.Email
-	hashService   hash.Hasher
-	config        *config.APIConfig
-	roleMap       auth.RoleMappings
-	users         users.Repository
-	emails        emails.Repository
-	sessions      sessions.Repository
-	organizations organizations.Repository
-	rbacMap       auth.RoleNameToAccessControlMap
+	auth             *auth.Auth
+	emailService     *email.Email
+	hashService      hash.Hasher
+	config           *config.APIConfig
+	roleMap          auth.RoleMappings
+	users            users.Repository
+	emails           emails.Repository
+	sessions         sessions.Repository
+	organizations    organizations.Repository
+	accessControlMap auth.RoleNameToAccessControlMap
 }
 
 func New(cfg Config) *handler {
 	return &handler{
-		auth:          cfg.Auth,
-		config:        cfg.Config,
-		sessions:      cfg.Sessions,
-		roleMap:       cfg.RoleMap,
-		users:         cfg.Users,
-		emails:        cfg.Emails,
-		organizations: cfg.Organizations,
-		hashService:   cfg.HashService,
-		emailService:  cfg.EmailService,
-		rbacMap:       cfg.RBACMap,
+		auth:             cfg.Auth,
+		config:           cfg.Config,
+		sessions:         cfg.Sessions,
+		roleMap:          cfg.RoleMap,
+		users:            cfg.Users,
+		emails:           cfg.Emails,
+		organizations:    cfg.Organizations,
+		hashService:      cfg.HashService,
+		emailService:     cfg.EmailService,
+		accessControlMap: cfg.AccessControlMap,
 	}
 }
 

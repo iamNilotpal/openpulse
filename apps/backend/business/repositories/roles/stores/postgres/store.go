@@ -7,10 +7,10 @@ import (
 )
 
 type Store interface {
-	Create(context context.Context, permission NewRole) (int, error)
-	GetAll(context context.Context) ([]Role, error)
-	QueryById(context context.Context, id int) (Role, error)
-	GetRolesAccessControl(context context.Context) ([]AccessControl, error)
+	Create(ctx context.Context, permission NewRole) (int, error)
+	QueryAll(ctx context.Context) ([]Role, error)
+	QueryById(ctx context.Context, id int) (Role, error)
+	QueryAccessControl(ctx context.Context) ([]AccessControl, error)
 }
 
 type postgresStore struct {
@@ -21,7 +21,7 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
 }
 
-func (s *postgresStore) Create(context context.Context, nr NewRole) (int, error) {
+func (s *postgresStore) Create(ctx context.Context, nr NewRole) (int, error) {
 	query := `
 		INSERT INTO
 			roles (name, description, is_system_role, role)
@@ -31,7 +31,7 @@ func (s *postgresStore) Create(context context.Context, nr NewRole) (int, error)
 
 	var id int
 	if err := s.db.QueryRowContext(
-		context, query, nr.Name, nr.Description, nr.IsSystemRole, nr.Role,
+		ctx, query, nr.Name, nr.Description, nr.IsSystemRole, nr.Role,
 	).Scan(&id); err != nil {
 		return 0, err
 	}
@@ -39,7 +39,7 @@ func (s *postgresStore) Create(context context.Context, nr NewRole) (int, error)
 	return id, nil
 }
 
-func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
+func (s *postgresStore) QueryAll(ctx context.Context) ([]Role, error) {
 	query := `
 		SELECT
 			r.id AS roleId,
@@ -51,9 +51,10 @@ func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
 			r.updated_at AS roleUpdatedAt
 		FROM
 			roles r
+		ORDER BY r.id;
 	`
 
-	rows, err := s.db.QueryContext(context, query)
+	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return []Role{}, err
 	}
@@ -63,7 +64,6 @@ func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
 
 	for rows.Next() {
 		var role Role
-
 		if err := rows.Scan(
 			&role.Id,
 			&role.Name,
@@ -75,18 +75,16 @@ func (s *postgresStore) GetAll(context context.Context) ([]Role, error) {
 		); err != nil {
 			return []Role{}, err
 		}
-
 		roles = append(roles, role)
 	}
 
 	if err = rows.Err(); err != nil {
 		return []Role{}, err
 	}
-
 	return roles, nil
 }
 
-func (s *postgresStore) QueryById(context context.Context, id int) (Role, error) {
+func (s *postgresStore) QueryById(ctx context.Context, id int) (Role, error) {
 	var role Role
 	query := `
 		SELECT
@@ -103,7 +101,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Role, error)
 			r.id = $1;
 	`
 
-	if err := s.db.QueryRowContext(context, query, id).Scan(
+	if err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&role.Id,
 		&role.Name,
 		&role.Description,
@@ -118,7 +116,7 @@ func (s *postgresStore) QueryById(context context.Context, id int) (Role, error)
 	return role, nil
 }
 
-func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]AccessControl, error) {
+func (s *postgresStore) QueryAccessControl(ctx context.Context) ([]AccessControl, error) {
 	query := `
 		SELECT
 			ro.id AS roleId,
@@ -136,7 +134,7 @@ func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]Access
 		ORDER BY ro.id, res.id, ps.id;
 	`
 
-	rows, err := s.db.QueryContext(context, query)
+	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return []AccessControl{}, err
 	}
@@ -146,7 +144,6 @@ func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]Access
 
 	for rows.Next() {
 		var row AccessControl
-
 		if err := rows.Scan(
 			&row.Role.Id,
 			&row.Role.Role,
@@ -157,13 +154,11 @@ func (s *postgresStore) GetRolesAccessControl(context context.Context) ([]Access
 		); err != nil {
 			return []AccessControl{}, err
 		}
-
 		accessControls = append(accessControls, row)
 	}
 
 	if err := rows.Err(); err != nil {
 		return []AccessControl{}, err
 	}
-
 	return accessControls, nil
 }

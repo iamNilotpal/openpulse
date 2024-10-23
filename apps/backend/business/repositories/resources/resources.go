@@ -8,6 +8,7 @@ import (
 
 type Repository interface {
 	Create(context context.Context, nr NewResource) (int, error)
+	QueryAll(ctx context.Context) ([]Resource, error)
 	QueryById(context context.Context, id int) (Resource, error)
 	QueryAllResourcesWithPermissions(context context.Context) ([]ResourceWithPermission, error)
 }
@@ -47,4 +48,18 @@ func (r *postgresRepository) QueryAllResourcesWithPermissions(context context.Co
 	}
 
 	return rps, nil
+}
+
+func (r *postgresRepository) QueryAll(ctx context.Context) ([]Resource, error) {
+	dbResources, err := r.store.QueryAll(ctx)
+	if err != nil {
+		return []Resource{}, err
+	}
+
+	resources := make([]Resource, len(dbResources))
+	for i, res := range dbResources {
+		resources[i] = FromDBResource(res)
+	}
+
+	return resources, nil
 }

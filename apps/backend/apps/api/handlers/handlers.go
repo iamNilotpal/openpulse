@@ -19,20 +19,20 @@ import (
 )
 
 type HandlerConfig struct {
-	DB                          *sqlx.DB
-	Auth                        *auth.Auth
-	HashService                 hash.Hasher
-	EmailService                *email.Email
-	Cache                       *redis.Client
-	Shutdown                    chan os.Signal
-	APIConfig                   *config.APIConfig
-	Log                         *zap.SugaredLogger
-	RoleMap                     auth.RoleMappings
-	ResourceMap                 auth.ResourceMappings
-	PermissionMap               auth.PermissionMappings
-	Repositories                *repositories.Repositories
-	ResourcePermissionsMap      auth.ResourceToPermissionsMap
-	RoleResourcesPermissionsMap auth.RoleNameToAccessControlMap
+	DB                     *sqlx.DB
+	Auth                   *auth.Auth
+	HashService            hash.Hasher
+	EmailService           *email.Email
+	Cache                  *redis.Client
+	Shutdown               chan os.Signal
+	APIConfig              *config.APIConfig
+	Log                    *zap.SugaredLogger
+	RoleMap                auth.RoleMappings
+	ResourceMap            auth.ResourceMappings
+	PermissionMap          auth.PermissionMappings
+	Repositories           *repositories.Repositories
+	ResourcePermissionsMap auth.ResourceToPermissionsMap
+	AccessControlMap       auth.RoleNameToAccessControlMap
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
@@ -72,8 +72,8 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 			Repositories:          cfg.Repositories,
 			EmailService:          cfg.EmailService,
 			PermissionMap:         cfg.PermissionMap,
+			AccessControlMap:      cfg.AccessControlMap,
 			ResourcePermissionMap: cfg.ResourcePermissionsMap,
-			AccessControlMap:      cfg.RoleResourcesPermissionsMap,
 		},
 	)
 
