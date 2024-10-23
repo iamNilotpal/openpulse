@@ -8,6 +8,7 @@ import (
 
 type Repository interface {
 	Create(context context.Context, permission NewPermission) (int, error)
+	QueryAll(ctx context.Context) ([]Permission, error)
 	QueryById(context context.Context, id int) (Permission, error)
 }
 
@@ -31,4 +32,18 @@ func (r *postgresRepository) QueryById(context context.Context, id int) (Permiss
 	}
 
 	return FromDBPermission(permission), nil
+}
+
+func (r *postgresRepository) QueryAll(ctx context.Context) ([]Permission, error) {
+	dbPermissions, err := r.s.QueryAll(ctx)
+	if err != nil {
+		return []Permission{}, err
+	}
+
+	permissions := make([]Permission, len(dbPermissions))
+	for i, p := range dbPermissions {
+		permissions[i] = FromDBPermission(p)
+	}
+
+	return permissions, nil
 }

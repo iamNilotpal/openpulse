@@ -52,10 +52,10 @@ func main() {
 }
 
 func run(log *zap.SugaredLogger) error {
-	// GOMAXPROCS
+	/* =========== GOMAXPROCS ===========  */
 	log.Infow("Startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 
-	// Initialize Config
+	/* =========== INITIALIZE CONFIG ===========  */
 	cfg := config.NewAPIConfig()
 	if err := config.Validate(*cfg); err != nil {
 		return err
@@ -63,13 +63,14 @@ func run(log *zap.SugaredLogger) error {
 
 	log.Infow("Config", "config", cfg)
 
-	// Initialize Database
+	/* =========== INITIALIZE DATABASE SUPPORT ===========  */
 	db, err := database.Open(cfg.DB)
 	if err != nil {
 		log.Infow("DATABASE CONNECTION ERROR", "error", err)
 		return err
 	}
 
+	/* =========== DATABASE STATUS CHECK ===========  */
 	err = database.StatusCheck(context.Background(), db)
 	if err != nil {
 		log.Infow("DATABASE Status Check Error", "error", err)
@@ -88,7 +89,7 @@ func run(log *zap.SugaredLogger) error {
 	// 	return err
 	// }
 
-	// Initialize repositories
+	/* =========== INITIALIZE REPOSITORIES ===========  */
 	usersStore := users_store.NewPostgresStore(db)
 	usersRepo := users.NewPostgresRepository(usersStore)
 
@@ -113,6 +114,7 @@ func run(log *zap.SugaredLogger) error {
 	sessionsStore := sessions_store.NewPostgresRepository(db)
 	sessionsRepo := sessions.NewPostgresRepository(sessionsStore)
 
+	/* =========== BUILD REPOSITORIES STRUCT ===========  */
 	repositories := repositories.Repositories{
 		Organizations: orgsRepo,
 		Teams:         teamsRepo,
@@ -124,49 +126,67 @@ func run(log *zap.SugaredLogger) error {
 		Sessions:      sessionsRepo,
 	}
 
-	// Get roles with rolesAccessControls
-	rolesAccessControls, err := rolesRepo.GetRolesAccessControl(context.Background())
+	/* =========== GET ACCESS CONTROL ===========  */
+	accessControls, err := rolesRepo.QueryAccessControl(context.Background())
 	if err != nil {
 		return err
 	}
 
-	// Build the Permissions Map
-	resourcePermsMap, rbacMap := auth.BuildAccessControlMaps(rolesAccessControls)
+	/* =========== GET ROLES ===========  */
+	appRoles, err := rolesRepo.QueryAll(context.Background())
+	if err != nil {
+		return err
+	}
 
-	// Build Roles, Resource and Permission map
+	/* =========== GET RESOURCES ===========  */
+	appResources, err := resourceRepo.QueryAll(context.Background())
+	if err != nil {
+		return err
+	}
+
+	/* =========== GET PERMISSIONS ===========  */
+	appPermissions, err := permissionsRepo.QueryAll(context.Background())
+	if err != nil {
+		return err
+	}
+
+	/* =========== BUILD RBAC AND RESOURCE PERMISSIONS MAP ===========  */
+	resourcePermsMap, accessControlMap := auth.BuildAccessControlMaps(accessControls)
+
+	/* =========== BUILD ROLES, RESOURCES AND PERMISSIONS MAP ===========  */
 	roleMapping, resourceMapping, permissionMapping := auth.BuildAuthorizationMaps(
-		[]roles.Role{}, []resources.Resource{}, []permissions.Permission{},
+		appRoles, appResources, appPermissions,
 	)
 
-	// Initialize authentication support
+	/* =========== AUTHENTICATION SUPPORT ===========  */
 	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepo})
 
-	// Initialize Email service support
+	/* =========== INITIALIZE EMAIL SERVICE ===========  */
 	emailService := email.New(email.Config{Config: cfg.Email, Logger: log})
 
-	// Initialize hasher
+	/* =========== INITIALIZE HASH SERVICE ===========  */
 	bcryptHasher := hash.NewBcryptHasher()
 
-	// Shutdown Signals
+	/* =========== SHUTDOWN SIGNAL ===========  */
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	// Initialize API support
+	/* =========== INITIALIZE API SUPPORT ===========  */
 	mux := handlers.NewHandler(
 		handlers.HandlerConfig{
-			DB:                          db,
-			Log:                         log,
-			APIConfig:                   cfg,
-			Auth:                        auth,
-			Shutdown:                    shutdown,
-			RoleMap:                     roleMapping,
-			ResourceMap:                 resourceMapping,
-			PermissionMap:               permissionMapping,
-			HashService:                 bcryptHasher,
-			EmailService:                emailService,
-			Repositories:                &repositories,
-			ResourcePermissionsMap:      resourcePermsMap,
-			RoleResourcesPermissionsMap: rbacMap,
+			DB:                     db,
+			Log:                    log,
+			APIConfig:              cfg,
+			Auth:                   auth,
+			Shutdown:               shutdown,
+			EmailService:           emailService,
+			HashService:            bcryptHasher,
+			Repositories:           &repositories,
+			RoleMap:                roleMapping,
+			ResourceMap:            resourceMapping,
+			AccessControlMap:       accessControlMap,
+			PermissionMap:          permissionMapping,
+			ResourcePermissionsMap: resourcePermsMap,
 		},
 	)
 
@@ -180,12 +200,13 @@ func run(log *zap.SugaredLogger) error {
 		ErrorLog:     zap.NewStdLog(log.Desugar()),
 	}
 
+	/* =========== START THE API SERVER ===========  */
 	go func() {
 		log.Infow("Server Listening", "address", api.Addr)
 		serverErrors <- api.ListenAndServe()
 	}()
 
-	// Graceful Shutdown of Server
+	/* =========== GRACEFUL SHUTDOWN ===========  */
 	select {
 	case err := <-serverErrors:
 		return fmt.Errorf("server error: %w", err)

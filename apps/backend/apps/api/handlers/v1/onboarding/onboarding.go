@@ -19,28 +19,28 @@ import (
 )
 
 type Config struct {
-	Config        *config.APIConfig
-	RoleMap       auth.RoleMappings
-	Users         users.Repository
-	Organizations organizations.Repository
-	RBACMap       auth.RoleNameToAccessControlMap
+	Config           *config.APIConfig
+	RoleMap          auth.RoleMappings
+	Users            users.Repository
+	Organizations    organizations.Repository
+	AccessControlMap auth.RoleNameToAccessControlMap
 }
 
 type handler struct {
-	config        *config.APIConfig
-	roleMap       auth.RoleMappings
-	users         users.Repository
-	organizations organizations.Repository
-	rbacMap       auth.RoleNameToAccessControlMap
+	users            users.Repository
+	config           *config.APIConfig
+	roleMap          auth.RoleMappings
+	organizations    organizations.Repository
+	accessControlMap auth.RoleNameToAccessControlMap
 }
 
 func New(cfg Config) *handler {
 	return &handler{
-		config:        cfg.Config,
-		roleMap:       cfg.RoleMap,
-		rbacMap:       cfg.RBACMap,
-		users:         cfg.Users,
-		organizations: cfg.Organizations,
+		config:           cfg.Config,
+		roleMap:          cfg.RoleMap,
+		accessControlMap: cfg.AccessControlMap,
+		users:            cfg.Users,
+		organizations:    cfg.Organizations,
 	}
 }
 
@@ -119,7 +119,7 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	userRBAC := make([]users.UserRBAC, 0)
-	resources := h.rbacMap[roles.RoleOrgAdmin]
+	resources := h.accessControlMap[roles.RoleOrgAdmin]
 	admin := h.roleMap.ByName[roles.RoleOrgAdmin]
 
 	for _, resPerms := range resources {
