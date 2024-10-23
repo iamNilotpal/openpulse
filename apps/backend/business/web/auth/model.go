@@ -21,8 +21,7 @@ type OnBoardingClaims struct {
 	jwt.RegisteredClaims
 }
 
-/* ========================================================= */
-
+/* ======================== User Access Controls  ======================== */
 type UserAccessControlMap map[resources.AppResource][]UserPermissionConfig
 
 type UserRoleConfig struct {
@@ -41,17 +40,33 @@ type UserResourceConfig struct {
 	Resource resources.AppResource
 }
 
-type UserAccessControlPolicy struct {
-	Role       UserRoleConfig
-	Resource   UserResourceConfig
-	Permission UserPermissionConfig
+/* ======================== App Access Controls  ======================== */
+type ResourceToPermissionsMap map[resources.AppResource]ResourcePermConfig
+type RoleNameToAccessControlMap map[roles.AppRole]ResourceToPermissionsMap
+
+type RoleIDMap map[int]RoleConfig
+type RoleNameMap map[roles.AppRole]RoleConfig
+
+type ResourceTypeIdMap map[int]ResourceConfig
+type ResourceTypeMap map[resources.AppResource]ResourceConfig
+
+type PermissionActionIdMap map[int]PermissionConfig
+type PermissionActionMap map[permissions.PermissionAction]PermissionConfig
+
+type RoleMappings struct {
+	ByID   RoleIDMap
+	ByName RoleNameMap
 }
 
-/* ========================================================= */
+type PermissionMappings struct {
+	ByAction PermissionActionMap
+	ByID     PermissionActionIdMap
+}
 
-type RoleConfigMap map[roles.AppRole]RoleConfig
-type ResourcePermsMap map[resources.AppResource]ResourcePermConfig
-type RBACMap map[roles.AppRole]ResourcePermsMap
+type ResourceMappings struct {
+	ByID   ResourceTypeIdMap
+	ByName ResourceTypeMap
+}
 
 type RoleConfig struct {
 	Id   int
@@ -71,10 +86,4 @@ type ResourceConfig struct {
 type ResourcePermConfig struct {
 	Resource    ResourceConfig
 	Permissions []PermissionConfig
-}
-
-type AccessControlPolicy struct {
-	Role       RoleConfig
-	Resource   ResourceConfig
-	Permission PermissionConfig
 }

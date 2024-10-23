@@ -131,7 +131,12 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	// Build the Permissions Map
-	rolesMap, resourcePermsMap, rbacMap := buildRBACMaps(rolesAccessControls)
+	resourcePermsMap, rbacMap := auth.BuildAccessControlMaps(rolesAccessControls)
+
+	// Build Roles, Resource and Permission map
+	roleMapping, resourceMapping, permissionMapping := auth.BuildAuthorizationMaps(
+		[]roles.Role{}, []resources.Resource{}, []permissions.Permission{},
+	)
 
 	// Initialize authentication support
 	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepo})
@@ -149,13 +154,14 @@ func run(log *zap.SugaredLogger) error {
 	// Initialize API support
 	mux := handlers.NewHandler(
 		handlers.HandlerConfig{
-			DB:        db,
-			Log:       log,
-			APIConfig: cfg,
-			Auth:      auth,
-			// Cache:                       redis,
+			DB:                          db,
+			Log:                         log,
+			APIConfig:                   cfg,
+			Auth:                        auth,
 			Shutdown:                    shutdown,
-			RolesMap:                    rolesMap,
+			RoleMap:                     roleMapping,
+			ResourceMap:                 resourceMapping,
+			PermissionMap:               permissionMapping,
 			HashService:                 bcryptHasher,
 			EmailService:                emailService,
 			Repositories:                &repositories,
@@ -198,59 +204,4 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	return nil
-}
-
-func buildRBACMaps(roleAccessControls []roles.RoleAccessControl) (
-	auth.RoleConfigMap, auth.ResourcePermsMap, auth.RBACMap,
-) {
-	rolesMap := make(auth.RoleConfigMap)
-	roleAccessControlMap := make(auth.RBACMap)
-	resourcesPermissionsMap := make(auth.ResourcePermsMap)
-
-	for _, rac := range roleAccessControls {
-		// 1. Assign to roles map.
-		if _, ok := rolesMap[rac.Role.Role]; !ok {
-			rolesMap[rac.Role.Role] = auth.NewRoleConfig(rac.Role)
-		}
-
-		// 2. Check if any value exists for current role
-		storedResourcePermsMap, ok := roleAccessControlMap[rac.Role.Role]
-
-		// 3. If not then assign new value with resource and permissions
-		if !ok {
-			resPermsMap := make(auth.ResourcePermsMap)
-			resPermsMap[rac.Resource.Resource] = auth.ResourcePermConfig{
-				Resource:    auth.NewResourceConfig(rac.Resource),
-				Permissions: []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)},
-			}
-
-			roleAccessControlMap[rac.Role.Role] = resPermsMap
-			resourcesPermissionsMap = resPermsMap
-			continue
-		}
-
-		// 4. Check any value exists for current resource
-		resourcePermissions, ok := storedResourcePermsMap[rac.Resource.Resource]
-
-		// 5. If not then assign new value with permissions
-		if !ok {
-			storedResourcePermsMap[rac.Resource.Resource] = auth.ResourcePermConfig{
-				Resource:    auth.NewResourceConfig(rac.Resource),
-				Permissions: []auth.PermissionConfig{auth.NewPermissionConfig(rac.Permission)},
-			}
-			roleAccessControlMap[rac.Role.Role] = storedResourcePermsMap
-			resourcesPermissionsMap = storedResourcePermsMap
-			continue
-		}
-
-		// 6. If yes, append new permission to the existing resource.
-		resourcePermissions.Permissions = append(
-			resourcePermissions.Permissions, auth.NewPermissionConfig(rac.Permission),
-		)
-		storedResourcePermsMap[rac.Resource.Resource] = resourcePermissions
-		roleAccessControlMap[rac.Role.Role] = storedResourcePermsMap
-		resourcesPermissionsMap = storedResourcePermsMap
-	}
-
-	return rolesMap, resourcesPermissionsMap, roleAccessControlMap
 }

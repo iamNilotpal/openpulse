@@ -20,18 +20,18 @@ import (
 
 type Config struct {
 	Config        *config.APIConfig
+	RoleMap       auth.RoleMappings
 	Users         users.Repository
 	Organizations organizations.Repository
-	RoleMap       auth.RoleConfigMap
-	RBACMap       auth.RBACMap
+	RBACMap       auth.RoleNameToAccessControlMap
 }
 
 type handler struct {
 	config        *config.APIConfig
+	roleMap       auth.RoleMappings
 	users         users.Repository
 	organizations organizations.Repository
-	roleMap       auth.RoleConfigMap
-	rbacMap       auth.RBACMap
+	rbacMap       auth.RoleNameToAccessControlMap
 }
 
 func New(cfg Config) *handler {
@@ -119,8 +119,8 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	userRBAC := make([]users.UserRBAC, 0)
-	admin := h.roleMap[roles.RoleOrgAdmin]
 	resources := h.rbacMap[roles.RoleOrgAdmin]
+	admin := h.roleMap.ByName[roles.RoleOrgAdmin]
 
 	for _, resPerms := range resources {
 		for _, permission := range resPerms.Permissions {

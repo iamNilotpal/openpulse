@@ -12,11 +12,10 @@ import (
 
 func ToNewDBUser(cmd NewUser) users_store.NewUser {
 	return users_store.NewUser{
-		Email:        cmd.Email,
-		RoleId:       cmd.RoleId,
-		FirstName:    cmd.FirstName,
-		LastName:     cmd.LastName,
-		PasswordHash: cmd.PasswordHash,
+		Email:     cmd.Email,
+		RoleId:    cmd.RoleId,
+		FirstName: cmd.FirstName,
+		LastName:  cmd.LastName,
 	}
 }
 
@@ -91,11 +90,11 @@ func FromDBUser(cmd users_store.User) User {
 		LastName:        cmd.LastName,
 		FirstName:       cmd.FirstName,
 		AvatarUrl:       cmd.AvatarUrl,
-		Password:        cmd.Password,
 		AccountStatus:   ParseStatusInt(cmd.AccountStatus),
 		Resources:       resources,
 		OAuthAccounts:   oauthAccounts,
 		Phone:           cmd.Phone,
+		CountryCode:     cmd.CountryCode,
 		Designation:     cmd.Designation,
 		IsEmailVerified: cmd.IsEmailVerified,
 		Team:            Team{Id: cmd.Team.Id, Name: cmd.Team.Name, LogoURL: cmd.Team.LogoURL},
@@ -152,10 +151,10 @@ func ToNewDBOauthUser(cmd NewOAuthUser) users_store.NewOAuthUser {
 
 func ToNewDBOauthAccount(cmd NewOAuthAccount) users_store.NewOAuthAccount {
 	return users_store.NewOAuthAccount{
-		Provider:   cmd.Provider,
-		ExternalId: cmd.ExternalId,
 		Scope:      cmd.Scope,
 		Metadata:   cmd.Metadata,
+		Provider:   cmd.Provider,
+		ExternalId: cmd.ExternalId,
 		User:       ToNewDBOauthUser(cmd.User),
 	}
 }

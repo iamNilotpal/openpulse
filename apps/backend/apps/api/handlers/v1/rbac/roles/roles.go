@@ -23,12 +23,12 @@ func New(cfg Config) *handler {
 }
 
 func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
-	var payload NewRole
-	if err := web.Decode(r, &payload); err != nil {
+	var input NewRoleInput
+	if err := web.Decode(r, &input); err != nil {
 		return err
 	}
 
-	appRole, err := roles.ParseRoleString(payload.Role)
+	appRole, err := roles.ParseRoleString(input.Role)
 	if err != nil {
 		return err
 	}
@@ -38,8 +38,8 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
 		roles.NewRole{
 			IsSystemRole: true,
 			Role:         appRole,
-			Name:         payload.Name,
-			Description:  payload.Description,
+			Name:         input.Name,
+			Description:  input.Description,
 		},
 	)
 
@@ -50,14 +50,17 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
 					"Role already exists", http.StatusConflict, errors.AlreadyExists,
 				)
 			}
-
 			return errors.NewRequestError(
 				"Unable to create role", http.StatusInternalServerError, errors.InternalServerError,
 			)
 		}
-
 		return err
 	}
 
-	return web.Success(w, http.StatusCreated, "", map[string]int{"id": id})
+	return web.Success(
+		w,
+		http.StatusCreated,
+		"Role created successfully.",
+		NewRoleResponse{Id: id, Role: string(appRole), Name: input.Name},
+	)
 }

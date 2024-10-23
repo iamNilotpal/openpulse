@@ -25,6 +25,8 @@ CREATE TABLE
 
 CREATE INDEX "idx_resources_resource" ON resources (resource);
 
+CREATE INDEX "idx_resources_display_name" ON resources (display_name);
+
 CREATE TABLE
   IF NOT EXISTS roles_resources (
     id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,

@@ -25,12 +25,14 @@ type HandlerConfig struct {
 	EmailService                *email.Email
 	Cache                       *redis.Client
 	Shutdown                    chan os.Signal
-	Log                         *zap.SugaredLogger
-	Repositories                *repositories.Repositories
 	APIConfig                   *config.APIConfig
-	RolesMap                    auth.RoleConfigMap
-	ResourcePermissionsMap      auth.ResourcePermsMap
-	RoleResourcesPermissionsMap auth.RBACMap
+	Log                         *zap.SugaredLogger
+	RoleMap                     auth.RoleMappings
+	ResourceMap                 auth.ResourceMappings
+	PermissionMap               auth.PermissionMappings
+	Repositories                *repositories.Repositories
+	ResourcePermissionsMap      auth.ResourceToPermissionsMap
+	RoleResourcesPermissionsMap auth.RoleNameToAccessControlMap
 }
 
 func NewHandler(cfg HandlerConfig) http.Handler {
@@ -60,16 +62,18 @@ func NewHandler(cfg HandlerConfig) http.Handler {
 
 	v1.SetupRoutes(
 		v1.Config{
-			App:          app,
-			Log:          cfg.Log,
-			Auth:         cfg.Auth,
-			APIConfig:    cfg.APIConfig,
-			HashService:  cfg.HashService,
-			EmailService: cfg.EmailService,
-			Repositories: cfg.Repositories,
-			RolesMap:     cfg.RolesMap,
-			ResPermsMap:  cfg.ResourcePermissionsMap,
-			RBACMaps:     cfg.RoleResourcesPermissionsMap,
+			App:                   app,
+			Log:                   cfg.Log,
+			Auth:                  cfg.Auth,
+			RoleMap:               cfg.RoleMap,
+			APIConfig:             cfg.APIConfig,
+			ResourceMap:           cfg.ResourceMap,
+			HashService:           cfg.HashService,
+			Repositories:          cfg.Repositories,
+			EmailService:          cfg.EmailService,
+			PermissionMap:         cfg.PermissionMap,
+			ResourcePermissionMap: cfg.ResourcePermissionsMap,
+			AccessControlMap:      cfg.RoleResourcesPermissionsMap,
 		},
 	)
 

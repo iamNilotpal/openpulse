@@ -2,7 +2,7 @@
   import {
     IconBrandGithubFilled,
     IconBrandGoogleFilled,
-    IconLockFilled,
+    IconCloverFilled,
   } from '@tabler/icons-svelte';
   import { superForm, type SuperValidated } from 'sveltekit-superforms';
   import { zodClient } from 'sveltekit-superforms/adapters';
@@ -78,17 +78,9 @@
       <Form.FieldErrors style="margin-bottom: 5px;" />
     </Form.Field>
 
-    <Form.Field {form} name="password">
-      <Form.Control let:attrs>
-        <Input type="password" placeholder="Password" {...attrs} bind:value={$formData.password} />
-      </Form.Control>
-      <Form.Description />
-      <Form.FieldErrors />
-    </Form.Field>
-
     <Button type="submit" class="mx-auto mt-5 flex w-full items-center gap-1">
-      <IconLockFilled class="h-4 w-4" />
-      <span>Sign Up</span>
+      <IconCloverFilled class="h-4 w-4" />
+      <span>Send Magic Link</span>
     </Button>
   </form>
 </div>

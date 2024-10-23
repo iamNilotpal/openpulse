@@ -9,11 +9,10 @@ import (
 )
 
 type NewUser struct {
-	RoleId       int
-	FirstName    string
-	LastName     string
-	Email        string
-	PasswordHash []byte
+	RoleId    int
+	FirstName string
+	LastName  string
+	Email     string
 }
 
 type User struct {
@@ -22,7 +21,7 @@ type User struct {
 	LastName        string
 	Email           string
 	Phone           string
-	Password        string
+	CountryCode     string
 	AvatarUrl       string
 	Designation     string
 	IsEmailVerified bool
