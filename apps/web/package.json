@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write . 'src/**/*.{ts,svelte,css,html}'",
+    "format": "prettier --check . 'src/**/*.{ts,svelte,css,html}'",
+    "format:fix": "prettier --write . 'src/**/*.{ts,svelte,css,html}'",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
   },
