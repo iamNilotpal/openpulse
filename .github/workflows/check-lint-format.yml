@@ -1,19 +1,22 @@
 name: Check, Lint & Format Code
+env:
+  PNPM_STORE_PATH: ''
 on:
   workflow_call:
     inputs:
       node-version:
         type: number
         required: true
-        description: Node version
+        description: Node Version
+      pnpm-version:
+        type: number
+        required: true
+        description: PNPM Version
       timeout-minutes:
         type: number
         default: 5
         required: false
         description: Timeout in minutes
-
-env:
-  PNPM_STORE_PATH: ''
 
 jobs:
   check-lint-format:
@@ -30,7 +33,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
-          version: 8.15.6
+          version: ${{ inputs.pnpm-version }}
           run_install: false
       - name: Get pnpm store directory
         shell: bash
