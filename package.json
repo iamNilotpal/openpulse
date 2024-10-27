@@ -3,11 +3,14 @@
   "name": "openpulse",
   "license": "Server Side Public License",
   "scripts": {
+    "prepare": "husky",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "build": "turbo run build",
-    "format": "prettier --write .",
-    "prepare": "husky"
+    "check": "turbo run check",
+    "format": "turbo run format",
+    "link:fix": "turbo run lint:fix",
+    "format:fix": "turbo run format:fix"
   },
   "devDependencies": {
     "husky": "^9.1.6",
@@ -23,17 +26,19 @@
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
-      "pre-push": "pnpm lint && pnpm format"
+      "pre-push": "turbo run check && turbo run lint && turbo run format"
     }
   },
   "lint-staged": {
     "apps/**/*.{ts,svelte,tsx,js,jsx}": [
-      "pnpm lint",
-      "pnpm format"
+      "turbo run check",
+      "turbo run lint",
+      "turbo run format"
     ],
     "packages/**/*.{ts,svelte,tsx,js,jsx}": [
-      "pnpm lint",
-      "pnpm format"
+      "turbo run check",
+      "turbo run lint",
+      "turbo run format"
     ]
   }
 }
