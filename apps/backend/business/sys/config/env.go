@@ -9,7 +9,6 @@ func GetEnvString(key, fallback string) string {
 	if env, ok := os.LookupEnv(key); ok {
 		return env
 	}
-
 	return fallback
 }
 
@@ -22,6 +21,5 @@ func GetEnvInt(key string, fallback int) int {
 	if parsed, err := strconv.Atoi(env); err == nil {
 		return parsed
 	}
-
 	return fallback
 }
