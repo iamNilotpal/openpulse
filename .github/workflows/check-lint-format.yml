@@ -41,12 +41,8 @@ jobs:
         with:
           path: ${{ env.PNPM_STORE_PATH }}
           key: ${{ runner.os }}-pnpm-cache-${{ hashFiles('**/package.json') }}
-      - name: Setup Husky
-        run: |
-          pnpm add --save-dev husky --workspace-root
-          pnpm exec husky init
       - name: Install Dependencies
-        run: pnpm install --prod
+        run: pnpm install
       - name: Check Types
         run: pnpm check
       - name: Check Linting
