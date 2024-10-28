@@ -117,8 +117,8 @@ func SetupRoutes(cfg Config) {
 			r.Use(middlewares.AuthenticateOnboard(cfg.Auth, cfg.Repositories.Users))
 			r.Use(middlewares.VerifiedUser)
 
-			r.Post("/organization/create", RespondErrorFunc(onboardingHandlers.CreateOrganization))
-			r.Post("/team/create", RespondErrorFunc(onboardingHandlers.CreateTeam))
+			r.Post("/team", RespondErrorFunc(onboardingHandlers.CreateTeam))
+			r.Post("/organization", RespondErrorFunc(onboardingHandlers.CreateOrganization))
 		})
 	})
 }

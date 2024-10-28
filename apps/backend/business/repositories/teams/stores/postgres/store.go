@@ -22,7 +22,7 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 }
 
 func (s *postgresStore) AddTeamMember(
-	context context.Context, teamId int, userRBAC []UserRBAC,
+	context context.Context, teamId int, userRBAC []UserAccessControl,
 ) error {
 	var args []any
 	query := `
@@ -33,7 +33,7 @@ func (s *postgresStore) AddTeamMember(
 
 	params := database.BuildQueryParams(
 		userRBAC,
-		func(index int, isLast bool, v UserRBAC) string {
+		func(index int, isLast bool, v UserAccessControl) string {
 			args = append(args, teamId, v.UserId, v.RoleId, v.ResourceId, v.PermissionId)
 			return "(?, ?, ?, ?, ?)"
 		},

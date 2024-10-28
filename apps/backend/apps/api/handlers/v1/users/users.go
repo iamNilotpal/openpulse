@@ -37,5 +37,5 @@ func (h *handler) QueryById(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	return web.Success(w, http.StatusOK, "OK", map[string]any{"user": FromAppUser(user)})
+	return web.Success(w, http.StatusOK, "OK", map[string]any{"user": toUser(user)})
 }

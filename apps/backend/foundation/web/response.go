@@ -7,10 +7,10 @@ import (
 
 type apiResponse struct {
 	Success    bool   `json:"success"`
-	Message    string `json:"message,omitempty"`
 	StatusCode int    `json:"statusCode"`
 	Data       any    `json:"data,omitempty"`
 	Error      any    `json:"error,omitempty"`
+	Message    string `json:"message,omitempty"`
 }
 
 type APIError struct {

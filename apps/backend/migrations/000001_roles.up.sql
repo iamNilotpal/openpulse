@@ -25,7 +25,7 @@ CREATE TABLE
 
 CREATE INDEX "idx_resources_resource" ON resources (resource);
 
-CREATE INDEX "idx_resources_display_name" ON resources (display_name);
+CREATE INDEX "idx_resources_name" ON resources (name);
 
 CREATE TABLE
   IF NOT EXISTS roles_resources (

@@ -104,7 +104,7 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 		return errors.NewRequestError("Organization not found.", http.StatusForbidden, errors.Forbidden)
 	}
 
-	userRBAC := make([]users.UserRBAC, 0)
+	userRBAC := make([]users.UserAccessControl, 0)
 	resources := h.accessControlMap[roles.RoleOrgAdmin]
 	admin := h.roleMap.ByName[roles.RoleOrgAdmin]
 
@@ -112,7 +112,7 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 		for _, permission := range resPerms.Permissions {
 			userRBAC = append(
 				userRBAC,
-				users.UserRBAC{
+				users.UserAccessControl{
 					UserId:       user.Id,
 					RoleId:       admin.Id,
 					PermissionId: permission.Id,
@@ -125,13 +125,13 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 	teamId, err := h.users.CreateTeam(
 		r.Context(),
 		users.NewTeam{
-			InvitationCode: code,
-			CreatorId:      user.Id,
-			OrgId:          input.OrgId,
-			CreatorRoleId:  user.Role.Id,
-			Name:           input.TeamName,
-			Description:    input.TeamDescription,
-			CreatorRBAC:    userRBAC,
+			InvitationCode:    code,
+			CreatorId:         user.Id,
+			OrgId:             input.OrgId,
+			CreatorRoleId:     user.Role.Id,
+			Name:              input.TeamName,
+			Description:       input.TeamDescription,
+			UserAccessControl: userRBAC,
 		},
 	)
 	if err != nil {

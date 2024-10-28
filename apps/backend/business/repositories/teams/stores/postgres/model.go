@@ -12,7 +12,7 @@ type Team struct {
 	UpdatedAt      string
 }
 
-type UserRBAC struct {
+type UserAccessControl struct {
 	RoleId       int
 	UserId       int
 	ResourceId   int

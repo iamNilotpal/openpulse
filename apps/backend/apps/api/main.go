@@ -60,7 +60,6 @@ func run(log *zap.SugaredLogger) error {
 	if err := config.Validate(*cfg); err != nil {
 		return err
 	}
-
 	log.Infow("Config", "config", cfg)
 
 	/* ========= INITIALIZE DATABASE SUPPORT =========  */
@@ -159,7 +158,14 @@ func run(log *zap.SugaredLogger) error {
 	)
 
 	/* ========= AUTHENTICATION SUPPORT =========  */
-	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepo})
+	auth := auth.New(
+		auth.Config{
+			Logger:           log,
+			AuthConfig:       cfg.Auth,
+			UserRepo:         usersRepo,
+			OnboardingConfig: cfg.Onboarding,
+		},
+	)
 
 	/* ========= INITIALIZE EMAIL SERVICE =========  */
 	emailService := email.New(email.Config{Config: cfg.Email, Logger: log})

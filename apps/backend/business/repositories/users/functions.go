@@ -48,8 +48,8 @@ func FromDBPermission(cmd users_store.Permission) Permission {
 	}
 }
 
-func FromDBResourceWithPermission(cmd users_store.ResourcePermission) ResourcePermission {
-	return ResourcePermission{
+func FromDBResourceWithPermission(cmd users_store.ResourcePermission) AccessControl {
+	return AccessControl{
 		Resource:   FromDBResource(cmd.Resource),
 		Permission: FromDBPermission(cmd.Permission),
 	}
@@ -62,9 +62,9 @@ func FromDBOAuthAccount(cmd users_store.OAuthAccount) OAuthAccount {
 	return OAuthAccount{
 		Id:         cmd.Id,
 		Scope:      cmd.Scope,
-		Metadata:   cmd.Metadata,
 		Provider:   cmd.Provider,
 		ExternalId: cmd.ExternalId,
+		Metadata:   cmd.Metadata.String,
 		CreatedAt:  createdAt,
 		UpdatedAt:  updatedAt,
 	}
@@ -74,7 +74,7 @@ func FromDBUser(cmd users_store.User) User {
 	createdAt, _ := time.Parse(time.UnixDate, cmd.CreatedAt)
 	updatedAt, _ := time.Parse(time.UnixDate, cmd.UpdatedAt)
 
-	resources := make([]ResourcePermission, 0, len(cmd.Resources))
+	resources := make([]AccessControl, 0, len(cmd.Resources))
 	for i, r := range cmd.Resources {
 		resources[i] = FromDBResourceWithPermission(r)
 	}
@@ -89,18 +89,22 @@ func FromDBUser(cmd users_store.User) User {
 		Email:           cmd.Email,
 		LastName:        cmd.LastName,
 		FirstName:       cmd.FirstName,
-		AvatarUrl:       cmd.AvatarUrl,
-		AccountStatus:   ParseStatusInt(cmd.AccountStatus),
-		Resources:       resources,
 		OAuthAccounts:   oauthAccounts,
-		Phone:           cmd.Phone,
-		CountryCode:     cmd.CountryCode,
-		Designation:     cmd.Designation,
+		Phone:           cmd.Phone.String,
 		IsEmailVerified: cmd.IsEmailVerified,
-		Team:            Team{Id: cmd.Team.Id, Name: cmd.Team.Name, LogoURL: cmd.Team.LogoURL},
+		AvatarUrl:       cmd.AvatarUrl.String,
+		CountryCode:     cmd.CountryCode.String,
+		Designation:     cmd.Designation.String,
+		AccountStatus:   ParseStatusInt(cmd.AccountStatus),
+		AccessControl:   resources,
 		Role:            FromDBRole(cmd.Role),
-		CreatedAt:       createdAt,
-		UpdatedAt:       updatedAt,
+		Team: Team{
+			Name:    cmd.Team.Name.String,
+			Id:      int(cmd.Team.Id.Int64),
+			LogoURL: cmd.Team.LogoURL.String,
+		},
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
 	}
 }
 
@@ -116,10 +120,10 @@ func ToNewDBOrganization(cmd NewOrganization) users_store.NewOrganization {
 }
 
 func ToNewDBTeam(cmd NewTeam) users_store.NewTeam {
-	tu := make([]teams_store.UserRBAC, len(cmd.CreatorRBAC))
+	tu := make([]teams_store.UserAccessControl, len(cmd.UserAccessControl))
 
-	for i, t := range cmd.CreatorRBAC {
-		tu[i] = teams_store.UserRBAC{
+	for i, t := range cmd.UserAccessControl {
+		tu[i] = teams_store.UserAccessControl{
 			RoleId:       t.RoleId,
 			UserId:       t.UserId,
 			ResourceId:   t.ResourceId,
@@ -128,13 +132,13 @@ func ToNewDBTeam(cmd NewTeam) users_store.NewTeam {
 	}
 
 	return users_store.NewTeam{
-		UserRBAC:       tu,
-		Name:           cmd.Name,
-		OrgId:          cmd.OrgId,
-		CreatorId:      cmd.CreatorId,
-		Description:    cmd.Description,
-		CreatorRoleId:  cmd.CreatorRoleId,
-		InvitationCode: cmd.InvitationCode,
+		UserAccessControl: tu,
+		Name:              cmd.Name,
+		OrgId:             cmd.OrgId,
+		CreatorId:         cmd.CreatorId,
+		Description:       cmd.Description,
+		CreatorRoleId:     cmd.CreatorRoleId,
+		InvitationCode:    cmd.InvitationCode,
 	}
 }
 

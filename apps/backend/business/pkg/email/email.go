@@ -63,7 +63,7 @@ func (e *Email) VerifyToken(token string) (Claims, error) {
 			if t.Method != e.method {
 				return "", stdErrors.New("invalid token")
 			}
-			return e.config.Secret, nil
+			return []byte(e.config.Secret), nil
 		},
 	)
 

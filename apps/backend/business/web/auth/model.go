@@ -8,9 +8,9 @@ import (
 )
 
 type AccessTokenClaims struct {
-	TeamId int
-	RoleId int
 	jwt.RegisteredClaims
+	TeamId int `json:"teamId"`
+	RoleId int `json:"roleId"`
 }
 
 type RefreshTokenClaims struct {
