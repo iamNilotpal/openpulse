@@ -1,6 +1,10 @@
 package users_store
 
-import teams_store "github.com/iamNilotpal/openpulse/business/repositories/teams/stores/postgres"
+import (
+	"database/sql"
+
+	teams_store "github.com/iamNilotpal/openpulse/business/repositories/teams/stores/postgres"
+)
 
 type NewUser struct {
 	RoleId    int
@@ -14,11 +18,11 @@ type User struct {
 	FirstName       string
 	LastName        string
 	Email           string
-	Phone           string
-	CountryCode     string
-	AvatarUrl       string
+	Phone           sql.NullString
+	CountryCode     sql.NullString
+	AvatarUrl       sql.NullString
 	AccountStatus   int
-	Designation     string
+	Designation     sql.NullString
 	IsEmailVerified bool
 	Role            Role
 	Team            Team
@@ -27,20 +31,20 @@ type User struct {
 	Resources       []ResourcePermission
 	CreatedAt       string
 	UpdatedAt       string
-	DeletedAt       string
+	DeletedAt       sql.NullInt64
 }
 
 type Team struct {
-	Id      int
-	Name    string
-	LogoURL string
+	Id      sql.NullInt64
+	Name    sql.NullString
+	LogoURL sql.NullString
 }
 
 type Preference struct {
-	Id         int
-	Appearance string
-	CreatedAt  string
-	UpdatedAt  string
+	Id         sql.NullInt64
+	Appearance sql.NullString
+	CreatedAt  sql.NullString
+	UpdatedAt  sql.NullString
 }
 
 type Role struct {
@@ -76,7 +80,7 @@ type OAuthAccount struct {
 	Provider   string
 	ExternalId string
 	Scope      string
-	Metadata   string
+	Metadata   sql.NullString
 	CreatedAt  string
 	UpdatedAt  string
 }
@@ -108,11 +112,11 @@ type NewOrganization struct {
 }
 
 type NewTeam struct {
-	CreatorId      int
-	CreatorRoleId  int
-	OrgId          int
-	Name           string
-	Description    string
-	InvitationCode string
-	UserRBAC       []teams_store.UserRBAC
+	CreatorId         int
+	CreatorRoleId     int
+	OrgId             int
+	Name              string
+	Description       string
+	InvitationCode    string
+	UserAccessControl []teams_store.UserAccessControl
 }

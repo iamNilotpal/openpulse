@@ -24,7 +24,7 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 func (s *postgresStore) Create(ctx context.Context, nr NewResource) (int, error) {
 	query := `
 		INSERT INTO
-			resources (display_name, description, resource)
+			resources (name, description, resource)
 		VALUES
 			($1, $2, $3) RETURNING id;
 	`
@@ -43,7 +43,7 @@ func (s *postgresStore) QueryAll(ctx context.Context) ([]Resource, error) {
 	query := `
 		SELECT
 			r.id AS resourceId,
-			r.display_name AS resourceName,
+			r.name AS resourceName,
 			r.description AS resourceDescription,
 			r.resource AS resource,
 			r.created_at AS resourceCreatedAt,
@@ -86,7 +86,7 @@ func (s *postgresStore) QueryById(ctx context.Context, id int) (Resource, error)
 	query := `
 		SELECT
 			r.id AS resourceId,
-			r.display_name AS resourceName,
+			r.name AS resourceName,
 			r.description AS resourceDescription,
 			r.resource AS resource,
 			r.created_at AS resourceCreatedAt,

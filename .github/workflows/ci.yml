@@ -7,11 +7,12 @@ on:
       - packages/**
 
 concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number}}
   cancel-in-progress: true
-  group: ${{ github.workflow }}-${{ github.event.inputs.environment }}-${{ github.event.pull_request.number}}
 
 jobs:
   ci:
     uses: './.github/workflows/check-lint-format.yml'
     with:
       node-version: 22
+      pnpm-version: 8.15.6

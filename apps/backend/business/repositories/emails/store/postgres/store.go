@@ -29,23 +29,21 @@ func NewPostgresStore(db *sqlx.DB) *postgresStore {
 	return &postgresStore{db: db}
 }
 
-func (s *postgresStore) SaveEmailVerificationDetails(
-	ctx context.Context, input EmailVerificationInput,
-) error {
+func (s *postgresStore) SaveEmailVerificationDetails(ctx context.Context, cmd EmailVerificationInput) error {
 	query := `
 		INSERT INTO
 			email_verifications (user_id, verification_token, email, expires_at)
 		VALUES
-			($1, $2, $3, $4, $5)
+			($1, $2, $3, $4)
 	`
 
 	if _, err := s.db.ExecContext(
 		ctx,
 		query,
-		input.UserId,
-		input.VerificationToken,
-		input.Email,
-		input.ExpiresAt,
+		cmd.UserId,
+		cmd.VerificationToken,
+		cmd.Email,
+		cmd.ExpiresAt,
 	); err != nil {
 		return err
 	}
@@ -65,17 +63,16 @@ func (s *postgresStore) ValidateVerificationDetails(
 			query := `
 				SELECT
 					ev.id as id,
-					ev.attempt_count as attempt,
+					ev.attempt_count as attempt
 				FROM
 					email_verifications ev
 				WHERE
 					ev.user_id = $1
-					AND ev.expires_at = $3
 					AND ev.is_revoked = FALSE
 					AND ev.verification_token = $2;
 			`
 
-			if err := tx.QueryRowContext(ctx, query, userId, token, expiresAt).Scan(
+			if err := tx.QueryRowContext(ctx, query, userId, token).Scan(
 				&id, &attempts,
 			); err != nil {
 				return err
@@ -97,13 +94,23 @@ func (s *postgresStore) ValidateVerificationDetails(
 				SET
 					verified_at = $1,
 					is_revoked = TRUE,
-					is_email_verified = TRUE
 					attempt_count = attempt_count + 1
 				WHERE
 					id = $2;
 			`
 
-			_, err := tx.ExecContext(ctx, query, time.Now(), id)
+			if _, err := tx.ExecContext(ctx, query, time.Now(), id); err != nil {
+				return err
+			}
+
+			query = `
+				UPDATE users
+				SET
+					is_email_verified = TRUE
+				WHERE
+					id = $1;
+			`
+			_, err := tx.ExecContext(ctx, query, userId)
 			return err
 		},
 	)

@@ -68,7 +68,7 @@ CREATE TABLE
     team_id BIGINT NOT NULL REFERENCES teams (id) ON DELETE NO ACTION,
     org_id BIGINT NOT NULL REFERENCES organizations (id) ON DELETE NO ACTION,
     invited_by BIGINT NOT NULL REFERENCES users (id) ON DELETE NO ACTION,
-    token VARCHAR(255) UNIQUE NOT NULL,
+    token TEXT UNIQUE NOT NULL,
     expires_in BIGINT NOT NULL,
     status SMALLINT DEFAULT 1 NOT NULL CHECK (status > 0), -- pending, accepted, expired
     invited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

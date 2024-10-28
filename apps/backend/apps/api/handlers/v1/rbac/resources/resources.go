@@ -43,13 +43,6 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
 		if err := database.CheckPQError(
 			err,
 			func(err *pq.Error) error {
-				if err.Column == "name" && err.Code == pgerrcode.UniqueViolation {
-					return errors.NewRequestError(
-						"Resource with same name already exists.",
-						http.StatusConflict,
-						errors.DuplicateValue,
-					)
-				}
 				if err.Column == "resource" && err.Code == pgerrcode.CheckViolation {
 					return errors.NewRequestError("Invalid resource.", http.StatusConflict, errors.DuplicateValue)
 				}

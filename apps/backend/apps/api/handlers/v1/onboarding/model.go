@@ -3,9 +3,9 @@ package onboarding_handlers
 import "github.com/iamNilotpal/openpulse/foundation/validate"
 
 type CreateOrganizationInput struct {
-	Name         string `json:"orgName" validate:"required,min=1"`
-	Description  string `json:"orgDescription" validate:"required,min=50,max=255"`
-	LogoURL      string `json:"orgLogoURL" validate:"http_url"`
+	Name         string `json:"name" validate:"required,min=1"`
+	Description  string `json:"description" validate:"required,min=50,max=255"`
+	LogoURL      string `json:"logoURL" validate:"url"`
 	Designation  string `json:"designation" validate:"required,min=1"`
 	MembersCount string `json:"membersCount" validate:"required,min=1"`
 }
