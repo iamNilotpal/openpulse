@@ -124,10 +124,10 @@ func (s *postgresStore) CreateOrganization(ctx context.Context, cmd NewOrganizat
 						admin_id
 					)
 				VALUES
-					($1, $2, $3, $4, $5) RETURNING id;
+					($1, $2, $3, $4, $5)
+				RETURNING id;
 			`
 
-			var id int
 			if err := tx.QueryRowContext(
 				ctx, query, cmd.Name, cmd.Description, cmd.LogoURL, cmd.TotalEmployees, cmd.AdminId,
 			).Scan(&id); err != nil {
@@ -139,7 +139,6 @@ func (s *postgresStore) CreateOrganization(ctx context.Context, cmd NewOrganizat
 				SET designation = $1
 				WHERE id = $2;
 			`
-
 			_, err := tx.ExecContext(ctx, query, cmd.Designation, cmd.AdminId)
 			return err
 		},
@@ -191,8 +190,8 @@ func (s *postgresStore) CreateTeam(ctx context.Context, team NewTeam) (int, erro
 			`
 
 			params := database.BuildQueryParams(
-				team.UserRBAC,
-				func(index int, isLast bool, v teams_store.UserRBAC) string {
+				team.UserAccessControl,
+				func(index int, isLast bool, v teams_store.UserAccessControl) string {
 					args = append(args, id, v.UserId, v.RoleId, v.ResourceId, v.PermissionId)
 					return "(?, ?, ?, ?, ?)"
 				},
@@ -268,24 +267,27 @@ func (p *postgresStore) queryByIdOrEmail(
 			up.updated_at as userPreferenceUpdatedAt
 		FROM
 			users us
-			JOIN teams t ON t.id = us.team_id
+			LEFT JOIN teams t ON t.id = us.team_id
 			JOIN roles ro ON ro.id = us.role_id
-			JOIN users_preferences up ON up.user_id = us.id
+			LEFT JOIN users_preferences up ON up.user_id = us.id
 		WHERE
-			us.id = $1
-			AND account_status = 1
-			AND delete_at IS NULL;
 	`
 
-	if queryType == "email" {
-		query += `us.id = $1;`
-	} else if queryType == "id" {
-		query += `us.email = $1;`
+	if queryType == "id" {
+		query += `
+			us.id = $1
+			AND us.account_status = $2;
+		`
+	} else if queryType == "email" {
+		query += `
+			us.email = $1
+			AND us.account_status = $2;
+		`
 	}
 
 	var user User
 	if queryType == "email" {
-		if err := p.db.QueryRowContext(context, query, email).Scan(
+		if err := p.db.QueryRowContext(context, query, email, 1).Scan(
 			&user.Id,
 			&user.Email,
 			&user.FirstName,
@@ -316,7 +318,7 @@ func (p *postgresStore) queryByIdOrEmail(
 	}
 
 	if queryType == "id" {
-		if err := p.db.QueryRowContext(context, query, id).Scan(
+		if err := p.db.QueryRowContext(context, query, id, 1).Scan(
 			&user.Id,
 			&user.Email,
 			&user.FirstName,
@@ -350,7 +352,7 @@ func (p *postgresStore) queryByIdOrEmail(
 		SELECT
 			res.id as resourceId,
 			res.resource as resource,
-			res.display_name as resourceName,
+			res.name as resourceName,
 			res.description as resourceDescription,
 			pes.id AS permissionsId,
 			pes.name AS permissionName,
@@ -418,28 +420,31 @@ func (p *postgresStore) queryByIdOrEmail(
 	}
 
 	defer rows.Close()
-	if !errors.Is(err, sql.ErrNoRows) {
-		oauthAccounts := make([]OAuthAccount, 0)
-		for rows.Next() {
-			var ac OAuthAccount
-			if err := rows.Scan(
-				&ac.Id,
-				&ac.Provider,
-				&ac.ExternalId,
-				&ac.Scope,
-				&ac.Metadata,
-				&ac.CreatedAt,
-				&ac.UpdatedAt,
-			); err != nil {
-				return User{}, err
-			}
-			oauthAccounts = append(oauthAccounts, ac)
-		}
-		if err = rows.Err(); err != nil {
-			return User{}, err
-		}
-		user.OAuthAccounts = oauthAccounts
+	if errors.Is(err, sql.ErrNoRows) {
+		return user, nil
 	}
 
+	oauthAccounts := make([]OAuthAccount, 0)
+	for rows.Next() {
+		var ac OAuthAccount
+		if err := rows.Scan(
+			&ac.Id,
+			&ac.Provider,
+			&ac.ExternalId,
+			&ac.Scope,
+			&ac.Metadata,
+			&ac.CreatedAt,
+			&ac.UpdatedAt,
+		); err != nil {
+			return User{}, err
+		}
+		oauthAccounts = append(oauthAccounts, ac)
+	}
+
+	if err = rows.Err(); err != nil {
+		return User{}, err
+	}
+
+	user.OAuthAccounts = oauthAccounts
 	return user, nil
 }

@@ -14,8 +14,8 @@ func (v SignUpInput) Validate() error {
 
 type RegisterUserResponse struct {
 	URL    string            `json:"url"` // Temporary
-	State  RegistrationState `json:"state,omitempty"`
-	UserId int               `json:"userId,omitempty"`
+	State  RegistrationState `json:"state"`
+	UserId *int              `json:"userId,omitempty"`
 }
 
 type RegistrationState struct {

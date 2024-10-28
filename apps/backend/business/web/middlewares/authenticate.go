@@ -69,7 +69,7 @@ func Authenticate(
 				return
 			}
 
-			resources := user.Resources
+			resources := user.AccessControl
 			userResourcesMap := make(auth.UserAccessControlMap)
 
 			for _, resource := range resources {
@@ -87,7 +87,7 @@ func Authenticate(
 			}
 
 			r = r.WithContext(auth.SetUser(r.Context(), user))
-			r = r.WithContext(auth.SetResourcesMap(r.Context(), userResourcesMap))
+			r = r.WithContext(auth.SetUserAccessControl(r.Context(), userResourcesMap))
 
 			handler.ServeHTTP(w, r)
 		}

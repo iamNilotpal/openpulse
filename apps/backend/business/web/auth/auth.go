@@ -47,7 +47,7 @@ func New(cfg Config) *Auth {
 }
 
 func generateToken(token *jwt.Token, secret string) (string, error) {
-	signedToken, err := token.SignedString(secret)
+	signedToken, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", NewAuthError(
 			"Internal Server Error", errors.InternalServerError, http.StatusInternalServerError,
@@ -74,7 +74,7 @@ func (a *Auth) NewOnboardingToken(claims OnBoardingClaims) (string, error) {
 func (a *Auth) Authenticate(bearerToken string) (AccessTokenClaims, error) {
 	parts := strings.Split(strings.TrimSpace(bearerToken), " ")
 
-	if len(parts) != 2 || parts[1] != "Bearer" {
+	if len(parts) != 2 || parts[0] != "Bearer" {
 		return AccessTokenClaims{}, NewAuthError(
 			"Authorization header missing. Expected format 'Bearer <token>'",
 			errors.InvalidAuthHeader,
@@ -92,7 +92,7 @@ func (a *Auth) Authenticate(bearerToken string) (AccessTokenClaims, error) {
 			if t.Method != a.method {
 				return "", stdErrors.New("invalid token")
 			}
-			return a.authCfg.AccessTokenSecret, nil
+			return []byte(a.authCfg.AccessTokenSecret), nil
 		},
 	)
 
@@ -112,8 +112,7 @@ func (a *Auth) Authenticate(bearerToken string) (AccessTokenClaims, error) {
 
 func (a *Auth) AuthenticateOnboard(bearerToken string) (OnBoardingClaims, error) {
 	parts := strings.Split(strings.TrimSpace(bearerToken), " ")
-
-	if len(parts) != 2 || parts[1] != "Bearer" {
+	if len(parts) != 2 || parts[0] != "Bearer" {
 		return OnBoardingClaims{}, NewAuthError(
 			"Authorization header missing. Expected format 'Bearer <token>'",
 			errors.InvalidAuthHeader,
@@ -131,7 +130,7 @@ func (a *Auth) AuthenticateOnboard(bearerToken string) (OnBoardingClaims, error)
 			if t.Method != a.method {
 				return "", stdErrors.New("invalid token")
 			}
-			return a.onboardingConfig.Secret, nil
+			return []byte(a.onboardingConfig.Secret), nil
 		},
 	)
 

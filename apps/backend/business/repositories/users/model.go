@@ -29,7 +29,7 @@ type User struct {
 	AccountStatus   AccountStatus
 	OAuthAccounts   []OAuthAccount
 	Team            Team
-	Resources       []ResourcePermission
+	AccessControl   []AccessControl
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
@@ -63,7 +63,7 @@ type Permission struct {
 	Action      permissions.PermissionAction
 }
 
-type ResourcePermission struct {
+type AccessControl struct {
 	Resource   Resource
 	Permission Permission
 }
@@ -105,16 +105,16 @@ type NewOrganization struct {
 }
 
 type NewTeam struct {
-	CreatorId      int
-	CreatorRoleId  int
-	OrgId          int
-	Name           string
-	Description    string
-	InvitationCode string
-	CreatorRBAC    []UserRBAC
+	CreatorId         int
+	CreatorRoleId     int
+	OrgId             int
+	Name              string
+	Description       string
+	InvitationCode    string
+	UserAccessControl []UserAccessControl
 }
 
-type UserRBAC struct {
+type UserAccessControl struct {
 	RoleId       int
 	UserId       int
 	ResourceId   int

@@ -4,7 +4,7 @@ import (
 	"github.com/iamNilotpal/openpulse/business/repositories/users"
 )
 
-func FromAppRole(cmd users.Role) Role {
+func toRole(cmd users.Role) Role {
 	return Role{
 		Id:           cmd.Id,
 		Name:         cmd.Name,
@@ -14,7 +14,14 @@ func FromAppRole(cmd users.Role) Role {
 	}
 }
 
-func FromAppResource(cmd users.Resource) Resource {
+func toTeam(cmd users.Team) *Team {
+	if cmd.Id == 0 || cmd.Name == "" {
+		return nil
+	}
+	return &Team{Id: cmd.Id, Name: cmd.Name, LogoURL: cmd.LogoURL}
+}
+
+func toResource(cmd users.Resource) Resource {
 	return Resource{
 		Id:          cmd.Id,
 		Name:        cmd.Name,
@@ -23,7 +30,7 @@ func FromAppResource(cmd users.Resource) Resource {
 	}
 }
 
-func FromAppPermission(cmd users.Permission) Permission {
+func toPermission(cmd users.Permission) Permission {
 	return Permission{
 		Id:          cmd.Id,
 		Name:        cmd.Name,
@@ -33,14 +40,14 @@ func FromAppPermission(cmd users.Permission) Permission {
 	}
 }
 
-func FromAppResourceWithPermission(cmd users.ResourcePermission) ResourcePermission {
-	return ResourcePermission{
-		Resource:   FromAppResource(cmd.Resource),
-		Permission: FromAppPermission(cmd.Permission),
+func toAccessControl(cmd users.AccessControl) AccessControl {
+	return AccessControl{
+		Resource:   toResource(cmd.Resource),
+		Permission: toPermission(cmd.Permission),
 	}
 }
 
-func FromAppOAuthAccount(cmd users.OAuthAccount) OAuthAccount {
+func toOAuthAccount(cmd users.OAuthAccount) OAuthAccount {
 	return OAuthAccount{
 		Id:         cmd.Id,
 		Scope:      cmd.Scope,
@@ -52,36 +59,32 @@ func FromAppOAuthAccount(cmd users.OAuthAccount) OAuthAccount {
 	}
 }
 
-func FromAppUser(cmd users.User) User {
-	resources := make([]ResourcePermission, 0, len(cmd.Resources))
-	for i, r := range cmd.Resources {
-		resources[i] = FromAppResourceWithPermission(r)
+func toUser(cmd users.User) User {
+	resources := make([]AccessControl, 0, len(cmd.AccessControl))
+	for i, r := range cmd.AccessControl {
+		resources[i] = toAccessControl(r)
 	}
 
 	oauthAccounts := make([]OAuthAccount, 0)
 	for i, ac := range cmd.OAuthAccounts {
-		oauthAccounts[i] = FromAppOAuthAccount(ac)
+		oauthAccounts[i] = toOAuthAccount(ac)
 	}
 
 	return User{
-		Id:                  cmd.Id,
-		Email:               cmd.Email,
-		LastName:            cmd.LastName,
-		FirstName:           cmd.FirstName,
-		AvatarUrl:           cmd.AvatarUrl,
-		Phone:               cmd.Phone,
-		Designation:         cmd.Designation,
-		IsEmailVerified:     cmd.IsEmailVerified,
-		AccountStatus:       string(cmd.AccountStatus),
-		ResourcePermissions: resources,
-		Role:                FromAppRole(cmd.Role),
-		OAuthAccounts:       oauthAccounts,
-		Team: Team{
-			Id:      cmd.Team.Id,
-			Name:    cmd.Team.Name,
-			LogoURL: cmd.Team.LogoURL,
-		},
-		CreatedAt: cmd.CreatedAt.String(),
-		UpdatedAt: cmd.UpdatedAt.String(),
+		Id:              cmd.Id,
+		Email:           cmd.Email,
+		LastName:        cmd.LastName,
+		FirstName:       cmd.FirstName,
+		Phone:           cmd.Phone,
+		AvatarUrl:       cmd.AvatarUrl,
+		Designation:     cmd.Designation,
+		IsEmailVerified: cmd.IsEmailVerified,
+		AccountStatus:   string(cmd.AccountStatus),
+		AccessControl:   resources,
+		OAuthAccounts:   oauthAccounts,
+		Team:            toTeam(cmd.Team),
+		Role:            toRole(cmd.Role),
+		CreatedAt:       cmd.CreatedAt.String(),
+		UpdatedAt:       cmd.UpdatedAt.String(),
 	}
 }

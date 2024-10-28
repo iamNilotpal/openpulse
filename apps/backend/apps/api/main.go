@@ -38,7 +38,7 @@ import (
 )
 
 func main() {
-	// Load envs.
+	/* ========= Load Env =========  */
 	godotenv.Load()
 
 	log := logger.New("Openpulse Backend")
@@ -52,25 +52,24 @@ func main() {
 }
 
 func run(log *zap.SugaredLogger) error {
-	/* =========== GOMAXPROCS ===========  */
+	/* ========= GOMAXPROCS =========  */
 	log.Infow("Startup", "GOMAXPROCS", runtime.GOMAXPROCS(0))
 
-	/* =========== INITIALIZE CONFIG ===========  */
+	/* ========= INITIALIZE CONFIG =========  */
 	cfg := config.NewAPIConfig()
 	if err := config.Validate(*cfg); err != nil {
 		return err
 	}
-
 	log.Infow("Config", "config", cfg)
 
-	/* =========== INITIALIZE DATABASE SUPPORT ===========  */
+	/* ========= INITIALIZE DATABASE SUPPORT =========  */
 	db, err := database.Open(cfg.DB)
 	if err != nil {
 		log.Infow("DATABASE CONNECTION ERROR", "error", err)
 		return err
 	}
 
-	/* =========== DATABASE STATUS CHECK ===========  */
+	/* ========= DATABASE STATUS CHECK =========  */
 	err = database.StatusCheck(context.Background(), db)
 	if err != nil {
 		log.Infow("DATABASE Status Check Error", "error", err)
@@ -89,7 +88,7 @@ func run(log *zap.SugaredLogger) error {
 	// 	return err
 	// }
 
-	/* =========== INITIALIZE REPOSITORIES ===========  */
+	/* ========= INITIALIZE REPOSITORIES =========  */
 	usersStore := users_store.NewPostgresStore(db)
 	usersRepo := users.NewPostgresRepository(usersStore)
 
@@ -114,7 +113,7 @@ func run(log *zap.SugaredLogger) error {
 	sessionsStore := sessions_store.NewPostgresRepository(db)
 	sessionsRepo := sessions.NewPostgresRepository(sessionsStore)
 
-	/* =========== BUILD REPOSITORIES STRUCT ===========  */
+	/* ========= BUILD REPOSITORIES STRUCT =========  */
 	repositories := repositories.Repositories{
 		Organizations: orgsRepo,
 		Teams:         teamsRepo,
@@ -126,52 +125,59 @@ func run(log *zap.SugaredLogger) error {
 		Sessions:      sessionsRepo,
 	}
 
-	/* =========== GET ACCESS CONTROL ===========  */
+	/* ========= GET ACCESS CONTROL =========  */
 	accessControls, err := rolesRepo.QueryAccessControl(context.Background())
 	if err != nil {
 		return err
 	}
 
-	/* =========== GET ROLES ===========  */
+	/* ========= GET ROLES =========  */
 	appRoles, err := rolesRepo.QueryAll(context.Background())
 	if err != nil {
 		return err
 	}
 
-	/* =========== GET RESOURCES ===========  */
+	/* ========= GET RESOURCES =========  */
 	appResources, err := resourceRepo.QueryAll(context.Background())
 	if err != nil {
 		return err
 	}
 
-	/* =========== GET PERMISSIONS ===========  */
+	/* ========= GET PERMISSIONS =========  */
 	appPermissions, err := permissionsRepo.QueryAll(context.Background())
 	if err != nil {
 		return err
 	}
 
-	/* =========== BUILD RBAC AND RESOURCE PERMISSIONS MAP ===========  */
+	/* ========= BUILD RBAC AND RESOURCE PERMISSIONS MAP =========  */
 	resourcePermsMap, accessControlMap := auth.BuildAccessControlMaps(accessControls)
 
-	/* =========== BUILD ROLES, RESOURCES AND PERMISSIONS MAP ===========  */
+	/* ========= BUILD ROLES, RESOURCES AND PERMISSIONS MAP =========  */
 	roleMapping, resourceMapping, permissionMapping := auth.BuildAuthorizationMaps(
 		appRoles, appResources, appPermissions,
 	)
 
-	/* =========== AUTHENTICATION SUPPORT ===========  */
-	auth := auth.New(auth.Config{Logger: log, AuthConfig: cfg.Auth, UserRepo: usersRepo})
+	/* ========= AUTHENTICATION SUPPORT =========  */
+	auth := auth.New(
+		auth.Config{
+			Logger:           log,
+			AuthConfig:       cfg.Auth,
+			UserRepo:         usersRepo,
+			OnboardingConfig: cfg.Onboarding,
+		},
+	)
 
-	/* =========== INITIALIZE EMAIL SERVICE ===========  */
+	/* ========= INITIALIZE EMAIL SERVICE =========  */
 	emailService := email.New(email.Config{Config: cfg.Email, Logger: log})
 
-	/* =========== INITIALIZE HASH SERVICE ===========  */
+	/* ========= INITIALIZE HASH SERVICE =========  */
 	bcryptHasher := hash.NewBcryptHasher()
 
-	/* =========== SHUTDOWN SIGNAL ===========  */
+	/* ========= SHUTDOWN SIGNAL =========  */
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	/* =========== INITIALIZE API SUPPORT ===========  */
+	/* ========= INITIALIZE API SUPPORT =========  */
 	mux := handlers.NewHandler(
 		handlers.HandlerConfig{
 			DB:                     db,
@@ -200,13 +206,13 @@ func run(log *zap.SugaredLogger) error {
 		ErrorLog:     zap.NewStdLog(log.Desugar()),
 	}
 
-	/* =========== START THE API SERVER ===========  */
+	/* ========= START THE API SERVER =========  */
 	go func() {
 		log.Infow("Server Listening", "address", api.Addr)
 		serverErrors <- api.ListenAndServe()
 	}()
 
-	/* =========== GRACEFUL SHUTDOWN ===========  */
+	/* ========= GRACEFUL SHUTDOWN =========  */
 	select {
 	case err := <-serverErrors:
 		return fmt.Errorf("server error: %w", err)

@@ -4,10 +4,8 @@ import (
 	"net/http"
 
 	"github.com/iamNilotpal/openpulse/business/repositories/roles"
-	"github.com/iamNilotpal/openpulse/business/web/errors"
+	"github.com/iamNilotpal/openpulse/business/sys/database"
 	"github.com/iamNilotpal/openpulse/foundation/web"
-	"github.com/jackc/pgerrcode"
-	"github.com/lib/pq"
 )
 
 type Config struct {
@@ -42,17 +40,9 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) error {
 			Description:  input.Description,
 		},
 	)
-
 	if err != nil {
-		if err, ok := err.(*pq.Error); ok {
-			if err.Code == pgerrcode.UniqueViolation {
-				return errors.NewRequestError(
-					"Role already exists", http.StatusConflict, errors.AlreadyExists,
-				)
-			}
-			return errors.NewRequestError(
-				"Unable to create role", http.StatusInternalServerError, errors.InternalServerError,
-			)
+		if err := database.CheckPQError(err, nil); err != nil {
+			return err
 		}
 		return err
 	}

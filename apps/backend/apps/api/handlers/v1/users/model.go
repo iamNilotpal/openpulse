@@ -1,21 +1,21 @@
 package users_handler
 
 type User struct {
-	Id                  int                  `json:"id"`
-	FirstName           string               `json:"firstName"`
-	LastName            string               `json:"lastName"`
-	Email               string               `json:"email"`
-	Phone               string               `json:"phoneNumber"`
-	AvatarUrl           string               `json:"avatarURL"`
-	Designation         string               `json:"designation"`
-	IsEmailVerified     bool                 `json:"isEmailVerified"`
-	Role                Role                 `json:"role"`
-	AccountStatus       string               `json:"accountStatus"`
-	OAuthAccounts       []OAuthAccount       `json:"oauthAccounts"`
-	Team                Team                 `json:"team"`
-	ResourcePermissions []ResourcePermission `json:"resourcePermissions"`
-	CreatedAt           string               `json:"createdAt"`
-	UpdatedAt           string               `json:"updatedAt"`
+	Id              int             `json:"id"`
+	FirstName       string          `json:"firstName"`
+	LastName        string          `json:"lastName"`
+	Email           string          `json:"email"`
+	Phone           string          `json:"phoneNumber"`
+	AvatarUrl       string          `json:"avatarURL"`
+	Designation     string          `json:"designation"`
+	IsEmailVerified bool            `json:"isEmailVerified"`
+	Role            Role            `json:"role"`
+	AccountStatus   string          `json:"accountStatus"`
+	OAuthAccounts   []OAuthAccount  `json:"oauthAccounts"`
+	Team            *Team           `json:"team"`
+	AccessControl   []AccessControl `json:"accessControl"`
+	CreatedAt       string          `json:"createdAt"`
+	UpdatedAt       string          `json:"updatedAt"`
 }
 
 type Team struct {
@@ -57,7 +57,7 @@ type Permission struct {
 	Action      string `json:"action"`
 }
 
-type ResourcePermission struct {
+type AccessControl struct {
 	Resource   Resource   `json:"resource"`
 	Permission Permission `json:"permission"`
 }

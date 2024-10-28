@@ -3,11 +3,14 @@ package database
 import (
 	"context"
 	"database/sql"
-	"errors"
+	stdErrors "errors"
+	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/iamNilotpal/openpulse/business/sys/config"
+	"github.com/iamNilotpal/openpulse/business/web/errors"
+	"github.com/jackc/pgerrcode"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 )
@@ -73,12 +76,27 @@ func StatusCheck(ctx context.Context, db *sqlx.DB) error {
 }
 
 func CheckPQError(err error, f func(*pq.Error) error) error {
-	e, ok := err.(*pq.Error)
+	pgErr, ok := err.(*pq.Error)
 	if !ok {
 		return nil
 	}
 
-	return f(e)
+	if pgErr.Code == pgerrcode.UniqueViolation {
+		if msg, exists := errors.GetUniqueConstraint(pgErr.Constraint); exists {
+			return errors.NewRequestError(msg, http.StatusConflict, errors.DuplicateValue)
+		}
+		return errors.NewRequestError(
+			http.StatusText(http.StatusInternalServerError),
+			http.StatusInternalServerError,
+			errors.InternalServerError,
+		)
+	}
+
+	if f != nil {
+		return f(pgErr)
+	}
+
+	return pgErr
 }
 
 func BuildQueryParams[T any](data []T, format func(index int, isLast bool, val T) string) []string {
@@ -106,7 +124,7 @@ func WithTx(
 
 	rollbackErr := tx.Rollback()
 	if rollbackErr != nil {
-		return errors.Join(err, rollbackErr)
+		return stdErrors.Join(err, rollbackErr)
 	}
 
 	return err

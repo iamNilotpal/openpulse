@@ -13,8 +13,6 @@ import (
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
-	"github.com/jackc/pgerrcode"
-	"github.com/lib/pq"
 	nanoid "github.com/matoous/go-nanoid/v2"
 )
 
@@ -64,19 +62,7 @@ func (h *handler) CreateOrganization(w http.ResponseWriter, r *http.Request) err
 	)
 
 	if err != nil {
-		if err := database.CheckPQError(
-			err,
-			func(err *pq.Error) error {
-				if err.Column == "admin_id" && err.Code == pgerrcode.UniqueViolation {
-					return errors.NewRequestError(
-						"One user can create only one organization.",
-						http.StatusBadRequest,
-						errors.DuplicateValue,
-					)
-				}
-				return nil
-			},
-		); err != nil {
+		if err := database.CheckPQError(err, nil); err != nil {
 			return err
 		}
 		return errors.NewRequestError(
@@ -118,7 +104,7 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 		return errors.NewRequestError("Organization not found.", http.StatusForbidden, errors.Forbidden)
 	}
 
-	userRBAC := make([]users.UserRBAC, 0)
+	userRBAC := make([]users.UserAccessControl, 0)
 	resources := h.accessControlMap[roles.RoleOrgAdmin]
 	admin := h.roleMap.ByName[roles.RoleOrgAdmin]
 
@@ -126,7 +112,7 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 		for _, permission := range resPerms.Permissions {
 			userRBAC = append(
 				userRBAC,
-				users.UserRBAC{
+				users.UserAccessControl{
 					UserId:       user.Id,
 					RoleId:       admin.Id,
 					PermissionId: permission.Id,
@@ -139,13 +125,13 @@ func (h *handler) CreateTeam(w http.ResponseWriter, r *http.Request) error {
 	teamId, err := h.users.CreateTeam(
 		r.Context(),
 		users.NewTeam{
-			InvitationCode: code,
-			CreatorId:      user.Id,
-			OrgId:          input.OrgId,
-			CreatorRoleId:  user.Role.Id,
-			Name:           input.TeamName,
-			Description:    input.TeamDescription,
-			CreatorRBAC:    userRBAC,
+			InvitationCode:    code,
+			CreatorId:         user.Id,
+			OrgId:             input.OrgId,
+			CreatorRoleId:     user.Role.Id,
+			Name:              input.TeamName,
+			Description:       input.TeamDescription,
+			UserAccessControl: userRBAC,
 		},
 	)
 	if err != nil {

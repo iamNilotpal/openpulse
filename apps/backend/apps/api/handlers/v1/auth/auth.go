@@ -21,8 +21,6 @@ import (
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/hash"
 	"github.com/iamNilotpal/openpulse/foundation/web"
-	"github.com/jackc/pgerrcode"
-	"github.com/lib/pq"
 )
 
 type Config struct {
@@ -82,19 +80,7 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		},
 	)
 	if err != nil {
-		if err := database.CheckPQError(
-			err,
-			func(err *pq.Error) error {
-				if err.Column == "email" && err.Code == pgerrcode.UniqueViolation {
-					return errors.NewRequestError(
-						"User with same email already exists.",
-						http.StatusConflict,
-						errors.DuplicateValue,
-					)
-				}
-				return nil
-			},
-		); err != nil {
+		if err := database.CheckPQError(err, nil); err != nil {
 			return err
 		}
 		return err
@@ -177,7 +163,7 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		http.StatusCreated,
 		"Account registered successfully.",
 		RegisterUserResponse{
-			UserId: userId,
+			UserId: &userId,
 			URL:    h.config.Web.ClientAPIHost + "/magic?magic_token=" + token,
 			State: RegistrationState{
 				EmailSent:     verificationMailSent,
@@ -356,17 +342,8 @@ func (h *handler) OauthSignup(w http.ResponseWriter, r *http.Request) error {
 		},
 	)
 
-	if err == nil {
-
-	}
-
 	if err != nil {
-		if err := database.CheckPQError(
-			err,
-			func(err *pq.Error) error {
-				return err
-			},
-		); err != nil {
+		if err := database.CheckPQError(err, nil); err != nil {
 			return err
 		}
 		return err

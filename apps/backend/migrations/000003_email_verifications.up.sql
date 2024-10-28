@@ -2,7 +2,7 @@ CREATE TABLE
   email_verifications (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
     user_id BIGINT REFERENCES users (id) ON DELETE SET NULL,
-    verification_token VARCHAR(255) NOT NULL UNIQUE,
+    verification_token TEXT NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL,
     attempt_count SMALLINT NOT NULL DEFAULT 0 CHECK (attempt_count <= 5),
     verified_at TIMESTAMP,
