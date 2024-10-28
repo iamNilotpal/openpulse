@@ -21,7 +21,6 @@ import (
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/hash"
 	"github.com/iamNilotpal/openpulse/foundation/web"
-	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
 )
 
@@ -82,19 +81,7 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 		},
 	)
 	if err != nil {
-		if err := database.CheckPQError(
-			err,
-			func(err *pq.Error) error {
-				if err.Column == "email" && err.Code == pgerrcode.UniqueViolation {
-					return errors.NewRequestError(
-						"User with same email already exists.",
-						http.StatusConflict,
-						errors.DuplicateValue,
-					)
-				}
-				return nil
-			},
-		); err != nil {
+		if err := database.CheckPQError(err, nil); err != nil {
 			return err
 		}
 		return err
@@ -156,6 +143,8 @@ func (h *handler) SignUp(w http.ResponseWriter, r *http.Request) error {
 			ExpiresAt:         time.Now().Add(time.Minute * 30),
 		},
 	); err != nil {
+		println(err.Error())
+
 		return web.Error(
 			w,
 			http.StatusInternalServerError,

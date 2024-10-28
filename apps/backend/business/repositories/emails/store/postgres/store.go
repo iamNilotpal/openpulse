@@ -36,7 +36,7 @@ func (s *postgresStore) SaveEmailVerificationDetails(
 		INSERT INTO
 			email_verifications (user_id, verification_token, email, expires_at)
 		VALUES
-			($1, $2, $3, $4, $5)
+			($1, $2, $3, $4)
 	`
 
 	if _, err := s.db.ExecContext(

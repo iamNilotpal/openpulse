@@ -13,8 +13,6 @@ import (
 	"github.com/iamNilotpal/openpulse/business/web/auth"
 	"github.com/iamNilotpal/openpulse/business/web/errors"
 	"github.com/iamNilotpal/openpulse/foundation/web"
-	"github.com/jackc/pgerrcode"
-	"github.com/lib/pq"
 	nanoid "github.com/matoous/go-nanoid/v2"
 )
 
@@ -64,19 +62,7 @@ func (h *handler) CreateOrganization(w http.ResponseWriter, r *http.Request) err
 	)
 
 	if err != nil {
-		if err := database.CheckPQError(
-			err,
-			func(err *pq.Error) error {
-				if err.Column == "admin_id" && err.Code == pgerrcode.UniqueViolation {
-					return errors.NewRequestError(
-						"One user can create only one organization.",
-						http.StatusBadRequest,
-						errors.DuplicateValue,
-					)
-				}
-				return nil
-			},
-		); err != nil {
+		if err := database.CheckPQError(err, nil); err != nil {
 			return err
 		}
 		return errors.NewRequestError(

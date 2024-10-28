@@ -47,7 +47,7 @@ func New(cfg Config) *Auth {
 }
 
 func generateToken(token *jwt.Token, secret string) (string, error) {
-	signedToken, err := token.SignedString(secret)
+	signedToken, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", NewAuthError(
 			"Internal Server Error", errors.InternalServerError, http.StatusInternalServerError,

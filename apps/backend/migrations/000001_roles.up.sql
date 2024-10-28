@@ -16,7 +16,7 @@ CREATE INDEX "idx_roles_role_name" ON roles (name);
 CREATE TABLE
   IF NOT EXISTS resources (
     id SMALLINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY NOT NULL,
-    display_name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT NOT NULL,
     resource SMALLINT UNIQUE NOT NULL CHECK (resource > 0),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

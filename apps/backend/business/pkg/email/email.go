@@ -40,7 +40,7 @@ func New(cfg Config) *Email {
 func (e *Email) NewToken(c Claims) (string, error) {
 	token := jwt.NewWithClaims(e.method, c)
 
-	signedToken, err := token.SignedString(e.config.Secret)
+	signedToken, err := token.SignedString([]byte(e.config.Secret))
 	if err != nil {
 		return "", errors.NewRequestError(
 			"Internal Server Error.", http.StatusInternalServerError, errors.InternalServerError,
